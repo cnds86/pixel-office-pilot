@@ -165,6 +165,8 @@ const actionLabel: Record<AgentAction, string> = {
   working: "Working", walking: "Walking", coffee: "Coffee break", meeting: "In meeting",
   idle: "Idle", printing: "Printing", chatting: "Chatting", snacking: "Snacking", calling: "On a call",
   "gone-home": "Gone home",
+  panicking: "Panicking!",
+  celebrating: "Celebrating!",
 };
 
 const priorityColor: Record<string, string> = {
