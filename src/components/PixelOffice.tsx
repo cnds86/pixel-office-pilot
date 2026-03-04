@@ -519,6 +519,32 @@ export function PixelOffice() {
         </div>
       </div>
 
+      {/* Event Banner */}
+      {activeEvent && (
+        <div
+          className="pixel-border p-2 mb-2 flex items-center justify-between animate-pixel-pulse"
+          style={{ backgroundColor: activeEvent.color, borderColor: activeEvent.color }}
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-xl">{activeEvent.icon}</span>
+            <div>
+              <span className="font-pixel text-[9px] text-primary-foreground">{activeEvent.label}</span>
+              <p className="font-pixel text-[6px] text-primary-foreground/80">{activeEvent.description}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-pixel text-[8px] text-primary-foreground">{eventTimer}s</span>
+            <button
+              onClick={endEvent}
+              className="font-pixel text-[6px] px-2 py-1 bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30 pixel-border"
+              style={{ borderWidth: 1 }}
+            >
+              DISMISS
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Office Canvas Wrapper */}
       <div className="relative" style={{ height: 520 }}>
       {/* Office Canvas */}
