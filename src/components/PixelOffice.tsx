@@ -137,7 +137,7 @@ const floorLabels: Record<FloorId, { label: string; departments: string }> = {
   4: { label: "ENGINEERING", departments: "Engineering • Server Room" },
 };
 
-type AgentAction = "working" | "walking" | "coffee" | "meeting" | "idle" | "printing" | "chatting" | "snacking" | "calling" | "gone-home" | "panicking" | "celebrating";
+type AgentAction = "working" | "walking" | "coffee" | "meeting" | "idle" | "printing" | "chatting" | "snacking" | "calling" | "gone-home" | "panicking" | "celebrating" | "gym" | "library" | "workshop" | "lounge" | "mailing" | "security-check";
 
 type OfficeEventType = "fire-drill" | "pizza-party" | "server-down" | "birthday" | "surprise-meeting" | "power-outage";
 
@@ -202,12 +202,20 @@ const speechOptions: Record<AgentAction, string[]> = {
   "gone-home": ["🏠 left for today", "👋 bye!"],
   panicking: ["😱 RUN!!", "🚨 EVACUATE!", "😰 oh no!!"],
   celebrating: ["🎉 woohoo!", "🥳 party!", "🍕 yummy!"],
+  gym: ["💪 one more rep!", "🏋️ leg day!", "🏃 cardio time!", "💦 feeling the burn!", "🧘 stretching..."],
+  library: ["📖 reading docs...", "📚 studying...", "🤓 interesting...", "📕 good book!", "🔍 researching..."],
+  workshop: ["🔧 fixing stuff...", "🔨 building!", "⚙️ tinkering...", "🛠️ repairing...", "🔩 assembling..."],
+  lounge: ["🎮 gaming break!", "☕ chilling...", "🛋️ relaxing...", "📺 watching...", "😎 vibing..."],
+  mailing: ["📬 checking mail...", "📦 got a package!", "✉️ sending letter..."],
+  "security-check": ["🛡️ badge check!", "🔒 scanning...", "🪪 verified!"],
 };
 
 const actionLabel: Record<AgentAction, string> = {
   working: "Working", walking: "Walking", coffee: "Coffee break", meeting: "In meeting",
   idle: "Idle", printing: "Printing", chatting: "Chatting", snacking: "Snacking", calling: "On a call",
   "gone-home": "Gone home", panicking: "Panicking!", celebrating: "Celebrating!",
+  gym: "At the Gym", library: "In Library", workshop: "In Workshop", lounge: "In Lounge",
+  mailing: "Checking Mail", "security-check": "Security Check",
 };
 
 const priorityColor: Record<string, string> = {
@@ -398,23 +406,88 @@ export function PixelOffice() {
         const room = rooms.find(r => r.department === oa.agent.department);
         if (!room) return oa;
 
-        if (roll < 0.25) {
+        if (roll < 0.20) {
           return { ...oa, action: "working", speechBubble: pickRandom(speechOptions.working) };
         }
-        // Go to pantry (F1)
-        if (roll < 0.35) {
+        // Go to pantry (F1) for coffee/snack
+        if (roll < 0.28) {
           const tx = pantrySpace.x + randomBetween(30, pantrySpace.w - 30);
           const ty = pantrySpace.y + randomBetween(60, pantrySpace.h - 40);
           return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: 1, speechBubble: pickRandom(speechOptions.coffee), direction: tx > oa.x ? "right" : "left" };
         }
-        // Walk within own room
+        // Go to Gym (F1)
+        if (roll < 0.34) {
+          const gymSpace = sharedSpaces[1].find(s => s.type === "gym");
+          if (gymSpace) {
+            const tx = gymSpace.x + randomBetween(20, gymSpace.w - 20);
+            const ty = gymSpace.y + randomBetween(20, gymSpace.h - 20);
+            return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: 1, speechBubble: "💪 gym time!", direction: tx > oa.x ? "right" : "left" };
+          }
+        }
+        // Go to Library (F3)
+        if (roll < 0.40) {
+          const libSpace = sharedSpaces[3].find(s => s.type === "library");
+          if (libSpace) {
+            const tx = libSpace.x + randomBetween(20, libSpace.w - 20);
+            const ty = libSpace.y + randomBetween(40, libSpace.h - 20);
+            return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: 3, speechBubble: "📚 reading time!", direction: tx > oa.x ? "right" : "left" };
+          }
+        }
+        // Go to Workshop (F3)
+        if (roll < 0.45) {
+          const workshopSpace = sharedSpaces[3].find(s => s.type === "workshop");
+          if (workshopSpace) {
+            const tx = workshopSpace.x + randomBetween(20, workshopSpace.w - 20);
+            const ty = workshopSpace.y + randomBetween(40, workshopSpace.h - 20);
+            return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: 3, speechBubble: "🔧 fixing stuff!", direction: tx > oa.x ? "right" : "left" };
+          }
+        }
+        // Go to Lounge (F4)
         if (roll < 0.50) {
+          const loungeSpace = sharedSpaces[4].find(s => s.type === "lounge");
+          if (loungeSpace) {
+            const tx = loungeSpace.x + randomBetween(20, loungeSpace.w - 20);
+            const ty = loungeSpace.y + randomBetween(20, loungeSpace.h - 20);
+            return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: 4, speechBubble: "🎮 break time!", direction: tx > oa.x ? "right" : "left" };
+          }
+        }
+        // Go to Meeting room
+        if (roll < 0.55) {
+          const meetingSpaces = [...(sharedSpaces[2] || []), ...(sharedSpaces[4] || [])].filter(s => s.type === "meeting");
+          const meetRoom = pickRandom(meetingSpaces);
+          if (meetRoom) {
+            const mFloor = sharedSpaces[2]?.includes(meetRoom) ? 2 : 4;
+            const tx = meetRoom.x + randomBetween(20, meetRoom.w - 20);
+            const ty = meetRoom.y + randomBetween(40, meetRoom.h - 20);
+            return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: mFloor as FloorId, speechBubble: pickRandom(speechOptions.meeting), direction: tx > oa.x ? "right" : "left" };
+          }
+        }
+        // Go to Mail Room (F1)
+        if (roll < 0.58) {
+          const mailSpace = sharedSpaces[1].find(s => s.type === "mail-room");
+          if (mailSpace) {
+            const tx = mailSpace.x + randomBetween(20, mailSpace.w - 20);
+            const ty = mailSpace.y + randomBetween(20, mailSpace.h - 20);
+            return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: 1, speechBubble: "📬 checking mail!", direction: tx > oa.x ? "right" : "left" };
+          }
+        }
+        // Go to R&D Lab (F4)
+        if (roll < 0.62) {
+          const labSpace = sharedSpaces[4].find(s => s.type === "lab");
+          if (labSpace) {
+            const tx = labSpace.x + randomBetween(20, labSpace.w - 20);
+            const ty = labSpace.y + randomBetween(40, labSpace.h - 20);
+            return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: 4, speechBubble: "🧬 experimenting!", direction: tx > oa.x ? "right" : "left" };
+          }
+        }
+        // Walk within own room
+        if (roll < 0.72) {
           const tx = room.x + randomBetween(20, room.w - 20);
           const ty = room.y + randomBetween(40, room.h - 20);
           return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: room.floor, speechBubble: pickRandom(speechOptions.chatting), direction: tx > oa.x ? "right" : "left" };
         }
         // Return to desk
-        if (roll < 0.75) {
+        if (roll < 0.85) {
           return { ...oa, action: "walking", targetX: oa.deskX, targetY: oa.deskY, floor: oa.deskFloor, speechBubble: null, direction: oa.deskX > oa.x ? "right" : "left" };
         }
         return { ...oa, speechBubble: pickRandom(speechOptions.idle) };
@@ -435,13 +508,35 @@ export function PixelOffice() {
 
         if (dist < 3) {
           const atDesk = Math.abs(oa.targetX - oa.deskX) < 10 && Math.abs(oa.targetY - oa.deskY) < 10;
-          const atPantry = oa.floor === 1 && oa.targetX >= pantrySpace.x;
+          
+          // Detect which shared space the agent arrived at
+          const findSpace = (floor: FloorId) => {
+            return (sharedSpaces[floor] || []).find(s =>
+              oa.targetX >= s.x && oa.targetX <= s.x + s.w &&
+              oa.targetY >= s.y && oa.targetY <= s.y + s.h
+            );
+          };
+          const arrivedSpace = findSpace(oa.floor);
 
           let newAction: AgentAction = "idle";
           let bubble: string | null = null;
-          if (atDesk) { newAction = "working"; bubble = pickRandom(speechOptions.working); }
-          else if (atPantry) { newAction = "coffee"; bubble = pickRandom(speechOptions.snacking); }
-          else { newAction = "chatting"; bubble = pickRandom(speechOptions.chatting); }
+
+          if (atDesk) {
+            newAction = "working"; bubble = pickRandom(speechOptions.working);
+          } else if (arrivedSpace) {
+            const spaceActionMap: Record<string, AgentAction> = {
+              "pantry": "coffee", "gym": "gym", "library": "library",
+              "workshop": "workshop", "lounge": "lounge", "meeting": "meeting",
+              "mail-room": "mailing", "security": "security-check",
+              "phone-booth": "calling", "print-room": "printing",
+              "lab": "working", "server-room": "working", "lobby": "idle",
+              "storage": "idle",
+            };
+            newAction = spaceActionMap[arrivedSpace.type] || "idle";
+            bubble = pickRandom(speechOptions[newAction] || speechOptions.idle);
+          } else {
+            newAction = "chatting"; bubble = pickRandom(speechOptions.chatting);
+          }
           return { ...oa, x: oa.targetX, y: oa.targetY, action: newAction, speechBubble: bubble, frame: 0 };
         }
 
@@ -1199,6 +1294,42 @@ export function PixelOffice() {
                     onClick={() => sendTo(pantrySpace.x + randomBetween(30, 150), pantrySpace.y + randomBetween(60, 200), "☕ coffee time!", 1)}>
                     ☕ Pantry
                   </Button>
+                  {(() => {
+                    const gymSpace = sharedSpaces[1].find(s => s.type === "gym");
+                    return gymSpace ? (
+                      <Button size="sm" variant="outline" className="font-pixel text-[7px] h-6"
+                        onClick={() => sendTo(gymSpace.x + randomBetween(20, gymSpace.w - 20), gymSpace.y + randomBetween(20, gymSpace.h - 20), "💪 gym time!", 1)}>
+                        🏋️ Gym
+                      </Button>
+                    ) : null;
+                  })()}
+                  {(() => {
+                    const libSpace = sharedSpaces[3].find(s => s.type === "library");
+                    return libSpace ? (
+                      <Button size="sm" variant="outline" className="font-pixel text-[7px] h-6"
+                        onClick={() => sendTo(libSpace.x + randomBetween(20, libSpace.w - 20), libSpace.y + randomBetween(40, libSpace.h - 20), "📚 reading!", 3)}>
+                        📚 Library
+                      </Button>
+                    ) : null;
+                  })()}
+                  {(() => {
+                    const wsSpace = sharedSpaces[3].find(s => s.type === "workshop");
+                    return wsSpace ? (
+                      <Button size="sm" variant="outline" className="font-pixel text-[7px] h-6"
+                        onClick={() => sendTo(wsSpace.x + randomBetween(20, wsSpace.w - 20), wsSpace.y + randomBetween(40, wsSpace.h - 20), "🔧 fixing!", 3)}>
+                        🔧 Workshop
+                      </Button>
+                    ) : null;
+                  })()}
+                  {(() => {
+                    const loungeSpace = sharedSpaces[4].find(s => s.type === "lounge");
+                    return loungeSpace ? (
+                      <Button size="sm" variant="outline" className="font-pixel text-[7px] h-6"
+                        onClick={() => sendTo(loungeSpace.x + randomBetween(20, loungeSpace.w - 20), loungeSpace.y + randomBetween(20, loungeSpace.h - 20), "🎮 break!", 4)}>
+                        🎮 Lounge
+                      </Button>
+                    ) : null;
+                  })()}
                   <Button size="sm" variant="default" className="font-pixel text-[7px] h-6"
                     onClick={() => { setChatAgent(selectedAgent.agent); setDialogOpen(false); }}>
                     💬 Chat
