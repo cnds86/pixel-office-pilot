@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { agents, tasks, departmentInfo } from "@/data/mockData";
 import type { Agent, Task, Department } from "@/data/mockData";
-import { CoffeeSteam, DustInLight, MonitorGlow, AmbientSparkles } from "./OfficeParticles";
+import { AmbientSparkles } from "./OfficeParticles";
+import floorF1 from "@/assets/floor-f1-lobby.png";
+import floorF2 from "@/assets/floor-f2-operations.png";
+import floorF3 from "@/assets/floor-f3-creative.png";
+import floorF4 from "@/assets/floor-f4-engineering.png";
 import {
   Dialog,
   DialogContent,
@@ -121,6 +125,13 @@ const floorLabels: Record<FloorId, { label: string; departments: string }> = {
   2: { label: "OPERATIONS", departments: "DevOps • Product • Meeting Room" },
   3: { label: "CREATIVE & QA", departments: "Design • QA & Testing" },
   4: { label: "ENGINEERING", departments: "Engineering • Server Room" },
+};
+
+const floorBgImages: Record<FloorId, string> = {
+  1: floorF1,
+  2: floorF2,
+  3: floorF3,
+  4: floorF4,
 };
 
 type AgentAction = "working" | "walking" | "coffee" | "meeting" | "idle" | "printing" | "chatting" | "snacking" | "calling" | "gone-home" | "panicking" | "celebrating";
@@ -565,239 +576,67 @@ export function PixelOffice() {
       <div className="relative" style={{ height: 480 }}>
         <div
           ref={containerRef}
-          className="pixel-border bg-card relative overflow-hidden select-none h-full"
+          className="pixel-border relative overflow-hidden select-none h-full"
+          style={{ borderWidth: 4 }}
         >
-          <div className="relative" style={{ width: CANVAS_W, height: CANVAS_H, minWidth: CANVAS_W }}>
-            {/* Background - isometric style floor */}
-            <div className="absolute inset-0" style={{
-              backgroundColor: "hsl(220 15% 10%)",
-              backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 39px, hsl(0 0% 100% / 0.015) 39px, hsl(0 0% 100% / 0.015) 40px), repeating-linear-gradient(0deg, transparent, transparent 39px, hsl(0 0% 100% / 0.015) 39px, hsl(0 0% 100% / 0.015) 40px)",
-            }} />
+          <div className="relative w-full h-full">
+            {/* Pixel Art Background Image */}
+            <img
+              src={floorBgImages[currentFloor]}
+              alt={`Floor ${currentFloor}`}
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ imageRendering: "auto" }}
+              draggable={false}
+            />
 
-            {/* Isometric wall top effect */}
-            <div className="absolute top-0 left-0 right-0 h-10 z-0" style={{
-              background: "linear-gradient(180deg, hsl(220 18% 18%) 0%, hsl(220 15% 12%) 60%, transparent 100%)",
-            }} />
-
-            {/* Side walls */}
-            <div className="absolute top-0 left-0 w-5 h-full" style={{
-              background: "linear-gradient(90deg, hsl(220 18% 16%), transparent)",
-            }} />
-            <div className="absolute top-0 right-0 w-5 h-full" style={{
-              background: "linear-gradient(270deg, hsl(220 18% 16%), transparent)",
-            }} />
-
-            {/* Floor label */}
-            <div className="absolute top-2 left-3 z-30 flex items-center gap-1.5">
-              <div className="bg-accent px-2 py-0.5">
-                <span className="font-pixel text-[11px] text-accent-foreground font-bold">{currentFloor}F</span>
+            {/* Floor label overlay */}
+            <div className="absolute top-3 left-3 z-30 flex items-center gap-1.5">
+              <div className="bg-accent px-2.5 py-1 shadow-[2px_2px_0_0_hsl(0_0%_0%/0.5)]">
+                <span className="font-pixel text-[12px] text-accent-foreground font-bold">{currentFloor}F</span>
               </div>
             </div>
 
-            {/* Outdoor view (right side) - sky & cityscape like reference */}
-            {currentFloor >= 3 && (
-              <div className="absolute top-0 right-0 w-20 h-full z-0 overflow-hidden" style={{
-                background: timePhase === "night"
-                  ? "linear-gradient(180deg, hsl(230 40% 15%) 0%, hsl(230 30% 20%) 100%)"
-                  : timePhase === "evening"
-                  ? "linear-gradient(180deg, hsl(25 60% 40%) 0%, hsl(30 50% 50%) 100%)"
-                  : "linear-gradient(180deg, hsl(200 60% 70%) 0%, hsl(200 50% 80%) 100%)",
-              }}>
-                {/* Simplified city silhouette */}
-                <div className="absolute bottom-0 left-0 right-0" style={{ height: 60 }}>
-                  {[10, 25, 40, 55].map((x, i) => (
-                    <div key={i} className="absolute bottom-0" style={{
-                      left: x, width: 10, height: 20 + i * 8,
-                      backgroundColor: timePhase === "night" ? "hsl(230 20% 12%)" : "hsl(220 10% 60% / 0.5)",
-                    }} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Department Rooms */}
+            {/* Department labels on the image */}
             {floorRooms.map(room => {
               const info = departmentInfo[room.department];
+              const labelPositions: Record<string, { x: string; y: string }> = {
+                support: { x: "5%", y: "8%" },
+                devops: { x: "5%", y: "8%" },
+                product: { x: "55%", y: "8%" },
+                design: { x: "5%", y: "8%" },
+                qa: { x: "55%", y: "8%" },
+                engineering: { x: "5%", y: "8%" },
+              };
+              const pos = labelPositions[room.department] || { x: "10%", y: "10%" };
               return (
-                <div key={room.department}>
-                  {/* Floor tiles */}
-                  <div className="absolute" style={{
-                    left: room.x, top: room.y, width: room.w, height: room.h,
-                    backgroundColor: room.floorColor,
-                    backgroundImage: `repeating-conic-gradient(hsl(0 0% 100% / 0.02) 0% 25%, transparent 0% 50%) 0 0 / 40px 40px`,
-                  }} />
-
-                  {/* Room border walls */}
-                  <div className="absolute" style={{ left: room.x, top: room.y, width: room.w, height: 3, backgroundColor: "hsl(var(--border))" }} />
-                  <div className="absolute" style={{ left: room.x, top: room.y, width: 3, height: room.h, backgroundColor: "hsl(var(--border))" }} />
-                  <div className="absolute" style={{ left: room.x + room.w - 3, top: room.y, width: 3, height: room.h, backgroundColor: "hsl(var(--border))" }} />
-                  <div className="absolute" style={{ left: room.x, top: room.y + room.h - 3, width: room.w, height: 3, backgroundColor: "hsl(var(--border))" }} />
-
-                  {/* Door */}
-                  <div className="absolute" style={{
-                    left: room.x + room.w - 3, top: room.y + room.h / 2 - 20, width: 6, height: 40,
-                    backgroundColor: room.floorColor,
-                  }} />
-
-                  {/* Room label */}
-                  <div className="absolute z-10 flex items-center gap-1.5" style={{ left: room.x + 10, top: room.y + 10 }}>
-                    <span className="text-sm">{info.icon}</span>
-                    <span className="font-pixel text-[7px]" style={{ color: info.color }}>{info.label.toUpperCase()}</span>
-                    <span className="font-pixel text-[6px] text-muted-foreground">
+                <div key={room.department} className="absolute z-10 flex items-center gap-1.5"
+                  style={{ left: pos.x, top: pos.y }}>
+                  <div className="bg-card/80 backdrop-blur-sm px-2 py-0.5 pixel-border" style={{ borderWidth: 2 }}>
+                    <span className="text-xs">{info.icon}</span>
+                    <span className="font-pixel text-[7px] ml-1" style={{ color: info.color }}>{info.label.toUpperCase()}</span>
+                    <span className="font-pixel text-[5px] text-muted-foreground ml-1">
                       ({agents.filter(a => a.department === room.department && a.status !== "offline").length})
                     </span>
-                  </div>
-
-                  {/* Ceiling lights */}
-                  {[0.3, 0.7].map((pct, li) => {
-                    const isLightOn = timePhase === "evening" || timePhase === "night";
-                    return (
-                      <div key={li} className="absolute" style={{ left: room.x + room.w * pct - 16, top: room.y + 4, width: 32, height: 6 }}>
-                        <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: isLightOn ? "hsl(45 80% 70% / 0.6)" : "hsl(0 0% 40% / 0.3)" }} />
-                        <div className="absolute top-6 left-1/2 -translate-x-1/2 w-40 h-48 rounded-full" style={{ opacity: isLightOn ? phaseInfo.lightIntensity : 0.03, background: "radial-gradient(ellipse, hsl(45 100% 85%), transparent)", transition: "opacity 1s" }} />
-                      </div>
-                    );
-                  })}
-
-                  {/* Desks */}
-                  {room.desks.map((desk, di) => (
-                    <div key={di} className="absolute" style={{ left: room.x + desk.x - 22, top: room.y + desk.y - 14 }}>
-                      <div className="w-[44px] h-[28px] bg-muted pixel-border flex items-center justify-center relative" style={{ borderWidth: 2 }}>
-                        <span className="text-[10px]">🖥️</span>
-                        <div className="absolute -top-1 w-8 h-5 opacity-[0.06] rounded-full" style={{ background: "radial-gradient(ellipse, hsl(200 80% 70%), transparent)" }} />
-                      </div>
-                      <div className="w-[44px] h-[10px] bg-muted/50 pixel-border mt-0.5" style={{ borderWidth: 1 }} />
-                    </div>
-                  ))}
-
-                  {/* Whiteboard */}
-                  <div className="absolute" style={{ left: room.x + room.w - 65, top: room.y + 35 }}>
-                    <div className="w-[50px] h-[30px] bg-foreground/5 pixel-border flex flex-col items-center justify-center gap-px p-1" style={{ borderWidth: 2 }}>
-                      <div className="w-8 h-px" style={{ backgroundColor: info.color, opacity: 0.4 }} />
-                      <div className="w-6 h-px bg-muted-foreground/20" />
-                      <div className="w-9 h-px" style={{ backgroundColor: info.color, opacity: 0.3 }} />
-                    </div>
-                  </div>
-
-                  {/* Plant */}
-                  <div className="absolute" style={{ left: room.x + 10, top: room.y + room.h - 35 }}>
-                    <span className="text-lg">🪴</span>
                   </div>
                 </div>
               );
             })}
 
-            {/* Shared Spaces */}
+            {/* Shared space labels */}
             {floorSpaces.map((space, si) => (
-              <div key={si}>
-                <div className="absolute" style={{
-                  left: space.x, top: space.y, width: space.w, height: space.h,
-                  backgroundColor: space.type === "pantry" ? "hsl(25 15% 12%)" : space.type === "meeting" ? "hsl(210 20% 14%)" : "hsl(200 15% 10%)",
-                  backgroundImage: "repeating-conic-gradient(hsl(0 0% 100% / 0.015) 0% 25%, transparent 0% 50%) 0 0 / 24px 24px",
-                }} />
-                {/* Walls */}
-                <div className="absolute" style={{ left: space.x, top: space.y, width: space.w, height: 3, backgroundColor: "hsl(var(--border))" }} />
-                <div className="absolute" style={{ left: space.x, top: space.y, width: 3, height: space.h, backgroundColor: "hsl(var(--border))" }} />
-                <div className="absolute" style={{ left: space.x + space.w - 3, top: space.y, width: 3, height: space.h, backgroundColor: "hsl(var(--border))" }} />
-                <div className="absolute" style={{ left: space.x, top: space.y + space.h - 3, width: space.w, height: 3, backgroundColor: "hsl(var(--border))" }} />
-
-                {/* Label */}
-                <div className="absolute z-10 flex items-center gap-1" style={{ left: space.x + 8, top: space.y + 8 }}>
-                  <span className="text-sm">{space.type === "pantry" ? "🍳" : space.type === "meeting" ? "📋" : "🖧"}</span>
-                  <span className="font-pixel text-[6px] text-accent/70">{space.type.toUpperCase().replace("-", " ")}</span>
+              <div key={si} className="absolute z-10" style={{ left: "75%", top: "8%" }}>
+                <div className="bg-card/80 backdrop-blur-sm px-2 py-0.5 pixel-border" style={{ borderWidth: 2 }}>
+                  <span className="text-xs">{space.type === "pantry" ? "🍳" : space.type === "meeting" ? "📋" : "🖧"}</span>
+                  <span className="font-pixel text-[6px] text-accent/80 ml-1">{space.type.toUpperCase().replace("-", " ")}</span>
                 </div>
-
-                {/* Pantry furniture */}
-                {space.type === "pantry" && (
-                  <>
-                    <div className="absolute flex flex-col items-center" style={{ left: space.x + 30, top: space.y + 60 }}>
-                      <div className="w-[30px] h-[36px] bg-muted pixel-border flex flex-col items-center justify-center" style={{ borderWidth: 2 }}>
-                        <span className="text-sm">☕</span>
-                        <div className="w-4 h-px bg-accent/40 animate-pixel-pulse" />
-                      </div>
-                      <span className="font-pixel text-[5px] text-muted-foreground mt-0.5">COFFEE</span>
-                    </div>
-                    <div className="absolute flex flex-col items-center" style={{ left: space.x + 90, top: space.y + 60 }}>
-                      <div className="w-[34px] h-[44px] bg-muted pixel-border flex flex-col items-center justify-center gap-0.5" style={{ borderWidth: 2 }}>
-                        <div className="flex gap-px">
-                          <div className="w-2 h-2 bg-destructive/20 rounded-sm" />
-                          <div className="w-2 h-2 bg-accent/20 rounded-sm" />
-                          <div className="w-2 h-2 bg-primary/20 rounded-sm" />
-                        </div>
-                        <div className="w-5 h-2 bg-card/30 rounded-sm" />
-                      </div>
-                      <span className="font-pixel text-[5px] text-muted-foreground mt-0.5">SNACKS</span>
-                    </div>
-                    <div className="absolute flex flex-col items-center" style={{ left: space.x + 160, top: space.y + 60 }}>
-                      <div className="w-[28px] h-[40px] bg-muted pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
-                        <span className="text-[8px]">🧊</span>
-                      </div>
-                      <span className="font-pixel text-[5px] text-muted-foreground mt-0.5">FRIDGE</span>
-                    </div>
-                    <div className="absolute" style={{ left: space.x + 50, top: space.y + 200 }}>
-                      <div className="w-[120px] h-[28px] bg-secondary/15 pixel-border flex items-center justify-center gap-1" style={{ borderWidth: 2 }}>
-                        <div className="w-3 h-5 bg-secondary/10 rounded-sm" />
-                        <div className="w-5 h-3 bg-secondary/8 rounded-sm" />
-                        <div className="w-5 h-3 bg-secondary/8 rounded-sm" />
-                        <div className="w-3 h-5 bg-secondary/10 rounded-sm" />
-                      </div>
-                      <span className="font-pixel text-[5px] text-muted-foreground mt-0.5 block text-center">LOUNGE</span>
-                    </div>
-                    <CoffeeSteam originX={space.x + 45} originY={space.y + 55} />
-                  </>
-                )}
-
-                {/* Meeting room furniture */}
-                {space.type === "meeting" && (
-                  <div className="absolute" style={{ left: space.x + 10, top: space.y + 120 }}>
-                    <div className="w-[60px] h-[100px] bg-muted/40 pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
-                      <span className="text-lg">📊</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Server room */}
-                {space.type === "server-room" && (
-                  <div className="absolute flex flex-col gap-2" style={{ left: space.x + 15, top: space.y + 40 }}>
-                    {[0, 1, 2].map(i => (
-                      <div key={i} className="w-[50px] h-[40px] bg-muted pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
-                        <div className="flex gap-0.5">
-                          <div className="w-1 h-1 bg-primary rounded-full animate-pixel-pulse" />
-                          <div className="w-1 h-1 bg-accent rounded-full animate-pixel-pulse" style={{ animationDelay: "0.5s" }} />
-                          <div className="w-1 h-1 bg-primary rounded-full animate-pixel-pulse" style={{ animationDelay: "1s" }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             ))}
 
-            {/* F1 lobby area with entrance */}
-            {currentFloor === 1 && (
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
-                <span className="text-lg">🚪</span>
-                <span className="font-pixel text-[6px] text-muted-foreground">ENTRANCE</span>
-              </div>
-            )}
-
-            {/* Ambient particles */}
-            {floorRooms.map((room, ri) =>
-              [0.3, 0.7].map((pct, li) => (
-                <DustInLight key={`dust-${ri}-${li}`} originX={room.x + room.w * pct - 20} originY={room.y + 12} width={40} height={80} />
-              ))
-            )}
-            {floorRooms.map(room => {
-              const info = departmentInfo[room.department];
-              return room.desks.map((desk, di) => (
-                <MonitorGlow key={`glow-${room.department}-${di}`} originX={room.x + desk.x} originY={room.y + desk.y - 6} color={info.color} />
-              ));
-            })}
             <AmbientSparkles canvasW={CANVAS_W} canvasH={CANVAS_H} />
 
             {/* Event Particles */}
             {eventParticles.map(p => (
-              <div key={p.id} className="absolute pointer-events-none z-30 animate-sparkle" style={{ left: p.x, top: p.y, fontSize: 16, animationDelay: `${p.delay}s`, animationDuration: "3s" }}>
+              <div key={p.id} className="absolute pointer-events-none z-30 animate-sparkle" style={{ left: `${(p.x / CANVAS_W) * 100}%`, top: `${(p.y / CANVAS_H) * 100}%`, fontSize: 16, animationDelay: `${p.delay}s`, animationDuration: "3s" }}>
                 {p.emoji}
               </div>
             ))}
@@ -814,39 +653,44 @@ export function PixelOffice() {
             {floorAgents.map((oa) => {
               const isMoving = oa.action === "walking" || oa.action === "panicking" || oa.action === "celebrating";
               const walkFrame = isMoving ? Math.floor(oa.frame / (oa.action === "panicking" ? 2 : 4)) % 2 : 0;
+              // Convert pixel coords to percentage for responsive positioning
+              const pctX = (oa.x / CANVAS_W) * 100;
+              const pctY = (oa.y / CANVAS_H) * 100;
               return (
                 <div
                   key={oa.agent.id}
                   className="absolute z-20 flex flex-col items-center cursor-pointer group"
                   style={{
-                    left: oa.x, top: oa.y,
+                    left: `${pctX}%`, top: `${pctY}%`,
                     transform: `translate(-50%, -50%) scaleX(${oa.direction === "left" ? -1 : 1})`,
                     transition: isMoving ? "none" : "left 0.05s, top 0.05s",
                   }}
                   onClick={() => handleAgentClick(oa)}
                 >
                   {/* Shadow */}
-                  <div className="absolute bottom-0 w-5 h-1 rounded-full" style={{ transform: "translateY(8px)", backgroundColor: "hsl(0 0% 0% / 0.3)" }} />
+                  <div className="absolute bottom-0 w-6 h-1.5 rounded-full" style={{ transform: "translateY(10px)", backgroundColor: "hsl(0 0% 0% / 0.4)" }} />
                   {/* Hover ring */}
                   <div className="absolute inset-0 -m-2 rounded-full border-2 border-primary/0 group-hover:border-primary/50 transition-colors" style={{ transform: `scaleX(${oa.direction === "left" ? -1 : 1})` }} />
 
-                  {/* Speech bubble */}
+                  {/* Speech bubble - game style with white bg */}
                   {oa.speechBubble && (
-                    <div className="absolute -top-8 left-1/2 whitespace-nowrap px-1.5 py-0.5 bg-card pixel-border font-pixel text-[5px] text-foreground z-30" style={{ transform: `translateX(-50%) scaleX(${oa.direction === "left" ? -1 : 1})`, borderWidth: 2 }}>
+                    <div className="absolute -top-9 left-1/2 whitespace-nowrap px-2 py-1 bg-white text-card-foreground rounded-lg font-pixel text-[6px] z-30 shadow-md"
+                      style={{ transform: `translateX(-50%) scaleX(${oa.direction === "left" ? -1 : 1})` }}>
                       {oa.speechBubble}
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white rotate-45" />
                     </div>
                   )}
 
                   {/* Character */}
-                  <div className="relative flex flex-col items-center" style={{ transform: isMoving ? `translateY(${walkFrame * -2}px)` : "none" }}>
-                    <span className="text-xl leading-none group-hover:scale-110 transition-transform">{oa.agent.avatar}</span>
-                    <div className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ${
+                  <div className="relative flex flex-col items-center" style={{ transform: isMoving ? `translateY(${walkFrame * -3}px)` : "none" }}>
+                    <span className="text-2xl leading-none group-hover:scale-110 transition-transform drop-shadow-md">{oa.agent.avatar}</span>
+                    <div className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-card ${
                       oa.agent.status === "online" ? "bg-primary" : oa.agent.status === "busy" ? "bg-accent" : "bg-muted-foreground"
                     }`} />
                   </div>
 
-                  {/* Name tag */}
-                  <span className="font-pixel text-[4px] text-primary/70 mt-0.5 whitespace-nowrap bg-card/80 px-0.5 rounded-sm" style={{ transform: `scaleX(${oa.direction === "left" ? -1 : 1})` }}>
+                  {/* Name tag - game style */}
+                  <span className="font-pixel text-[5px] text-white mt-0.5 whitespace-nowrap bg-card/90 px-1 py-px rounded-sm shadow-sm" style={{ transform: `scaleX(${oa.direction === "left" ? -1 : 1})` }}>
                     {oa.agent.name}
                   </span>
                 </div>
@@ -857,11 +701,13 @@ export function PixelOffice() {
             {agents.filter(a => a.status === "offline" && getDeptFloor(a.department) === currentFloor).map((agent, i) => {
               const room = rooms.find(r => r.department === agent.department);
               if (!room) return null;
+              const offX = ((room.x + room.w - 30) / CANVAS_W) * 100;
+              const offY = ((room.y + room.h - 40 - i * 30) / CANVAS_H) * 100;
               return (
                 <div
                   key={agent.id}
                   className="absolute z-10 flex flex-col items-center opacity-20 cursor-pointer hover:opacity-40 transition-opacity"
-                  style={{ left: room.x + room.w - 30, top: room.y + room.h - 40 - i * 30 }}
+                  style={{ left: `${offX}%`, top: `${offY}%` }}
                   onClick={() => {
                     setSelectedAgent({
                       agent, floor: room.floor, x: room.x + room.w - 30, y: room.y + room.h - 40,
@@ -873,8 +719,8 @@ export function PixelOffice() {
                     setDialogOpen(true);
                   }}
                 >
-                  <span className="text-sm grayscale">{agent.avatar}</span>
-                  <span className="font-pixel text-[4px] text-muted-foreground">{agent.name}</span>
+                  <span className="text-lg grayscale">{agent.avatar}</span>
+                  <span className="font-pixel text-[5px] text-muted-foreground">{agent.name}</span>
                 </div>
               );
             })}
