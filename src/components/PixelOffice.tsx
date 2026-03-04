@@ -95,7 +95,23 @@ const meetingRoom = { x: 1020, y: 0, w: 220, h: 320 };
 const CANVAS_W = 1260;
 const CANVAS_H = 680;
 
-type AgentAction = "working" | "walking" | "coffee" | "meeting" | "idle" | "printing" | "chatting" | "snacking" | "calling";
+type AgentAction = "working" | "walking" | "coffee" | "meeting" | "idle" | "printing" | "chatting" | "snacking" | "calling" | "gone-home";
+
+type TimePhase = "morning" | "day" | "evening" | "night";
+
+function getTimePhase(hour: number): TimePhase {
+  if (hour >= 6 && hour < 9) return "morning";
+  if (hour >= 9 && hour < 17) return "day";
+  if (hour >= 17 && hour < 20) return "evening";
+  return "night";
+}
+
+const phaseOverlay: Record<TimePhase, { bg: string; opacity: number; skyIcon: string; lightIntensity: number }> = {
+  morning: { bg: "hsl(30 60% 50%)", opacity: 0.05, skyIcon: "🌅", lightIntensity: 0.04 },
+  day: { bg: "transparent", opacity: 0, skyIcon: "☀️", lightIntensity: 0.03 },
+  evening: { bg: "hsl(25 80% 30%)", opacity: 0.12, skyIcon: "🌇", lightIntensity: 0.08 },
+  night: { bg: "hsl(230 60% 10%)", opacity: 0.25, skyIcon: "🌙", lightIntensity: 0.15 },
+};
 
 interface OfficeAgent {
   agent: Agent;
