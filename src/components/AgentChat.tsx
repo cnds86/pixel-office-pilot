@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Agent } from "@/data/mockData";
 import { departmentInfo } from "@/data/mockData";
-import { getAgentSprite } from "@/data/agentSprites";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -156,7 +155,7 @@ export function AgentChat({ agent, onClose }: AgentChatProps) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center gap-3 p-3 border-b border-border bg-muted/30">
-        <img src={getAgentSprite(agent.id, agent.department)} alt={agent.name} className="w-8 h-8 object-contain" draggable={false} />
+        <span className="text-2xl">{agent.avatar}</span>
         <div className="flex-1 min-w-0">
           <div className="font-pixel text-[9px] text-primary truncate">{agent.name}</div>
           <div className="font-pixel text-[6px] text-muted-foreground">
@@ -193,7 +192,7 @@ export function AgentChat({ agent, onClose }: AgentChatProps) {
                 : "bg-muted text-foreground"
             }`} style={{ borderWidth: 2 }}>
               {msg.role === "agent" && (
-                <img src={getAgentSprite(agent.id, agent.department)} alt="" className="w-4 h-4 object-contain inline mr-1" />
+                <span className="text-xs mr-1">{agent.avatar}</span>
               )}
               <span className="font-pixel-body text-xs leading-relaxed">{msg.content}</span>
               <div className={`font-pixel text-[5px] mt-1 ${
@@ -209,7 +208,7 @@ export function AgentChat({ agent, onClose }: AgentChatProps) {
         {isTyping && (
           <div className="flex justify-start">
             <div className="bg-muted px-3 py-2 pixel-border" style={{ borderWidth: 2 }}>
-              <img src={getAgentSprite(agent.id, agent.department)} alt="" className="w-4 h-4 object-contain inline mr-1" />
+              <span className="text-xs mr-1">{agent.avatar}</span>
               <span className="font-pixel-body text-xs text-muted-foreground animate-pulse">
                 typing...
               </span>

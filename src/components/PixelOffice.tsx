@@ -1,13 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { agents, tasks, departmentInfo } from "@/data/mockData";
 import type { Agent, Task, Department } from "@/data/mockData";
-import { AmbientSparkles } from "./OfficeParticles";
-import { getAgentSprite } from "@/data/agentSprites";
-import floorF1 from "@/assets/floor-f1-lobby.png";
-import floorF2 from "@/assets/floor-f2-operations.png";
-import floorF3 from "@/assets/floor-f3-creative.png";
-import floorF4 from "@/assets/floor-f4-engineering.png";
-import skyBg from "@/assets/sky-bg.png";
+import { CoffeeSteam, DustInLight, MonitorGlow, AmbientSparkles } from "./OfficeParticles";
 import {
   Dialog,
   DialogContent,
@@ -27,117 +21,84 @@ import {
 } from "@/components/ui/select";
 import { AgentChat } from "./AgentChat";
 
-// ─── Floor & Room Layout ───
-// 4 floors, each floor is a separate view
-// F4 (top): Engineering
-// F3: Design + QA
-// F2: DevOps + Product + Meeting Room
-// F1 (ground): Support + Pantry/Lobby
-
-type FloorId = 1 | 2 | 3 | 4;
+// ─── Department Room Layout ───
+// The office is a wide scrollable canvas (1600x700 virtual px)
+// Each department has its own room/zone
 
 interface RoomDef {
   department: Department;
-  floor: FloorId;
   x: number; y: number; w: number; h: number;
   floorColor: string;
   desks: { x: number; y: number }[];
 }
 
-const CANVAS_W = 800;
-const CANVAS_H = 420;
-
 const rooms: RoomDef[] = [
-  // F1 - Support + Pantry
   {
-    department: "support", floor: 1,
-    x: 20, y: 40, w: 360, h: 340,
-    floorColor: "hsl(50 12% 14%)",
+    department: "engineering",
+    x: 0, y: 0, w: 380, h: 320,
+    floorColor: "hsl(220 18% 13%)",
     desks: [
-      { x: 60, y: 100 }, { x: 160, y: 100 },
-      { x: 60, y: 210 }, { x: 160, y: 210 },
-    ],
-  },
-  // F2 - DevOps + Product
-  {
-    department: "devops", floor: 2,
-    x: 20, y: 40, w: 340, h: 340,
-    floorColor: "hsl(30 15% 13%)",
-    desks: [
-      { x: 60, y: 100 }, { x: 160, y: 100 },
-      { x: 60, y: 210 }, { x: 160, y: 210 },
+      { x: 50, y: 80 }, { x: 140, y: 80 }, { x: 230, y: 80 }, { x: 320, y: 80 },
+      { x: 50, y: 180 }, { x: 140, y: 180 }, { x: 230, y: 180 }, { x: 320, y: 180 },
     ],
   },
   {
-    department: "product", floor: 2,
-    x: 380, y: 40, w: 300, h: 340,
-    floorColor: "hsl(270 12% 13%)",
+    department: "design",
+    x: 400, y: 0, w: 300, h: 320,
+    floorColor: "hsl(320 15% 12%)",
     desks: [
-      { x: 60, y: 100 }, { x: 160, y: 100 },
-      { x: 60, y: 210 }, { x: 160, y: 210 },
-    ],
-  },
-  // F3 - Design + QA
-  {
-    department: "design", floor: 3,
-    x: 20, y: 40, w: 360, h: 340,
-    floorColor: "hsl(320 15% 13%)",
-    desks: [
-      { x: 60, y: 90 }, { x: 160, y: 90 }, { x: 260, y: 90 },
-      { x: 60, y: 200 }, { x: 160, y: 200 },
+      { x: 50, y: 80 }, { x: 150, y: 80 }, { x: 250, y: 80 },
+      { x: 50, y: 180 }, { x: 150, y: 180 },
     ],
   },
   {
-    department: "qa", floor: 3,
-    x: 400, y: 40, w: 300, h: 340,
-    floorColor: "hsl(140 12% 13%)",
+    department: "qa",
+    x: 720, y: 0, w: 280, h: 320,
+    floorColor: "hsl(140 12% 12%)",
     desks: [
-      { x: 60, y: 90 }, { x: 160, y: 90 },
-      { x: 60, y: 200 }, { x: 160, y: 200 }, { x: 240, y: 200 },
+      { x: 50, y: 80 }, { x: 150, y: 80 },
+      { x: 50, y: 180 }, { x: 150, y: 180 }, { x: 230, y: 180 },
     ],
   },
-  // F4 - Engineering (big room, top floor)
   {
-    department: "engineering", floor: 4,
-    x: 20, y: 40, w: 660, h: 340,
-    floorColor: "hsl(220 18% 14%)",
+    department: "devops",
+    x: 0, y: 340, w: 300, h: 320,
+    floorColor: "hsl(30 15% 12%)",
     desks: [
-      { x: 60, y: 90 }, { x: 160, y: 90 }, { x: 260, y: 90 }, { x: 360, y: 90 },
-      { x: 60, y: 200 }, { x: 160, y: 200 }, { x: 260, y: 200 }, { x: 360, y: 200 },
+      { x: 50, y: 80 }, { x: 150, y: 80 },
+      { x: 50, y: 180 }, { x: 150, y: 180 },
+    ],
+  },
+  {
+    department: "product",
+    x: 320, y: 340, w: 300, h: 320,
+    floorColor: "hsl(270 12% 12%)",
+    desks: [
+      { x: 50, y: 80 }, { x: 150, y: 80 },
+      { x: 50, y: 180 }, { x: 150, y: 180 },
+    ],
+  },
+  {
+    department: "support",
+    x: 640, y: 340, w: 280, h: 320,
+    floorColor: "hsl(50 12% 12%)",
+    desks: [
+      { x: 50, y: 80 }, { x: 150, y: 80 },
+      { x: 50, y: 180 }, { x: 150, y: 180 },
     ],
   },
 ];
 
-// Shared spaces per floor
-const sharedSpaces: Record<FloorId, { type: string; x: number; y: number; w: number; h: number }[]> = {
-  1: [
-    { type: "pantry", x: 400, y: 40, w: 280, h: 340 },
-  ],
-  2: [
-    { type: "meeting", x: 700, y: 40, w: 80, h: 340 },
-  ],
-  3: [],
-  4: [
-    { type: "server-room", x: 700, y: 40, w: 80, h: 200 },
-  ],
-};
+// Shared spaces
+const pantry = { x: 940, y: 340, w: 220, h: 320 };
+const meetingRoom = { x: 1020, y: 0, w: 220, h: 320 };
 
-const floorLabels: Record<FloorId, { label: string; departments: string }> = {
-  1: { label: "LOBBY & SUPPORT", departments: "Support • Pantry • Break Room" },
-  2: { label: "OPERATIONS", departments: "DevOps • Product • Meeting Room" },
-  3: { label: "CREATIVE & QA", departments: "Design • QA & Testing" },
-  4: { label: "ENGINEERING", departments: "Engineering • Server Room" },
-};
-
-const floorBgImages: Record<FloorId, string> = {
-  1: floorF1,
-  2: floorF2,
-  3: floorF3,
-  4: floorF4,
-};
+const CANVAS_W = 1260;
+const CANVAS_H = 680;
 
 type AgentAction = "working" | "walking" | "coffee" | "meeting" | "idle" | "printing" | "chatting" | "snacking" | "calling" | "gone-home" | "panicking" | "celebrating";
 
+// ─── Random Office Events ───
 type OfficeEventType = "fire-drill" | "pizza-party" | "server-down" | "birthday" | "surprise-meeting" | "power-outage";
 
 interface OfficeEvent {
@@ -145,18 +106,18 @@ interface OfficeEvent {
   label: string;
   icon: string;
   color: string;
-  duration: number;
+  duration: number; // seconds
   description: string;
-  affectedDept?: Department;
+  affectedDept?: Department; // if undefined, affects all
 }
 
 const officeEvents: OfficeEvent[] = [
-  { type: "fire-drill", label: "🔥 FIRE DRILL!", icon: "🚨", color: "hsl(0 85% 55%)", duration: 20, description: "Everyone evacuate!" },
-  { type: "pizza-party", label: "🍕 PIZZA PARTY!", icon: "🎉", color: "hsl(45 100% 60%)", duration: 25, description: "Free pizza in the pantry!" },
-  { type: "server-down", label: "💥 SERVER DOWN!", icon: "🔴", color: "hsl(0 80% 45%)", duration: 18, description: "Production servers are down!", affectedDept: "devops" },
-  { type: "birthday", label: "🎂 BIRTHDAY!", icon: "🎈", color: "hsl(320 70% 55%)", duration: 22, description: "Happy birthday! Cake time!" },
-  { type: "surprise-meeting", label: "📢 ALL-HANDS!", icon: "📋", color: "hsl(270 60% 55%)", duration: 15, description: "Everyone to the meeting room!" },
-  { type: "power-outage", label: "⚡ POWER OUT!", icon: "🔌", color: "hsl(240 20% 30%)", duration: 12, description: "Backup power in 10 seconds..." },
+  { type: "fire-drill", label: "🔥 FIRE DRILL!", icon: "🚨", color: "hsl(0 85% 55%)", duration: 20, description: "Everyone evacuate! Head to the exit!" },
+  { type: "pizza-party", label: "🍕 PIZZA PARTY!", icon: "🎉", color: "hsl(45 100% 60%)", duration: 25, description: "Free pizza in the pantry! Everyone come!" },
+  { type: "server-down", label: "💥 SERVER DOWN!", icon: "🔴", color: "hsl(0 80% 45%)", duration: 18, description: "Production servers are down! DevOps to the rescue!", affectedDept: "devops" },
+  { type: "birthday", label: "🎂 BIRTHDAY PARTY!", icon: "🎈", color: "hsl(320 70% 55%)", duration: 22, description: "Happy birthday! Cake in the pantry!" },
+  { type: "surprise-meeting", label: "📢 ALL-HANDS MEETING!", icon: "📋", color: "hsl(270 60% 55%)", duration: 15, description: "Surprise all-hands! Everyone to the meeting room!" },
+  { type: "power-outage", label: "⚡ POWER OUTAGE!", icon: "🔌", color: "hsl(240 20% 30%)", duration: 12, description: "Lights are flickering! Backup power in 10 seconds..." },
 ];
 
 type TimePhase = "morning" | "day" | "evening" | "night";
@@ -177,12 +138,10 @@ const phaseOverlay: Record<TimePhase, { bg: string; opacity: number; skyIcon: st
 
 interface OfficeAgent {
   agent: Agent;
-  floor: FloorId;
   x: number; y: number;
   targetX: number; targetY: number;
   action: AgentAction;
   deskX: number; deskY: number;
-  deskFloor: FloorId;
   speechBubble: string | null;
   direction: "left" | "right";
   frame: number;
@@ -199,14 +158,16 @@ const speechOptions: Record<AgentAction, string[]> = {
   snacking: ["🍪 cookie time!", "🥤 slurp...", "🌮 taco break"],
   calling: ["📞 on a call...", "🎙️ presenting..."],
   "gone-home": ["🏠 left for today", "👋 bye!"],
-  panicking: ["😱 RUN!!", "🚨 EVACUATE!", "😰 oh no!!"],
-  celebrating: ["🎉 woohoo!", "🥳 party!", "🍕 yummy!"],
+  panicking: ["😱 RUN!!", "🚨 EVACUATE!", "😰 oh no!!", "🏃 hurry!"],
+  celebrating: ["🎉 woohoo!", "🥳 party!", "🍕 yummy!", "🎊 amazing!", "🎂 cake time!"],
 };
 
 const actionLabel: Record<AgentAction, string> = {
   working: "Working", walking: "Walking", coffee: "Coffee break", meeting: "In meeting",
   idle: "Idle", printing: "Printing", chatting: "Chatting", snacking: "Snacking", calling: "On a call",
-  "gone-home": "Gone home", panicking: "Panicking!", celebrating: "Celebrating!",
+  "gone-home": "Gone home",
+  panicking: "Panicking!",
+  celebrating: "Celebrating!",
 };
 
 const priorityColor: Record<string, string> = {
@@ -223,15 +184,6 @@ function randomBetween(a: number, b: number) {
   return a + Math.random() * (b - a);
 }
 
-// Get the floor a department is on
-function getDeptFloor(dept: Department): FloorId {
-  const room = rooms.find(r => r.department === dept);
-  return room?.floor ?? 1;
-}
-
-// Get pantry location (always F1)
-const pantrySpace = sharedSpaces[1][0];
-
 export function PixelOffice() {
   const [officeAgents, setOfficeAgents] = useState<OfficeAgent[]>([]);
   const [clock, setClock] = useState("09:00");
@@ -242,15 +194,14 @@ export function PixelOffice() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [taskList, setTaskList] = useState<Task[]>(tasks);
   const [assignTaskId, setAssignTaskId] = useState<string>("");
-  const [currentFloor, setCurrentFloor] = useState<FloorId>(4);
-  const [viewMode, setViewMode] = useState<"single" | "stacked">("stacked");
+  const [activeDept, setActiveDept] = useState<Department | "all">("all");
   const [activeEvent, setActiveEvent] = useState<OfficeEvent | null>(null);
   const [eventTimer, setEventTimer] = useState(0);
   const [eventParticles, setEventParticles] = useState<{ id: number; x: number; y: number; emoji: string; delay: number }[]>([]);
   const [chatAgent, setChatAgent] = useState<Agent | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Initialize agents on their department floors
+  // Initialize agents
   useEffect(() => {
     const initial: OfficeAgent[] = [];
     const deptAgents: Record<string, Agent[]> = {};
@@ -267,8 +218,8 @@ export function PixelOffice() {
         const ax = room.x + desk.x;
         const ay = room.y + desk.y;
         initial.push({
-          agent, floor: room.floor, x: ax, y: ay, targetX: ax, targetY: ay,
-          action: "working", deskX: ax, deskY: ay, deskFloor: room.floor,
+          agent, x: ax, y: ay, targetX: ax, targetY: ay,
+          action: "working", deskX: ax, deskY: ay,
           speechBubble: pickRandom(speechOptions.working),
           direction: "right", frame: 0,
         });
@@ -277,25 +228,31 @@ export function PixelOffice() {
     setOfficeAgents(initial);
   }, []);
 
-  // Random Event Trigger
+  // ─── Random Event Trigger ───
   useEffect(() => {
-    if (timePhase === "night") return;
+    if (timePhase === "night") return; // no events at night
     const interval = setInterval(() => {
-      if (activeEvent) return;
-      if (Math.random() < 0.08) {
-        triggerEvent(pickRandom(officeEvents));
+      if (activeEvent) return; // don't stack events
+      const roll = Math.random();
+      if (roll < 0.08) { // ~8% chance every 15s
+        const event = pickRandom(officeEvents);
+        triggerEvent(event);
       }
     }, 15000);
     return () => clearInterval(interval);
   }, [activeEvent, timePhase]);
 
-  // Event countdown
+  // Event duration countdown
   useEffect(() => {
     if (!activeEvent) return;
     setEventTimer(activeEvent.duration);
     const countdown = setInterval(() => {
       setEventTimer(prev => {
-        if (prev <= 1) { clearInterval(countdown); endEvent(); return 0; }
+        if (prev <= 1) {
+          clearInterval(countdown);
+          endEvent();
+          return 0;
+        }
         return prev - 1;
       });
     }, 1000);
@@ -304,48 +261,64 @@ export function PixelOffice() {
 
   function triggerEvent(event: OfficeEvent) {
     setActiveEvent(event);
+
+    // Generate particles based on event type
     const particleEmojis: Record<OfficeEventType, string[]> = {
       "fire-drill": ["🔥", "🚨", "💨", "🧯"],
       "pizza-party": ["🍕", "🎉", "🍕", "🥤"],
       "server-down": ["💥", "⚠️", "🔴", "💻"],
-      "birthday": ["🎈", "🎂", "🎊", "🎁"],
+      "birthday": ["🎈", "🎂", "🎊", "🎁", "🎈"],
       "surprise-meeting": ["📢", "📋", "💼", "📊"],
       "power-outage": ["⚡", "🔌", "💡", "🕯️"],
     };
+    const emojis = particleEmojis[event.type];
     setEventParticles(
-      Array.from({ length: 20 }, (_, i) => ({
-        id: i, x: Math.random() * CANVAS_W, y: Math.random() * CANVAS_H,
-        emoji: pickRandom(particleEmojis[event.type]), delay: Math.random() * 3,
+      Array.from({ length: 25 }, (_, i) => ({
+        id: i,
+        x: Math.random() * CANVAS_W,
+        y: Math.random() * CANVAS_H,
+        emoji: pickRandom(emojis),
+        delay: Math.random() * 3,
       }))
     );
 
+    // Move agents based on event
     setOfficeAgents(prev => prev.map(oa => {
       if (oa.action === "gone-home") return oa;
+
       switch (event.type) {
         case "fire-drill": {
+          // Everyone runs to bottom-left exit area
           const tx = randomBetween(20, 100);
           const ty = randomBetween(CANVAS_H - 60, CANVAS_H - 20);
-          return { ...oa, action: "panicking" as AgentAction, targetX: tx, targetY: ty, floor: 1, speechBubble: pickRandom(speechOptions.panicking), direction: tx > oa.x ? "right" : "left" };
+          return { ...oa, action: "panicking" as AgentAction, targetX: tx, targetY: ty, speechBubble: pickRandom(speechOptions.panicking), direction: tx > oa.x ? "right" : "left" };
         }
         case "pizza-party":
         case "birthday": {
-          const tx = pantrySpace.x + randomBetween(20, pantrySpace.w - 20);
-          const ty = pantrySpace.y + randomBetween(40, pantrySpace.h - 20);
-          return { ...oa, action: "celebrating" as AgentAction, targetX: tx, targetY: ty, floor: 1, speechBubble: pickRandom(speechOptions.celebrating), direction: tx > oa.x ? "right" : "left" };
+          // Everyone goes to pantry
+          const tx = pantry.x + randomBetween(20, pantry.w - 20);
+          const ty = pantry.y + randomBetween(40, pantry.h - 20);
+          return { ...oa, action: "celebrating" as AgentAction, targetX: tx, targetY: ty, speechBubble: pickRandom(speechOptions.celebrating), direction: tx > oa.x ? "right" : "left" };
         }
         case "server-down": {
+          // DevOps panics, others watch
           if (oa.agent.department === "devops") {
-            return { ...oa, action: "panicking" as AgentAction, speechBubble: "🔥 FIXING SERVERS!", direction: "right" };
+            const devopsRoom = rooms.find(r => r.department === "devops")!;
+            const tx = devopsRoom.x + randomBetween(20, devopsRoom.w - 20);
+            const ty = devopsRoom.y + randomBetween(40, devopsRoom.h - 20);
+            return { ...oa, action: "panicking" as AgentAction, targetX: tx, targetY: ty, speechBubble: "🔥 FIXING SERVERS!", direction: tx > oa.x ? "right" : "left" };
           }
           return { ...oa, speechBubble: "😰 servers down?!", action: "idle" as AgentAction };
         }
         case "surprise-meeting": {
-          const tx = randomBetween(720, 760);
-          const ty = randomBetween(100, 300);
-          return { ...oa, action: "walking" as AgentAction, targetX: tx, targetY: ty, floor: 2, speechBubble: "📢 all-hands!", direction: tx > oa.x ? "right" : "left" };
+          // Everyone to meeting room
+          const tx = meetingRoom.x + randomBetween(30, meetingRoom.w - 30);
+          const ty = meetingRoom.y + randomBetween(50, meetingRoom.h - 30);
+          return { ...oa, action: "walking" as AgentAction, targetX: tx, targetY: ty, speechBubble: "📢 all-hands!", direction: tx > oa.x ? "right" : "left" };
         }
-        case "power-outage":
+        case "power-outage": {
           return { ...oa, action: "panicking" as AgentAction, speechBubble: pickRandom(["😱 lights out!", "🕯️ so dark!", "⚡ what happened?"]) };
+        }
         default:
           return oa;
       }
@@ -355,13 +328,13 @@ export function PixelOffice() {
   function endEvent() {
     setActiveEvent(null);
     setEventParticles([]);
+    // Send everyone back to desks
     setOfficeAgents(prev => prev.map(oa => {
       if (oa.action === "gone-home") return oa;
-      return { ...oa, action: "walking" as AgentAction, targetX: oa.deskX, targetY: oa.deskY, floor: oa.deskFloor, speechBubble: "😮‍💨 back to work!", direction: oa.deskX > oa.x ? "right" : "left" };
+      return { ...oa, action: "walking" as AgentAction, targetX: oa.deskX, targetY: oa.deskY, speechBubble: "😮‍💨 back to work!", direction: oa.deskX > oa.x ? "right" : "left" };
     }));
   }
 
-  // Clock
   useEffect(() => {
     let h = 9, m = 0;
     const interval = setInterval(() => {
@@ -373,7 +346,7 @@ export function PixelOffice() {
     return () => clearInterval(interval);
   }, []);
 
-  // Agent AI
+  // Agent AI — responds to time of day
   useEffect(() => {
     const interval = setInterval(() => {
       const h = parseInt(clock.split(":")[0]);
@@ -381,41 +354,66 @@ export function PixelOffice() {
 
       setOfficeAgents(prev => prev.map(oa => {
         if (oa.action === "walking") return oa;
+        // Don't override event-driven behavior
         if (activeEvent && (oa.action === "panicking" || oa.action === "celebrating")) return oa;
 
+        // Night: all agents gone home
         if (phase === "night") {
-          if (oa.action !== "gone-home") return { ...oa, action: "gone-home", speechBubble: pickRandom(speechOptions["gone-home"]) };
+          if (oa.action !== "gone-home") {
+            return { ...oa, action: "gone-home", speechBubble: pickRandom(speechOptions["gone-home"]) };
+          }
           return oa;
         }
+
+        // Morning: agents returning to work
         if (phase === "morning" && oa.action === "gone-home") {
-          return { ...oa, action: "walking", targetX: oa.deskX, targetY: oa.deskY, floor: oa.deskFloor, speechBubble: "☕ good morning!", direction: "right" };
+          return { ...oa, action: "walking", targetX: oa.deskX, targetY: oa.deskY, speechBubble: "☕ good morning!", direction: "right" };
         }
-        if (phase === "evening" && oa.action !== "gone-home" && Math.random() < 0.08) {
-          return { ...oa, action: "gone-home", speechBubble: pickRandom(speechOptions["gone-home"]) };
+
+        // Evening: some agents start leaving (random chance)
+        if (phase === "evening" && oa.action !== "gone-home") {
+          const leaveChance = Math.random();
+          if (leaveChance < 0.08) {
+            return { ...oa, action: "gone-home", speechBubble: pickRandom(speechOptions["gone-home"]) };
+          }
         }
 
         const roll = Math.random();
         const room = rooms.find(r => r.department === oa.agent.department);
         if (!room) return oa;
 
+        // Stay working
         if (roll < 0.25) {
           return { ...oa, action: "working", speechBubble: pickRandom(speechOptions.working) };
         }
-        // Go to pantry (F1)
+        // Go to pantry
         if (roll < 0.35) {
-          const tx = pantrySpace.x + randomBetween(30, pantrySpace.w - 30);
-          const ty = pantrySpace.y + randomBetween(60, pantrySpace.h - 40);
-          return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: 1, speechBubble: pickRandom(speechOptions.coffee), direction: tx > oa.x ? "right" : "left" };
+          const tx = pantry.x + randomBetween(30, 180);
+          const ty = pantry.y + randomBetween(60, 260);
+          return { ...oa, action: "walking", targetX: tx, targetY: ty, speechBubble: pickRandom(speechOptions.coffee), direction: tx > oa.x ? "right" : "left" };
+        }
+        // Go to meeting room
+        if (roll < 0.45) {
+          const tx = meetingRoom.x + randomBetween(40, 180);
+          const ty = meetingRoom.y + randomBetween(60, 260);
+          return { ...oa, action: "walking", targetX: tx, targetY: ty, speechBubble: pickRandom(speechOptions.meeting), direction: tx > oa.x ? "right" : "left" };
         }
         // Walk within own room
-        if (roll < 0.50) {
+        if (roll < 0.55) {
           const tx = room.x + randomBetween(20, room.w - 20);
           const ty = room.y + randomBetween(40, room.h - 20);
-          return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: room.floor, speechBubble: pickRandom(speechOptions.chatting), direction: tx > oa.x ? "right" : "left" };
+          return { ...oa, action: "walking", targetX: tx, targetY: ty, speechBubble: pickRandom(speechOptions.chatting), direction: tx > oa.x ? "right" : "left" };
+        }
+        // Visit another department
+        if (roll < 0.62) {
+          const otherRoom = pickRandom(rooms.filter(r => r.department !== oa.agent.department));
+          const tx = otherRoom.x + randomBetween(30, otherRoom.w - 30);
+          const ty = otherRoom.y + randomBetween(50, otherRoom.h - 30);
+          return { ...oa, action: "walking", targetX: tx, targetY: ty, speechBubble: "🚶 visiting...", direction: tx > oa.x ? "right" : "left" };
         }
         // Return to desk
-        if (roll < 0.75) {
-          return { ...oa, action: "walking", targetX: oa.deskX, targetY: oa.deskY, floor: oa.deskFloor, speechBubble: null, direction: oa.deskX > oa.x ? "right" : "left" };
+        if (roll < 0.80) {
+          return { ...oa, action: "walking", targetX: oa.deskX, targetY: oa.deskY, speechBubble: null, direction: oa.deskX > oa.x ? "right" : "left" };
         }
         return { ...oa, speechBubble: pickRandom(speechOptions.idle) };
       }));
@@ -435,12 +433,14 @@ export function PixelOffice() {
 
         if (dist < 3) {
           const atDesk = Math.abs(oa.targetX - oa.deskX) < 10 && Math.abs(oa.targetY - oa.deskY) < 10;
-          const atPantry = oa.floor === 1 && oa.targetX >= pantrySpace.x;
+          const atPantry = oa.targetX >= pantry.x && oa.targetX <= pantry.x + pantry.w;
+          const atMeeting = oa.targetX >= meetingRoom.x && oa.targetX <= meetingRoom.x + meetingRoom.w && oa.targetY < meetingRoom.h;
 
           let newAction: AgentAction = "idle";
           let bubble: string | null = null;
           if (atDesk) { newAction = "working"; bubble = pickRandom(speechOptions.working); }
           else if (atPantry) { newAction = "coffee"; bubble = pickRandom(speechOptions.snacking); }
+          else if (atMeeting) { newAction = "meeting"; bubble = pickRandom(speechOptions.meeting); }
           else { newAction = "chatting"; bubble = pickRandom(speechOptions.chatting); }
           return { ...oa, x: oa.targetX, y: oa.targetY, action: newAction, speechBubble: bubble, frame: 0 };
         }
@@ -466,11 +466,11 @@ export function PixelOffice() {
     setAssignTaskId("");
   };
 
-  const sendTo = (tx: number, ty: number, bubble: string, floor?: FloorId) => {
+  const sendTo = (tx: number, ty: number, bubble: string) => {
     if (!selectedAgent) return;
     setOfficeAgents(prev => prev.map(oa =>
       oa.agent.id === selectedAgent.agent.id
-        ? { ...oa, action: "walking" as const, targetX: tx, targetY: ty, floor: floor ?? oa.floor, speechBubble: bubble, direction: tx > oa.x ? "right" : "left" }
+        ? { ...oa, action: "walking" as const, targetX: tx, targetY: ty, speechBubble: bubble, direction: tx > oa.x ? "right" : "left" }
         : oa
     ));
     setDialogOpen(false);
@@ -479,130 +479,63 @@ export function PixelOffice() {
   const agentTasks = selectedAgent ? taskList.filter(t => t.assigneeId === selectedAgent.agent.id) : [];
   const unassignedTasks = taskList.filter(t => t.status === "todo");
 
-  // Get rooms and agents for current floor
-  const floorRooms = rooms.filter(r => r.floor === currentFloor);
-  const floorAgents = officeAgents.filter(oa => oa.floor === currentFloor && oa.action !== "gone-home");
-  const floorSpaces = sharedSpaces[currentFloor] || [];
-
-  // Count agents per floor
-  const floorAgentCount = (f: FloorId) => officeAgents.filter(oa => oa.floor === f && oa.action !== "gone-home").length;
-
-  // Helper to render agents for a given floor
-  const renderFloorAgents = (floor: FloorId, containerW: number, containerH: number) => {
-    const fAgents = officeAgents.filter(oa => oa.floor === floor && oa.action !== "gone-home");
-    return fAgents.map((oa) => {
-      const isMoving = oa.action === "walking" || oa.action === "panicking" || oa.action === "celebrating";
-      const walkFrame = isMoving ? Math.floor(oa.frame / (oa.action === "panicking" ? 2 : 4)) % 2 : 0;
-      const pctX = (oa.x / CANVAS_W) * 100;
-      const pctY = (oa.y / CANVAS_H) * 100;
-      const spriteSize = viewMode === "stacked" ? "w-7 h-7" : "w-10 h-10";
-      const nameSize = viewMode === "stacked" ? "text-[3px]" : "text-[5px]";
-      const bubbleSize = viewMode === "stacked" ? "text-[4px] -top-6 px-1 py-0.5" : "text-[6px] -top-9 px-2 py-1";
-      return (
-        <div
-          key={oa.agent.id}
-          className="absolute z-20 flex flex-col items-center cursor-pointer group"
-          style={{
-            left: `${pctX}%`, top: `${pctY}%`,
-            transform: `translate(-50%, -50%) scaleX(${oa.direction === "left" ? -1 : 1})`,
-            transition: isMoving ? "none" : "left 0.05s, top 0.05s",
-          }}
-          onClick={() => handleAgentClick(oa)}
-        >
-          <div className="absolute bottom-0 w-4 h-1 rounded-full" style={{ transform: "translateY(6px)", backgroundColor: "hsl(0 0% 0% / 0.3)" }} />
-          <div className="absolute inset-0 -m-1 rounded-full border border-primary/0 group-hover:border-primary/60 transition-colors" style={{ transform: `scaleX(${oa.direction === "left" ? -1 : 1})` }} />
-          {oa.speechBubble && (
-            <div className={`absolute left-1/2 whitespace-nowrap bg-white text-gray-800 rounded-md font-pixel z-30 shadow-md ${bubbleSize}`}
-              style={{ transform: `translateX(-50%) scaleX(${oa.direction === "left" ? -1 : 1})` }}>
-              {oa.speechBubble}
-              <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rotate-45" />
-            </div>
-          )}
-          <div className="relative flex flex-col items-center" style={{ transform: isMoving ? `translateY(${walkFrame * -2}px)` : "none" }}>
-            <img src={getAgentSprite(oa.agent.id, oa.agent.department)} alt={oa.agent.name}
-              className={`${spriteSize} object-contain group-hover:scale-110 transition-transform drop-shadow-md`}
-              style={{ imageRendering: "auto" }} draggable={false} />
-            <div className={`absolute top-0 -right-0.5 w-1.5 h-1.5 rounded-full border border-white ${
-              oa.agent.status === "online" ? "bg-primary" : oa.agent.status === "busy" ? "bg-accent" : "bg-muted-foreground"
-            }`} />
-          </div>
-          <span className={`font-pixel ${nameSize} text-white mt-0.5 whitespace-nowrap bg-black/60 px-0.5 py-px rounded-sm`}
-            style={{ transform: `scaleX(${oa.direction === "left" ? -1 : 1})` }}>
-            {oa.agent.name}
-          </span>
-        </div>
-      );
-    });
+  // Filter for department nav
+  const scrollToDept = (dept: Department) => {
+    setActiveDept(dept);
+    const room = rooms.find(r => r.department === dept);
+    if (room && containerRef.current) {
+      containerRef.current.scrollTo({ left: room.x - 20, top: room.y - 10, behavior: "smooth" });
+    }
   };
 
   return (
     <>
-      {/* Office Header */}
-      <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-        <div className="flex items-center gap-3">
-          <div className="pixel-border bg-primary px-3 py-1.5">
-            <span className="font-pixel text-sm text-primary-foreground tracking-wider">2AM</span>
-          </div>
-          <div>
-            <span className="font-pixel text-[8px] text-muted-foreground">OFFICE</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* View mode toggle */}
-          <div className="flex gap-0">
-            <button onClick={() => setViewMode("stacked")}
-              className={`px-2 py-1 font-pixel text-[6px] border-2 transition-colors ${viewMode === "stacked" ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:bg-muted"}`}>
-              🏢 ALL
+      {/* Department Navigation */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <button
+          onClick={() => { setActiveDept("all"); containerRef.current?.scrollTo({ left: 0, top: 0, behavior: "smooth" }); }}
+          className={`px-2 py-1 font-pixel text-[7px] pixel-border transition-colors ${activeDept === "all" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted"}`}
+        >
+          🏢 ALL
+        </button>
+        {Object.entries(departmentInfo).map(([dept, info]) => {
+          const count = agents.filter(a => a.department === dept && a.status !== "offline").length;
+          return (
+            <button
+              key={dept}
+              onClick={() => scrollToDept(dept as Department)}
+              className={`px-2 py-1 font-pixel text-[7px] pixel-border transition-colors flex items-center gap-1 ${activeDept === dept ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted"}`}
+            >
+              {info.icon} {info.label.toUpperCase()}
+              <span className="font-pixel text-[6px] opacity-60">({count})</span>
             </button>
-            <button onClick={() => setViewMode("single")}
-              className={`px-2 py-1 font-pixel text-[6px] border-2 transition-colors ${viewMode === "single" ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:bg-muted"}`}>
-              🔍 FLOOR
-            </button>
-          </div>
-          <span className="font-pixel text-[8px] text-primary/80">{phaseInfo.skyIcon} {clock}</span>
-          <span className="font-pixel text-[6px] text-muted-foreground">
-            👥 {officeAgents.filter(a => a.action !== "gone-home").length}/{agents.length}
+          );
+        })}
+        <div className="ml-auto font-pixel text-[8px] text-primary/80 flex items-center gap-1">
+          <span>{phaseInfo.skyIcon}</span> {clock}
+          <span className="text-[6px] text-muted-foreground ml-1">
+            {timePhase === "morning" ? "MORNING" : timePhase === "day" ? "DAYTIME" : timePhase === "evening" ? "EVENING" : "NIGHT"}
           </span>
-          {!activeEvent && timePhase !== "night" && (
-            <button onClick={() => triggerEvent(pickRandom(officeEvents))}
-              className="px-2 py-1 font-pixel text-[6px] pixel-border bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors">
-              🎲 EVENT
-            </button>
-          )}
         </div>
+        <div className="font-pixel text-[7px] text-muted-foreground">
+          👥 {officeAgents.filter(a => a.action !== "gone-home").length}/{agents.length} in office
+        </div>
+        {!activeEvent && timePhase !== "night" && (
+          <button
+            onClick={() => triggerEvent(pickRandom(officeEvents))}
+            className="px-2 py-1 font-pixel text-[6px] pixel-border bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+          >
+            🎲 EVENT
+          </button>
+        )}
       </div>
-
-      {/* Floor Selector (single mode) */}
-      {viewMode === "single" && (
-        <div className="flex items-stretch gap-0 mb-2">
-          {([4, 3, 2, 1] as FloorId[]).map((f) => {
-            const isActive = currentFloor === f;
-            const count = floorAgentCount(f);
-            return (
-              <button key={f} onClick={() => setCurrentFloor(f)}
-                className={`relative px-3 py-1.5 font-pixel text-[10px] transition-all border-2 ${
-                  isActive ? "bg-primary text-primary-foreground border-primary z-10" : "bg-card text-muted-foreground border-border hover:bg-muted"
-                }`}>
-                <span className="font-bold">{f}F</span>
-                {count > 0 && (
-                  <span className={`absolute -top-1 -right-1 w-3.5 h-3.5 flex items-center justify-center font-pixel text-[5px] rounded-full ${
-                    isActive ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
-                  }`}>{count}</span>
-                )}
-              </button>
-            );
-          })}
-          <div className="flex-1 border-b-2 border-border" />
-          <div className="px-2 py-1.5 bg-card border-2 border-border font-pixel text-[7px] text-accent flex items-center">
-            {floorLabels[currentFloor].label}
-          </div>
-        </div>
-      )}
 
       {/* Event Banner */}
       {activeEvent && (
-        <div className="pixel-border p-2 mb-2 flex items-center justify-between animate-pixel-pulse"
-          style={{ backgroundColor: activeEvent.color, borderColor: activeEvent.color }}>
+        <div
+          className="pixel-border p-2 mb-2 flex items-center justify-between animate-pixel-pulse"
+          style={{ backgroundColor: activeEvent.color, borderColor: activeEvent.color }}
+        >
           <div className="flex items-center gap-2">
             <span className="text-xl">{activeEvent.icon}</span>
             <div>
@@ -612,226 +545,450 @@ export function PixelOffice() {
           </div>
           <div className="flex items-center gap-2">
             <span className="font-pixel text-[8px] text-primary-foreground">{eventTimer}s</span>
-            <button onClick={endEvent} className="font-pixel text-[6px] px-2 py-1 bg-primary-foreground/20 text-primary-foreground pixel-border" style={{ borderWidth: 1 }}>
+            <button
+              onClick={endEvent}
+              className="font-pixel text-[6px] px-2 py-1 bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30 pixel-border"
+              style={{ borderWidth: 1 }}
+            >
               DISMISS
             </button>
           </div>
         </div>
       )}
 
-      {/* ===== STACKED VIEW - All floors visible ===== */}
-      {viewMode === "stacked" && (
-        <div className="relative pixel-border overflow-auto" style={{ height: 600, borderWidth: 4 }}>
-          {/* Sky background */}
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url(${skyBg})`,
-            backgroundSize: "cover",
-            backgroundPosition: "top center",
-          }} />
+      {/* Office Canvas Wrapper */}
+      <div className="relative" style={{ height: 520 }}>
+      {/* Office Canvas */}
+      <div
+        ref={containerRef}
+        className="pixel-border bg-card relative overflow-auto select-none h-full"
+      >
+        <div className="relative" style={{ width: CANVAS_W, height: CANVAS_H, minWidth: CANVAS_W }}>
+          {/* Background */}
+          <div className="absolute inset-0" style={{ backgroundColor: "hsl(0 0% 8%)" }} />
 
-          {/* Scrollable content with all floors stacked */}
-          <div className="relative" style={{ width: "100%", minHeight: 580, padding: "10px 0" }}>
-            {/* Floors stacked from top (F4) to bottom (F1) */}
-            {([4, 3, 2, 1] as FloorId[]).map((floor, idx) => {
-              const floorInfo = floorLabels[floor];
-              const fRooms = rooms.filter(r => r.floor === floor);
-              return (
-                <div key={floor} className="relative mx-auto cursor-pointer"
-                  style={{ width: "92%", height: 130, marginBottom: idx < 3 ? 8 : 0 }}
-                  onClick={() => { setCurrentFloor(floor); setViewMode("single"); }}
-                >
-                  {/* Floor background image */}
-                  <div className="absolute inset-0 rounded-sm overflow-hidden" style={{
-                    border: "3px solid hsl(210 30% 40% / 0.6)",
-                    boxShadow: "0 4px 12px hsl(0 0% 0% / 0.3), inset 0 0 0 1px hsl(0 0% 100% / 0.1)",
-                  }}>
-                    <img src={floorBgImages[floor]} alt={`${floor}F`}
-                      className="w-full h-full object-cover" style={{ imageRendering: "auto" }} draggable={false} />
+          {/* Department Rooms */}
+          {rooms.map(room => {
+            const info = departmentInfo[room.department];
+            return (
+              <div key={room.department}>
+                {/* Floor */}
+                <div
+                  className="absolute"
+                  style={{
+                    left: room.x, top: room.y, width: room.w, height: room.h,
+                    backgroundColor: room.floorColor,
+                    backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 39px, hsl(0 0% 100% / 0.02) 39px, hsl(0 0% 100% / 0.02) 40px), repeating-linear-gradient(0deg, transparent, transparent 39px, hsl(0 0% 100% / 0.02) 39px, hsl(0 0% 100% / 0.02) 40px)",
+                  }}
+                />
+                {/* Walls */}
+                <div className="absolute bg-border" style={{ left: room.x, top: room.y, width: room.w, height: 2 }} />
+                <div className="absolute bg-border" style={{ left: room.x, top: room.y, width: 2, height: room.h }} />
+                <div className="absolute bg-border" style={{ left: room.x + room.w - 2, top: room.y, width: 2, height: room.h }} />
+                <div className="absolute bg-border" style={{ left: room.x, top: room.y + room.h - 2, width: room.w, height: 2 }} />
+                {/* Door gap */}
+                <div className="absolute" style={{ left: room.x + room.w - 2, top: room.y + room.h / 2 - 25, width: 4, height: 50, backgroundColor: room.floorColor }} />
 
-                    {/* Slight 3D wall effect - top */}
-                    <div className="absolute top-0 left-0 right-0 h-3" style={{
-                      background: "linear-gradient(180deg, hsl(210 20% 50% / 0.4) 0%, transparent 100%)",
-                    }} />
-                    {/* Left wall edge */}
-                    <div className="absolute top-0 left-0 w-2 h-full" style={{
-                      background: "linear-gradient(90deg, hsl(210 20% 60% / 0.3) 0%, transparent 100%)",
-                    }} />
-
-                    {/* Floor label */}
-                    <div className="absolute top-1.5 left-2 z-10">
-                      <div className="bg-accent/90 px-2 py-0.5 shadow-md">
-                        <span className="font-pixel text-[10px] text-accent-foreground font-bold">{floor}F</span>
-                      </div>
-                    </div>
-
-                    {/* Department labels */}
-                    <div className="absolute top-1.5 right-2 z-10 flex gap-1">
-                      {fRooms.map(room => {
-                        const info = departmentInfo[room.department];
-                        return (
-                          <div key={room.department} className="bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded-sm">
-                            <span className="text-[8px]">{info.icon}</span>
-                            <span className="font-pixel text-[5px] ml-0.5 text-white">{info.label.toUpperCase()}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Agents on this floor */}
-                    {renderFloorAgents(floor, 100, 130)}
-
-                    {/* Day/Night overlay */}
-                    {phaseInfo.opacity > 0 && (
-                      <div className="absolute inset-0 pointer-events-none" style={{
-                        backgroundColor: phaseInfo.bg, opacity: phaseInfo.opacity * 0.7,
-                        mixBlendMode: "multiply",
-                      }} />
-                    )}
-                  </div>
-
-                  {/* Blue glass side panel - isometric effect */}
-                  <div className="absolute -right-1 top-2 bottom-0 w-3" style={{
-                    background: "linear-gradient(180deg, hsl(210 60% 55% / 0.7) 0%, hsl(210 50% 40% / 0.5) 100%)",
-                    transform: "skewY(-2deg)",
-                    borderRight: "2px solid hsl(210 40% 30% / 0.5)",
-                  }} />
-                  {/* Bottom edge - floor thickness */}
-                  <div className="absolute -bottom-1 left-0 right-0 h-2" style={{
-                    background: "linear-gradient(180deg, hsl(210 20% 35% / 0.6) 0%, hsl(210 20% 25% / 0.8) 100%)",
-                    borderBottom: "2px solid hsl(210 30% 20% / 0.5)",
-                  }} />
+                {/* Room label */}
+                <div className="absolute z-10 flex items-center gap-1.5" style={{ left: room.x + 10, top: room.y + 8 }}>
+                  <span className="text-sm">{info.icon}</span>
+                  <span className="font-pixel text-[7px]" style={{ color: info.color }}>{info.label.toUpperCase()}</span>
+                  <span className="font-pixel text-[6px] text-muted-foreground">
+                    ({agents.filter(a => a.department === room.department && a.status !== "offline").length})
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
-      {/* ===== SINGLE FLOOR VIEW ===== */}
-      {viewMode === "single" && (
-        <div className="relative" style={{ height: 480 }}>
-          <div ref={containerRef} className="pixel-border relative overflow-hidden select-none h-full" style={{ borderWidth: 4 }}>
-            <div className="relative w-full h-full">
-              <img src={floorBgImages[currentFloor]} alt={`Floor ${currentFloor}`}
-                className="absolute inset-0 w-full h-full object-cover" style={{ imageRendering: "auto" }} draggable={false} />
+                {/* Ceiling lights */}
+                {[0.3, 0.7].map((pct, li) => {
+                  const isLightOn = timePhase === "evening" || timePhase === "night";
+                  return (
+                    <div key={li} className="absolute" style={{ left: room.x + room.w * pct - 16, top: room.y + 4, width: 32, height: 6 }}>
+                      <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: isLightOn ? "hsl(45 80% 70% / 0.6)" : "hsl(0 0% 40% / 0.3)" }} />
+                      <div className="absolute top-6 left-1/2 -translate-x-1/2 w-40 h-48 rounded-full" style={{ opacity: isLightOn ? phaseInfo.lightIntensity : 0.03, background: `radial-gradient(ellipse, hsl(45 100% 85%), transparent)`, transition: "opacity 1s" }} />
+                    </div>
+                  );
+                })}
+                {/* Desks */}
+                {room.desks.map((desk, di) => (
+                  <div key={di} className="absolute" style={{ left: room.x + desk.x - 22, top: room.y + desk.y - 14 }}>
+                    <div className="w-[44px] h-[28px] bg-muted pixel-border flex items-center justify-center relative" style={{ borderWidth: 2 }}>
+                      <span className="text-[10px]">🖥️</span>
+                      <div className="absolute -top-1 w-8 h-5 opacity-[0.06] rounded-full" style={{ background: "radial-gradient(ellipse, hsl(200 80% 70%), transparent)" }} />
+                    </div>
+                    <div className="w-[44px] h-[10px] bg-muted/50 pixel-border mt-0.5" style={{ borderWidth: 1 }} />
+                  </div>
+                ))}
 
-              <div className="absolute top-3 left-3 z-30">
-                <div className="bg-accent px-2.5 py-1 shadow-[2px_2px_0_0_hsl(0_0%_0%/0.5)]">
-                  <span className="font-pixel text-[12px] text-accent-foreground font-bold">{currentFloor}F</span>
+                {/* Whiteboard per room */}
+                <div className="absolute" style={{ left: room.x + room.w - 60, top: room.y + 30 }}>
+                  <div className="w-[50px] h-[30px] bg-foreground/5 pixel-border flex flex-col items-center justify-center gap-px p-1" style={{ borderWidth: 2 }}>
+                    <div className="w-8 h-px" style={{ backgroundColor: info.color, opacity: 0.4 }} />
+                    <div className="w-6 h-px bg-muted-foreground/20" />
+                    <div className="w-9 h-px" style={{ backgroundColor: info.color, opacity: 0.3 }} />
+                  </div>
+                </div>
+
+                {/* Plant per room */}
+                <div className="absolute" style={{ left: room.x + 8, top: room.y + room.h - 35 }}>
+                  <span className="text-lg">🪴</span>
                 </div>
               </div>
+            );
+          })}
 
-              {floorRooms.map(room => {
-                const info = departmentInfo[room.department];
-                const labelPositions: Record<string, { x: string; y: string }> = {
-                  support: { x: "5%", y: "8%" }, devops: { x: "5%", y: "8%" },
-                  product: { x: "55%", y: "8%" }, design: { x: "5%", y: "8%" },
-                  qa: { x: "55%", y: "8%" }, engineering: { x: "5%", y: "8%" },
-                };
-                const pos = labelPositions[room.department] || { x: "10%", y: "10%" };
-                return (
-                  <div key={room.department} className="absolute z-10" style={{ left: pos.x, top: pos.y }}>
-                    <div className="bg-card/80 backdrop-blur-sm px-2 py-0.5 pixel-border" style={{ borderWidth: 2 }}>
-                      <span className="text-xs">{info.icon}</span>
-                      <span className="font-pixel text-[7px] ml-1" style={{ color: info.color }}>{info.label.toUpperCase()}</span>
-                      <span className="font-pixel text-[5px] text-muted-foreground ml-1">
-                        ({agents.filter(a => a.department === room.department && a.status !== "offline").length})
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {floorSpaces.map((space, si) => (
-                <div key={si} className="absolute z-10" style={{ left: "75%", top: "8%" }}>
-                  <div className="bg-card/80 backdrop-blur-sm px-2 py-0.5 pixel-border" style={{ borderWidth: 2 }}>
-                    <span className="text-xs">{space.type === "pantry" ? "🍳" : space.type === "meeting" ? "📋" : "🖧"}</span>
-                    <span className="font-pixel text-[6px] text-accent/80 ml-1">{space.type.toUpperCase().replace("-", " ")}</span>
-                  </div>
-                </div>
-              ))}
-
-              <AmbientSparkles canvasW={CANVAS_W} canvasH={CANVAS_H} />
-
-              {eventParticles.map(p => (
-                <div key={p.id} className="absolute pointer-events-none z-30 animate-sparkle"
-                  style={{ left: `${(p.x / CANVAS_W) * 100}%`, top: `${(p.y / CANVAS_H) * 100}%`, fontSize: 16, animationDelay: `${p.delay}s`, animationDuration: "3s" }}>
-                  {p.emoji}
-                </div>
-              ))}
-
-              {activeEvent?.type === "power-outage" && (
-                <div className="absolute inset-0 pointer-events-none z-35 animate-monitor-flicker" style={{ backgroundColor: "hsl(0 0% 0% / 0.5)" }} />
-              )}
-              {activeEvent?.type === "fire-drill" && (
-                <div className="absolute inset-0 pointer-events-none z-35 animate-pixel-pulse" style={{ border: "4px solid hsl(0 85% 55% / 0.6)" }} />
-              )}
-
-              {renderFloorAgents(currentFloor, CANVAS_W, CANVAS_H)}
-
-              {agents.filter(a => a.status === "offline" && getDeptFloor(a.department) === currentFloor).map((agent, i) => {
-                const room = rooms.find(r => r.department === agent.department);
-                if (!room) return null;
-                const offX = ((room.x + room.w - 30) / CANVAS_W) * 100;
-                const offY = ((room.y + room.h - 40 - i * 30) / CANVAS_H) * 100;
-                return (
-                  <div key={agent.id} className="absolute z-10 flex flex-col items-center opacity-20 cursor-pointer hover:opacity-40 transition-opacity"
-                    style={{ left: `${offX}%`, top: `${offY}%` }}
-                    onClick={() => {
-                      setSelectedAgent({ agent, floor: room.floor, x: room.x + room.w - 30, y: room.y + room.h - 40,
-                        targetX: room.x + room.w - 30, targetY: room.y + room.h - 40,
-                        action: "idle", deskX: room.x + 50, deskY: room.y + 80, deskFloor: room.floor,
-                        speechBubble: null, direction: "right", frame: 0 });
-                      setAssignTaskId(""); setDialogOpen(true);
-                    }}>
-                    <img src={getAgentSprite(agent.id, agent.department)} alt={agent.name} className="w-8 h-8 object-contain grayscale" draggable={false} />
-                    <span className="font-pixel text-[5px] text-muted-foreground">{agent.name}</span>
-                  </div>
-                );
-              })}
-
-              {phaseInfo.opacity > 0 && (
-                <div className="absolute inset-0 pointer-events-none z-40" style={{
-                  backgroundColor: phaseInfo.bg, opacity: phaseInfo.opacity,
-                  transition: "background-color 2s, opacity 2s", mixBlendMode: "multiply",
-                }} />
-              )}
-
-              {timePhase === "night" && (
-                <div className="absolute inset-0 pointer-events-none z-35">
-                  {Array.from({ length: 15 }, (_, i) => (
-                    <div key={i} className="absolute rounded-full animate-sparkle" style={{
-                      left: `${5 + (i * 47) % 90}%`, top: `${3 + (i * 31) % 15}%`,
-                      width: 2, height: 2, backgroundColor: "hsl(45 80% 90% / 0.4)",
-                      animationDelay: `${i * 0.4}s`,
-                    }} />
-                  ))}
-                </div>
-              )}
+          {/* Meeting Room */}
+          <div className="absolute" style={{ left: meetingRoom.x, top: meetingRoom.y, width: meetingRoom.w, height: meetingRoom.h, backgroundColor: "hsl(210 20% 14%)", backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 4px, hsl(0 0% 100% / 0.01) 4px, hsl(0 0% 100% / 0.01) 5px)" }} />
+          <div className="absolute bg-border" style={{ left: meetingRoom.x, top: meetingRoom.y, width: meetingRoom.w, height: 2 }} />
+          <div className="absolute bg-border" style={{ left: meetingRoom.x, top: meetingRoom.y, width: 2, height: meetingRoom.h }} />
+          <div className="absolute bg-border" style={{ left: meetingRoom.x + meetingRoom.w - 2, top: meetingRoom.y, width: 2, height: meetingRoom.h }} />
+          <div className="absolute bg-border" style={{ left: meetingRoom.x, top: meetingRoom.y + meetingRoom.h - 2, width: meetingRoom.w, height: 2 }} />
+          <div className="absolute" style={{ left: meetingRoom.x - 1, top: meetingRoom.y + 120, width: 4, height: 50, backgroundColor: "hsl(210 20% 14%)" }} />
+          <div className="absolute z-10 flex items-center gap-1" style={{ left: meetingRoom.x + 10, top: meetingRoom.y + 8 }}>
+            <span className="text-sm">📋</span>
+            <span className="font-pixel text-[7px] text-secondary/80">MEETING ROOM</span>
+          </div>
+          {/* Meeting table */}
+          <div className="absolute" style={{ left: meetingRoom.x + 55, top: meetingRoom.y + 100 }}>
+            <div className="w-[110px] h-[70px] bg-muted/60 pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
+              <span className="text-xl">📊</span>
+            </div>
+          </div>
+          {/* TV */}
+          <div className="absolute" style={{ left: meetingRoom.x + 70, top: meetingRoom.y + 20 }}>
+            <div className="w-[80px] h-[40px] bg-card pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
+              <span className="font-pixel text-[5px] text-primary/50 animate-pixel-pulse">LIVE</span>
             </div>
           </div>
 
-          {/* Floor minimap */}
-          <div className="absolute bottom-3 right-3 z-50 pixel-border bg-card/90 backdrop-blur-sm p-2 flex flex-col gap-1" style={{ width: 50 }}>
-            <div className="font-pixel text-[4px] text-muted-foreground text-center mb-1">FLOORS</div>
-            {([4, 3, 2, 1] as FloorId[]).map(f => {
-              const count = floorAgentCount(f);
+          {/* Pantry */}
+          <div className="absolute" style={{ left: pantry.x, top: pantry.y, width: pantry.w, height: pantry.h, backgroundColor: "hsl(25 15% 11%)", backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 23px, hsl(0 0% 100% / 0.02) 23px, hsl(0 0% 100% / 0.02) 24px), repeating-linear-gradient(0deg, transparent, transparent 23px, hsl(0 0% 100% / 0.02) 23px, hsl(0 0% 100% / 0.02) 24px)" }} />
+          <div className="absolute bg-border" style={{ left: pantry.x, top: pantry.y, width: pantry.w, height: 2 }} />
+          <div className="absolute bg-border" style={{ left: pantry.x, top: pantry.y, width: 2, height: pantry.h }} />
+          <div className="absolute bg-border" style={{ left: pantry.x + pantry.w - 2, top: pantry.y, width: 2, height: pantry.h }} />
+          <div className="absolute bg-border" style={{ left: pantry.x, top: pantry.y + pantry.h - 2, width: pantry.w, height: 2 }} />
+          <div className="absolute" style={{ left: pantry.x - 1, top: pantry.y + 80, width: 4, height: 50, backgroundColor: "hsl(25 15% 11%)" }} />
+          <div className="absolute z-10 flex items-center gap-1" style={{ left: pantry.x + 10, top: pantry.y + 8 }}>
+            <span className="text-sm">🍳</span>
+            <span className="font-pixel text-[7px] text-accent/70">PANTRY & BREAK</span>
+          </div>
+          {/* Coffee machine */}
+          <div className="absolute flex flex-col items-center" style={{ left: pantry.x + 30, top: pantry.y + 60 }}>
+            <div className="w-[30px] h-[36px] bg-muted pixel-border flex flex-col items-center justify-center" style={{ borderWidth: 2 }}>
+              <span className="text-sm">☕</span>
+              <div className="w-4 h-px bg-accent/40 animate-pixel-pulse" />
+            </div>
+            <span className="font-pixel text-[5px] text-muted-foreground mt-0.5">COFFEE</span>
+          </div>
+          {/* Vending */}
+          <div className="absolute flex flex-col items-center" style={{ left: pantry.x + 80, top: pantry.y + 60 }}>
+            <div className="w-[34px] h-[44px] bg-muted pixel-border flex flex-col items-center justify-center gap-0.5" style={{ borderWidth: 2 }}>
+              <div className="flex gap-px">
+                <div className="w-2 h-2 bg-destructive/20 rounded-sm" />
+                <div className="w-2 h-2 bg-accent/20 rounded-sm" />
+                <div className="w-2 h-2 bg-primary/20 rounded-sm" />
+              </div>
+              <div className="w-5 h-2 bg-card/30 rounded-sm" />
+            </div>
+            <span className="font-pixel text-[5px] text-muted-foreground mt-0.5">SNACKS</span>
+          </div>
+          {/* Fridge */}
+          <div className="absolute flex flex-col items-center" style={{ left: pantry.x + 140, top: pantry.y + 60 }}>
+            <div className="w-[28px] h-[40px] bg-muted pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
+              <span className="text-[8px]">🧊</span>
+            </div>
+            <span className="font-pixel text-[5px] text-muted-foreground mt-0.5">FRIDGE</span>
+          </div>
+          {/* Sofa */}
+          <div className="absolute" style={{ left: pantry.x + 40, top: pantry.y + 180 }}>
+            <div className="w-[120px] h-[28px] bg-secondary/15 pixel-border flex items-center justify-center gap-1" style={{ borderWidth: 2 }}>
+              <div className="w-3 h-5 bg-secondary/10 rounded-sm" />
+              <div className="w-5 h-3 bg-secondary/8 rounded-sm" />
+              <div className="w-5 h-3 bg-secondary/8 rounded-sm" />
+              <div className="w-3 h-5 bg-secondary/10 rounded-sm" />
+            </div>
+            <span className="font-pixel text-[5px] text-muted-foreground mt-0.5 block text-center">LOUNGE</span>
+          </div>
+
+          {/* Hallway label */}
+          <div className="absolute font-pixel text-[6px] text-muted-foreground/30 z-10" style={{ left: 500, top: 330 }}>
+            ─── HALLWAY ───
+          </div>
+
+          {/* ===== AMBIENT PARTICLES ===== */}
+          {/* Coffee steam from pantry coffee machine */}
+          <CoffeeSteam originX={pantry.x + 45} originY={pantry.y + 55} />
+
+          {/* Dust in ceiling light beams */}
+          {rooms.map((room, ri) =>
+            [0.3, 0.7].map((pct, li) => (
+              <DustInLight
+                key={`dust-${ri}-${li}`}
+                originX={room.x + room.w * pct - 20}
+                originY={room.y + 12}
+                width={40}
+                height={80}
+              />
+            ))
+          )}
+
+          {/* Monitor glow flicker on desks */}
+          {rooms.map(room => {
+            const info = departmentInfo[room.department];
+            return room.desks.map((desk, di) => (
+              <MonitorGlow
+                key={`glow-${room.department}-${di}`}
+                originX={room.x + desk.x}
+                originY={room.y + desk.y - 6}
+                color={info.color}
+              />
+            ));
+          })}
+
+          {/* General ambient sparkles */}
+          <AmbientSparkles canvasW={CANVAS_W} canvasH={CANVAS_H} />
+
+          {/* ===== EVENT PARTICLES ===== */}
+          {eventParticles.map(p => (
+            <div
+              key={p.id}
+              className="absolute pointer-events-none z-30 animate-sparkle"
+              style={{
+                left: p.x,
+                top: p.y,
+                fontSize: 16,
+                animationDelay: `${p.delay}s`,
+                animationDuration: "3s",
+              }}
+            >
+              {p.emoji}
+            </div>
+          ))}
+
+          {/* Power outage overlay */}
+          {activeEvent?.type === "power-outage" && (
+            <div
+              className="absolute inset-0 pointer-events-none z-35 animate-monitor-flicker"
+              style={{ backgroundColor: "hsl(0 0% 0% / 0.5)" }}
+            />
+          )}
+
+          {/* Fire drill flashing border */}
+          {activeEvent?.type === "fire-drill" && (
+            <div
+              className="absolute inset-0 pointer-events-none z-35 animate-pixel-pulse"
+              style={{ border: "4px solid hsl(0 85% 55% / 0.6)", boxShadow: "inset 0 0 40px hsl(0 85% 55% / 0.15)" }}
+            />
+          )}
+
+          {officeAgents.filter(oa => oa.action !== "gone-home").map((oa) => {
+            const isMoving = oa.action === "walking" || oa.action === "panicking" || oa.action === "celebrating";
+            const walkFrame = isMoving ? Math.floor(oa.frame / (oa.action === "panicking" ? 2 : 4)) % 2 : 0;
+            return (
+              <div
+                key={oa.agent.id}
+                className="absolute z-20 flex flex-col items-center cursor-pointer group"
+                style={{
+                  left: oa.x,
+                  top: oa.y,
+                  transform: `translate(-50%, -50%) scaleX(${oa.direction === "left" ? -1 : 1})`,
+                  transition: isMoving ? "none" : "left 0.05s, top 0.05s",
+                }}
+                onClick={() => handleAgentClick(oa)}
+              >
+                {/* Shadow */}
+                <div className="absolute bottom-0 w-5 h-1 rounded-full" style={{ transform: "translateY(8px)", backgroundColor: "hsl(0 0% 0% / 0.3)" }} />
+
+                {/* Hover ring */}
+                <div className="absolute inset-0 -m-2 rounded-full border-2 border-primary/0 group-hover:border-primary/50 transition-colors" style={{ transform: `scaleX(${oa.direction === "left" ? -1 : 1})` }} />
+
+                {/* Speech bubble */}
+                {oa.speechBubble && (
+                  <div
+                    className="absolute -top-8 left-1/2 whitespace-nowrap px-1.5 py-0.5 bg-card pixel-border font-pixel text-[5px] text-foreground z-30"
+                    style={{ transform: `translateX(-50%) scaleX(${oa.direction === "left" ? -1 : 1})`, borderWidth: 2 }}
+                  >
+                    {oa.speechBubble}
+                  </div>
+                )}
+
+                {/* Character */}
+                <div className="relative flex flex-col items-center" style={{ transform: isMoving ? `translateY(${walkFrame * -2}px)` : "none" }}>
+                  <span className="text-xl leading-none group-hover:scale-110 transition-transform">
+                    {oa.agent.avatar}
+                  </span>
+                  <div className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ${
+                    oa.agent.status === "online" ? "bg-primary" : oa.agent.status === "busy" ? "bg-accent" : "bg-muted-foreground"
+                  }`} />
+                </div>
+
+                {/* Name tag */}
+                <span
+                  className="font-pixel text-[4px] text-primary/70 mt-0.5 whitespace-nowrap bg-card/80 px-0.5 rounded-sm"
+                  style={{ transform: `scaleX(${oa.direction === "left" ? -1 : 1})` }}
+                >
+                  {oa.agent.name}
+                </span>
+              </div>
+            );
+          })}
+
+          {/* Offline agents */}
+          {agents.filter(a => a.status === "offline").map((agent, i) => {
+            const room = rooms.find(r => r.department === agent.department);
+            if (!room) return null;
+            return (
+              <div
+                key={agent.id}
+                className="absolute z-10 flex flex-col items-center opacity-20 cursor-pointer hover:opacity-40 transition-opacity"
+                style={{ left: room.x + room.w - 30, top: room.y + room.h - 40 - i * 30 }}
+                onClick={() => {
+                  setSelectedAgent({
+                    agent, x: room.x + room.w - 30, y: room.y + room.h - 40,
+                    targetX: room.x + room.w - 30, targetY: room.y + room.h - 40,
+                    action: "idle", deskX: room.x + 50, deskY: room.y + 80,
+                    speechBubble: null, direction: "right", frame: 0,
+                  });
+                  setAssignTaskId("");
+                  setDialogOpen(true);
+                }}
+              >
+                <span className="text-sm grayscale">{agent.avatar}</span>
+                <span className="font-pixel text-[4px] text-muted-foreground">{agent.name}</span>
+              </div>
+            );
+          })}
+
+          {/* Day/Night overlay */}
+          {phaseInfo.opacity > 0 && (
+            <div
+              className="absolute inset-0 pointer-events-none z-40"
+              style={{
+                backgroundColor: phaseInfo.bg,
+                opacity: phaseInfo.opacity,
+                transition: "background-color 2s, opacity 2s",
+                mixBlendMode: "multiply",
+              }}
+            />
+          )}
+
+          {/* Stars at night */}
+          {timePhase === "night" && (
+            <div className="absolute inset-0 pointer-events-none z-35">
+              {Array.from({ length: 20 }, (_, i) => (
+                <div
+                  key={i}
+                  className="absolute rounded-full animate-sparkle"
+                  style={{
+                    left: `${5 + (i * 47) % 90}%`,
+                    top: `${3 + (i * 31) % 15}%`,
+                    width: 2,
+                    height: 2,
+                    backgroundColor: "hsl(45 80% 90% / 0.4)",
+                    animationDelay: `${i * 0.4}s`,
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+        {/* Mini Map - inside wrapper, outside scroll */}
+        <div
+          className="absolute bottom-4 right-4 z-50 pixel-border bg-card/90 backdrop-blur-sm p-1.5 cursor-pointer"
+          style={{ width: 180, height: 100 }}
+          onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const clickX = ((e.clientX - rect.left - 6) / (180 - 12)) * CANVAS_W;
+            const clickY = ((e.clientY - rect.top - 6) / (100 - 12)) * CANVAS_H;
+            containerRef.current?.scrollTo({
+              left: clickX - containerRef.current.clientWidth / 2,
+              top: clickY - containerRef.current.clientHeight / 2,
+              behavior: "smooth",
+            });
+          }}
+        >
+          <div className="font-pixel text-[5px] text-muted-foreground mb-0.5">🗺️ MINIMAP</div>
+          <div className="relative w-full" style={{ height: 82 }}>
+            {rooms.map(room => {
+              const info = departmentInfo[room.department];
+              const scaleX = (180 - 12) / CANVAS_W;
+              const scaleY = 82 / CANVAS_H;
               return (
-                <button key={f} onClick={() => setCurrentFloor(f)}
-                  className={`w-full h-7 flex items-center justify-center gap-1 font-pixel text-[6px] transition-colors border ${
-                    currentFloor === f ? "bg-primary/20 border-primary text-primary" : "bg-muted/30 border-border text-muted-foreground hover:bg-muted/60"
-                  }`}>
-                  {f}F {count > 0 && <span className="text-[5px] opacity-60">·{count}</span>}
-                </button>
+                <div
+                  key={room.department}
+                  className="absolute border border-border/50"
+                  style={{
+                    left: room.x * scaleX,
+                    top: room.y * scaleY,
+                    width: room.w * scaleX,
+                    height: room.h * scaleY,
+                    backgroundColor: room.floorColor,
+                    opacity: 0.7,
+                  }}
+                >
+                  <span className="font-pixel text-[3px] absolute top-px left-px" style={{ color: info.color }}>
+                    {info.icon}
+                  </span>
+                </div>
               );
             })}
-            <button onClick={() => setViewMode("stacked")}
-              className="w-full h-6 flex items-center justify-center font-pixel text-[5px] border border-accent text-accent hover:bg-accent/20 transition-colors mt-1">
-              🏢 ALL
-            </button>
+            {[meetingRoom, pantry].map((space, i) => {
+              const scaleX = (180 - 12) / CANVAS_W;
+              const scaleY = 82 / CANVAS_H;
+              return (
+                <div
+                  key={i}
+                  className="absolute border border-border/30"
+                  style={{
+                    left: space.x * scaleX,
+                    top: space.y * scaleY,
+                    width: space.w * scaleX,
+                    height: space.h * scaleY,
+                    backgroundColor: "hsl(210 15% 15%)",
+                    opacity: 0.5,
+                  }}
+                />
+              );
+            })}
+            {officeAgents.map(oa => {
+              const scaleX = (180 - 12) / CANVAS_W;
+              const scaleY = 82 / CANVAS_H;
+              const dotColor = oa.agent.status === "online" ? "hsl(var(--primary))" : "hsl(var(--accent))";
+              return (
+                <div
+                  key={oa.agent.id}
+                  className={`absolute rounded-full ${oa.action === "walking" ? "animate-pixel-pulse" : ""}`}
+                  style={{
+                    left: oa.x * scaleX - 1.5,
+                    top: oa.y * scaleY - 1.5,
+                    width: 3,
+                    height: 3,
+                    backgroundColor: dotColor,
+                    transition: "left 0.05s, top 0.05s",
+                  }}
+                />
+              );
+            })}
+            {containerRef.current && (() => {
+              const scaleX = (180 - 12) / CANVAS_W;
+              const scaleY = 82 / CANVAS_H;
+              const el = containerRef.current!;
+              return (
+                <div
+                  className="absolute border border-primary/60 rounded-sm pointer-events-none"
+                  style={{
+                    left: el.scrollLeft * scaleX,
+                    top: el.scrollTop * scaleY,
+                    width: el.clientWidth * scaleX,
+                    height: el.clientHeight * scaleY,
+                  }}
+                />
+              );
+            })()}
           </div>
         </div>
-      )}
+      </div>
 
       {/* Agent Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -840,7 +997,7 @@ export function PixelOffice() {
             <>
               <DialogHeader>
                 <DialogTitle className="font-pixel text-sm text-primary flex items-center gap-3">
-                  <img src={getAgentSprite(selectedAgent.agent.id, selectedAgent.agent.department)} alt={selectedAgent.agent.name} className="w-12 h-12 object-contain" draggable={false} />
+                  <span className="text-3xl">{selectedAgent.agent.avatar}</span>
                   <div>
                     <div>{selectedAgent.agent.name}</div>
                     <div className="font-pixel-body text-xs text-muted-foreground font-normal mt-0.5">
@@ -859,21 +1016,28 @@ export function PixelOffice() {
                   }`} />
                   {selectedAgent.agent.status.toUpperCase()}
                 </Badge>
-                <Badge variant="secondary" className="font-pixel text-[7px]">{actionLabel[selectedAgent.action]}</Badge>
-                <Badge variant="outline" className="font-pixel text-[7px]">{selectedAgent.agent.role.toUpperCase()}</Badge>
-                <Badge variant="outline" className="font-pixel text-[7px]">📍 {selectedAgent.floor}F</Badge>
+                <Badge variant="secondary" className="font-pixel text-[7px]">
+                  {actionLabel[selectedAgent.action]}
+                </Badge>
+                <Badge variant="outline" className="font-pixel text-[7px]">
+                  {selectedAgent.agent.role.toUpperCase()}
+                </Badge>
               </div>
 
               <div className="mt-3">
                 <h3 className="font-pixel text-[7px] text-accent mb-2">⚡ QUICK COMMANDS</h3>
                 <div className="flex flex-wrap gap-1.5">
                   <Button size="sm" variant="outline" className="font-pixel text-[7px] h-6"
-                    onClick={() => sendTo(selectedAgent.deskX, selectedAgent.deskY, "🫡 on it!", selectedAgent.deskFloor)}>
+                    onClick={() => sendTo(selectedAgent.deskX, selectedAgent.deskY, "🫡 on it!")}>
                     🖥️ Desk
                   </Button>
                   <Button size="sm" variant="outline" className="font-pixel text-[7px] h-6"
-                    onClick={() => sendTo(pantrySpace.x + randomBetween(30, 150), pantrySpace.y + randomBetween(60, 200), "☕ coffee time!", 1)}>
+                    onClick={() => sendTo(pantry.x + randomBetween(30, 150), pantry.y + randomBetween(60, 200), "☕ coffee time!")}>
                     ☕ Pantry
+                  </Button>
+                  <Button size="sm" variant="outline" className="font-pixel text-[7px] h-6"
+                    onClick={() => sendTo(meetingRoom.x + randomBetween(50, 150), meetingRoom.y + randomBetween(80, 200), "📋 meeting!")}>
+                    📋 Meeting
                   </Button>
                   <Button size="sm" variant="default" className="font-pixel text-[7px] h-6"
                     onClick={() => { setChatAgent(selectedAgent.agent); setDialogOpen(false); }}>
@@ -891,7 +1055,9 @@ export function PixelOffice() {
                     <div className="space-y-1">
                       {agentTasks.map(task => (
                         <div key={task.id} className="flex items-center gap-2 p-1.5 bg-muted/50 pixel-border" style={{ borderWidth: 2 }}>
-                          <Badge className={`font-pixel text-[5px] ${priorityColor[task.priority]}`}>{task.priority.toUpperCase()}</Badge>
+                          <Badge className={`font-pixel text-[5px] ${priorityColor[task.priority]}`}>
+                            {task.priority.toUpperCase()}
+                          </Badge>
                           <div className="flex-1 min-w-0">
                             <p className="font-pixel text-[6px] text-foreground truncate">{task.title}</p>
                             <p className="font-pixel text-[5px] text-muted-foreground">{task.status}</p>
