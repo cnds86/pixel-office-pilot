@@ -145,4 +145,44 @@
   .animate-pixel-pulse {
     animation: pixel-pulse 2s step-end infinite;
   }
+
+  @keyframes steam-rise {
+    0% { opacity: 0; transform: translateY(0) scale(0.5); }
+    30% { opacity: 0.6; }
+    100% { opacity: 0; transform: translateY(-25px) scale(1.5) translateX(3px); }
+  }
+  .animate-steam {
+    animation: steam-rise 2s ease-out infinite;
+  }
+
+  @keyframes dust-float {
+    0% { opacity: 0; transform: translate(0, 0); }
+    20% { opacity: 0.6; }
+    80% { opacity: 0.3; }
+    100% { opacity: 0; transform: translate(var(--drift-x, 10px), -15px); }
+  }
+  .animate-dust-float {
+    animation: dust-float 5s ease-in-out infinite;
+  }
+
+  @keyframes monitor-flicker {
+    0%, 100% { opacity: 0.8; }
+    10% { opacity: 0.3; }
+    20% { opacity: 0.9; }
+    50% { opacity: 0.6; }
+    70% { opacity: 1; }
+    85% { opacity: 0.4; }
+  }
+  .animate-monitor-flicker {
+    animation: monitor-flicker 3s ease-in-out infinite;
+  }
+
+  @keyframes sparkle-drift {
+    0% { opacity: 0; transform: scale(0); }
+    50% { opacity: 0.5; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0); }
+  }
+  .animate-sparkle {
+    animation: sparkle-drift 4s ease-in-out infinite;
+  }
 }

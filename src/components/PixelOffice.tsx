@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { agents, tasks, departmentInfo } from "@/data/mockData";
 import type { Agent, Task, Department } from "@/data/mockData";
+import { CoffeeSteam, DustInLight, MonitorGlow, AmbientSparkles } from "./OfficeParticles";
 import {
   Dialog,
   DialogContent,
@@ -484,6 +485,39 @@ export function PixelOffice() {
           <div className="absolute font-pixel text-[6px] text-muted-foreground/30 z-10" style={{ left: 500, top: 330 }}>
             ─── HALLWAY ───
           </div>
+
+          {/* ===== AMBIENT PARTICLES ===== */}
+          {/* Coffee steam from pantry coffee machine */}
+          <CoffeeSteam originX={pantry.x + 45} originY={pantry.y + 55} />
+
+          {/* Dust in ceiling light beams */}
+          {rooms.map((room, ri) =>
+            [0.3, 0.7].map((pct, li) => (
+              <DustInLight
+                key={`dust-${ri}-${li}`}
+                originX={room.x + room.w * pct - 20}
+                originY={room.y + 12}
+                width={40}
+                height={80}
+              />
+            ))
+          )}
+
+          {/* Monitor glow flicker on desks */}
+          {rooms.map(room => {
+            const info = departmentInfo[room.department];
+            return room.desks.map((desk, di) => (
+              <MonitorGlow
+                key={`glow-${room.department}-${di}`}
+                originX={room.x + desk.x}
+                originY={room.y + desk.y - 6}
+                color={info.color}
+              />
+            ));
+          })}
+
+          {/* General ambient sparkles */}
+          <AmbientSparkles canvasW={CANVAS_W} canvasH={CANVAS_H} />
 
           {/* ===== AGENTS ===== */}
           {officeAgents.map((oa) => {
