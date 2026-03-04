@@ -651,6 +651,39 @@ export function PixelOffice() {
               </div>
             );
           })}
+
+          {/* Day/Night overlay */}
+          {phaseInfo.opacity > 0 && (
+            <div
+              className="absolute inset-0 pointer-events-none z-40"
+              style={{
+                backgroundColor: phaseInfo.bg,
+                opacity: phaseInfo.opacity,
+                transition: "background-color 2s, opacity 2s",
+                mixBlendMode: "multiply",
+              }}
+            />
+          )}
+
+          {/* Stars at night */}
+          {timePhase === "night" && (
+            <div className="absolute inset-0 pointer-events-none z-35">
+              {Array.from({ length: 20 }, (_, i) => (
+                <div
+                  key={i}
+                  className="absolute rounded-full animate-sparkle"
+                  style={{
+                    left: `${5 + (i * 47) % 90}%`,
+                    top: `${3 + (i * 31) % 15}%`,
+                    width: 2,
+                    height: 2,
+                    backgroundColor: "hsl(45 80% 90% / 0.4)",
+                    animationDelay: `${i * 0.4}s`,
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
