@@ -160,6 +160,9 @@ function randomBetween(a: number, b: number) {
 export function PixelOffice() {
   const [officeAgents, setOfficeAgents] = useState<OfficeAgent[]>([]);
   const [clock, setClock] = useState("09:00");
+  const clockHour = parseInt(clock.split(":")[0]);
+  const timePhase = getTimePhase(clockHour);
+  const phaseInfo = phaseOverlay[timePhase];
   const [selectedAgent, setSelectedAgent] = useState<OfficeAgent | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [taskList, setTaskList] = useState<Task[]>(tasks);
