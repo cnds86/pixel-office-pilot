@@ -7,6 +7,7 @@ import floorF1 from "@/assets/floor-f1-lobby.png";
 import floorF2 from "@/assets/floor-f2-operations.png";
 import floorF3 from "@/assets/floor-f3-creative.png";
 import floorF4 from "@/assets/floor-f4-engineering.png";
+import skyBg from "@/assets/sky-bg.png";
 import {
   Dialog,
   DialogContent,
@@ -242,6 +243,7 @@ export function PixelOffice() {
   const [taskList, setTaskList] = useState<Task[]>(tasks);
   const [assignTaskId, setAssignTaskId] = useState<string>("");
   const [currentFloor, setCurrentFloor] = useState<FloorId>(4);
+  const [viewMode, setViewMode] = useState<"single" | "stacked">("stacked");
   const [activeEvent, setActiveEvent] = useState<OfficeEvent | null>(null);
   const [eventTimer, setEventTimer] = useState(0);
   const [eventParticles, setEventParticles] = useState<{ id: number; x: number; y: number; emoji: string; delay: number }[]>([]);
@@ -485,78 +487,122 @@ export function PixelOffice() {
   // Count agents per floor
   const floorAgentCount = (f: FloorId) => officeAgents.filter(oa => oa.floor === f && oa.action !== "gone-home").length;
 
+  // Helper to render agents for a given floor
+  const renderFloorAgents = (floor: FloorId, containerW: number, containerH: number) => {
+    const fAgents = officeAgents.filter(oa => oa.floor === floor && oa.action !== "gone-home");
+    return fAgents.map((oa) => {
+      const isMoving = oa.action === "walking" || oa.action === "panicking" || oa.action === "celebrating";
+      const walkFrame = isMoving ? Math.floor(oa.frame / (oa.action === "panicking" ? 2 : 4)) % 2 : 0;
+      const pctX = (oa.x / CANVAS_W) * 100;
+      const pctY = (oa.y / CANVAS_H) * 100;
+      const spriteSize = viewMode === "stacked" ? "w-7 h-7" : "w-10 h-10";
+      const nameSize = viewMode === "stacked" ? "text-[3px]" : "text-[5px]";
+      const bubbleSize = viewMode === "stacked" ? "text-[4px] -top-6 px-1 py-0.5" : "text-[6px] -top-9 px-2 py-1";
+      return (
+        <div
+          key={oa.agent.id}
+          className="absolute z-20 flex flex-col items-center cursor-pointer group"
+          style={{
+            left: `${pctX}%`, top: `${pctY}%`,
+            transform: `translate(-50%, -50%) scaleX(${oa.direction === "left" ? -1 : 1})`,
+            transition: isMoving ? "none" : "left 0.05s, top 0.05s",
+          }}
+          onClick={() => handleAgentClick(oa)}
+        >
+          <div className="absolute bottom-0 w-4 h-1 rounded-full" style={{ transform: "translateY(6px)", backgroundColor: "hsl(0 0% 0% / 0.3)" }} />
+          <div className="absolute inset-0 -m-1 rounded-full border border-primary/0 group-hover:border-primary/60 transition-colors" style={{ transform: `scaleX(${oa.direction === "left" ? -1 : 1})` }} />
+          {oa.speechBubble && (
+            <div className={`absolute left-1/2 whitespace-nowrap bg-white text-gray-800 rounded-md font-pixel z-30 shadow-md ${bubbleSize}`}
+              style={{ transform: `translateX(-50%) scaleX(${oa.direction === "left" ? -1 : 1})` }}>
+              {oa.speechBubble}
+              <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rotate-45" />
+            </div>
+          )}
+          <div className="relative flex flex-col items-center" style={{ transform: isMoving ? `translateY(${walkFrame * -2}px)` : "none" }}>
+            <img src={getAgentSprite(oa.agent.id, oa.agent.department)} alt={oa.agent.name}
+              className={`${spriteSize} object-contain group-hover:scale-110 transition-transform drop-shadow-md`}
+              style={{ imageRendering: "auto" }} draggable={false} />
+            <div className={`absolute top-0 -right-0.5 w-1.5 h-1.5 rounded-full border border-white ${
+              oa.agent.status === "online" ? "bg-primary" : oa.agent.status === "busy" ? "bg-accent" : "bg-muted-foreground"
+            }`} />
+          </div>
+          <span className={`font-pixel ${nameSize} text-white mt-0.5 whitespace-nowrap bg-black/60 px-0.5 py-px rounded-sm`}
+            style={{ transform: `scaleX(${oa.direction === "left" ? -1 : 1})` }}>
+            {oa.agent.name}
+          </span>
+        </div>
+      );
+    });
+  };
+
   return (
     <>
-      {/* Office Header with Floor Nav */}
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        {/* Office Name */}
+      {/* Office Header */}
+      <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <div className="pixel-border bg-primary px-3 py-1.5">
             <span className="font-pixel text-sm text-primary-foreground tracking-wider">2AM</span>
           </div>
           <div>
             <span className="font-pixel text-[8px] text-muted-foreground">OFFICE</span>
-            <span className="font-pixel text-[7px] text-muted-foreground/60 ml-2">
-              {floorLabels[currentFloor].departments}
-            </span>
           </div>
         </div>
-
-        {/* Clock & Status */}
         <div className="flex items-center gap-3">
+          {/* View mode toggle */}
+          <div className="flex gap-0">
+            <button onClick={() => setViewMode("stacked")}
+              className={`px-2 py-1 font-pixel text-[6px] border-2 transition-colors ${viewMode === "stacked" ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:bg-muted"}`}>
+              🏢 ALL
+            </button>
+            <button onClick={() => setViewMode("single")}
+              className={`px-2 py-1 font-pixel text-[6px] border-2 transition-colors ${viewMode === "single" ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:bg-muted"}`}>
+              🔍 FLOOR
+            </button>
+          </div>
           <span className="font-pixel text-[8px] text-primary/80">{phaseInfo.skyIcon} {clock}</span>
           <span className="font-pixel text-[6px] text-muted-foreground">
             👥 {officeAgents.filter(a => a.action !== "gone-home").length}/{agents.length}
           </span>
           {!activeEvent && timePhase !== "night" && (
-            <button
-              onClick={() => triggerEvent(pickRandom(officeEvents))}
-              className="px-2 py-1 font-pixel text-[6px] pixel-border bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
-            >
+            <button onClick={() => triggerEvent(pickRandom(officeEvents))}
+              className="px-2 py-1 font-pixel text-[6px] pixel-border bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors">
               🎲 EVENT
             </button>
           )}
         </div>
       </div>
 
-      {/* Floor Selector - styled like the reference "1F" indicator */}
-      <div className="flex items-stretch gap-0 mb-3">
-        {([4, 3, 2, 1] as FloorId[]).map((f) => {
-          const isActive = currentFloor === f;
-          const count = floorAgentCount(f);
-          return (
-            <button
-              key={f}
-              onClick={() => setCurrentFloor(f)}
-              className={`relative px-4 py-2 font-pixel text-[10px] transition-all border-2 ${
-                isActive
-                  ? "bg-primary text-primary-foreground border-primary z-10 shadow-[3px_3px_0_0_hsl(var(--primary)/0.4)]"
-                  : "bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              <span className="text-sm font-bold">{f}F</span>
-              {count > 0 && (
-                <span className={`absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center font-pixel text-[5px] rounded-full ${
-                  isActive ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
+      {/* Floor Selector (single mode) */}
+      {viewMode === "single" && (
+        <div className="flex items-stretch gap-0 mb-2">
+          {([4, 3, 2, 1] as FloorId[]).map((f) => {
+            const isActive = currentFloor === f;
+            const count = floorAgentCount(f);
+            return (
+              <button key={f} onClick={() => setCurrentFloor(f)}
+                className={`relative px-3 py-1.5 font-pixel text-[10px] transition-all border-2 ${
+                  isActive ? "bg-primary text-primary-foreground border-primary z-10" : "bg-card text-muted-foreground border-border hover:bg-muted"
                 }`}>
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-        <div className="flex-1 border-b-2 border-border" />
-        <div className="px-3 py-2 bg-card border-2 border-border font-pixel text-[7px] text-accent flex items-center gap-1">
-          {floorLabels[currentFloor].label}
+                <span className="font-bold">{f}F</span>
+                {count > 0 && (
+                  <span className={`absolute -top-1 -right-1 w-3.5 h-3.5 flex items-center justify-center font-pixel text-[5px] rounded-full ${
+                    isActive ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
+                  }`}>{count}</span>
+                )}
+              </button>
+            );
+          })}
+          <div className="flex-1 border-b-2 border-border" />
+          <div className="px-2 py-1.5 bg-card border-2 border-border font-pixel text-[7px] text-accent flex items-center">
+            {floorLabels[currentFloor].label}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Event Banner */}
       {activeEvent && (
-        <div
-          className="pixel-border p-2 mb-2 flex items-center justify-between animate-pixel-pulse"
-          style={{ backgroundColor: activeEvent.color, borderColor: activeEvent.color }}
-        >
+        <div className="pixel-border p-2 mb-2 flex items-center justify-between animate-pixel-pulse"
+          style={{ backgroundColor: activeEvent.color, borderColor: activeEvent.color }}>
           <div className="flex items-center gap-2">
             <span className="text-xl">{activeEvent.icon}</span>
             <div>
@@ -566,217 +612,226 @@ export function PixelOffice() {
           </div>
           <div className="flex items-center gap-2">
             <span className="font-pixel text-[8px] text-primary-foreground">{eventTimer}s</span>
-            <button onClick={endEvent} className="font-pixel text-[6px] px-2 py-1 bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30 pixel-border" style={{ borderWidth: 1 }}>
+            <button onClick={endEvent} className="font-pixel text-[6px] px-2 py-1 bg-primary-foreground/20 text-primary-foreground pixel-border" style={{ borderWidth: 1 }}>
               DISMISS
             </button>
           </div>
         </div>
       )}
 
-      {/* Office Canvas */}
-      <div className="relative" style={{ height: 480 }}>
-        <div
-          ref={containerRef}
-          className="pixel-border relative overflow-hidden select-none h-full"
-          style={{ borderWidth: 4 }}
-        >
-          <div className="relative w-full h-full">
-            {/* Pixel Art Background Image */}
-            <img
-              src={floorBgImages[currentFloor]}
-              alt={`Floor ${currentFloor}`}
-              className="absolute inset-0 w-full h-full object-cover"
-              style={{ imageRendering: "auto" }}
-              draggable={false}
-            />
+      {/* ===== STACKED VIEW - All floors visible ===== */}
+      {viewMode === "stacked" && (
+        <div className="relative pixel-border overflow-auto" style={{ height: 600, borderWidth: 4 }}>
+          {/* Sky background */}
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url(${skyBg})`,
+            backgroundSize: "cover",
+            backgroundPosition: "top center",
+          }} />
 
-            {/* Floor label overlay */}
-            <div className="absolute top-3 left-3 z-30 flex items-center gap-1.5">
-              <div className="bg-accent px-2.5 py-1 shadow-[2px_2px_0_0_hsl(0_0%_0%/0.5)]">
-                <span className="font-pixel text-[12px] text-accent-foreground font-bold">{currentFloor}F</span>
-              </div>
-            </div>
-
-            {/* Department labels on the image */}
-            {floorRooms.map(room => {
-              const info = departmentInfo[room.department];
-              const labelPositions: Record<string, { x: string; y: string }> = {
-                support: { x: "5%", y: "8%" },
-                devops: { x: "5%", y: "8%" },
-                product: { x: "55%", y: "8%" },
-                design: { x: "5%", y: "8%" },
-                qa: { x: "55%", y: "8%" },
-                engineering: { x: "5%", y: "8%" },
-              };
-              const pos = labelPositions[room.department] || { x: "10%", y: "10%" };
+          {/* Scrollable content with all floors stacked */}
+          <div className="relative" style={{ width: "100%", minHeight: 580, padding: "10px 0" }}>
+            {/* Floors stacked from top (F4) to bottom (F1) */}
+            {([4, 3, 2, 1] as FloorId[]).map((floor, idx) => {
+              const floorInfo = floorLabels[floor];
+              const fRooms = rooms.filter(r => r.floor === floor);
               return (
-                <div key={room.department} className="absolute z-10 flex items-center gap-1.5"
-                  style={{ left: pos.x, top: pos.y }}>
-                  <div className="bg-card/80 backdrop-blur-sm px-2 py-0.5 pixel-border" style={{ borderWidth: 2 }}>
-                    <span className="text-xs">{info.icon}</span>
-                    <span className="font-pixel text-[7px] ml-1" style={{ color: info.color }}>{info.label.toUpperCase()}</span>
-                    <span className="font-pixel text-[5px] text-muted-foreground ml-1">
-                      ({agents.filter(a => a.department === room.department && a.status !== "offline").length})
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Shared space labels */}
-            {floorSpaces.map((space, si) => (
-              <div key={si} className="absolute z-10" style={{ left: "75%", top: "8%" }}>
-                <div className="bg-card/80 backdrop-blur-sm px-2 py-0.5 pixel-border" style={{ borderWidth: 2 }}>
-                  <span className="text-xs">{space.type === "pantry" ? "🍳" : space.type === "meeting" ? "📋" : "🖧"}</span>
-                  <span className="font-pixel text-[6px] text-accent/80 ml-1">{space.type.toUpperCase().replace("-", " ")}</span>
-                </div>
-              </div>
-            ))}
-
-            <AmbientSparkles canvasW={CANVAS_W} canvasH={CANVAS_H} />
-
-            {/* Event Particles */}
-            {eventParticles.map(p => (
-              <div key={p.id} className="absolute pointer-events-none z-30 animate-sparkle" style={{ left: `${(p.x / CANVAS_W) * 100}%`, top: `${(p.y / CANVAS_H) * 100}%`, fontSize: 16, animationDelay: `${p.delay}s`, animationDuration: "3s" }}>
-                {p.emoji}
-              </div>
-            ))}
-
-            {/* Power outage overlay */}
-            {activeEvent?.type === "power-outage" && (
-              <div className="absolute inset-0 pointer-events-none z-35 animate-monitor-flicker" style={{ backgroundColor: "hsl(0 0% 0% / 0.5)" }} />
-            )}
-            {activeEvent?.type === "fire-drill" && (
-              <div className="absolute inset-0 pointer-events-none z-35 animate-pixel-pulse" style={{ border: "4px solid hsl(0 85% 55% / 0.6)", boxShadow: "inset 0 0 40px hsl(0 85% 55% / 0.15)" }} />
-            )}
-
-            {/* Agents on current floor */}
-            {floorAgents.map((oa) => {
-              const isMoving = oa.action === "walking" || oa.action === "panicking" || oa.action === "celebrating";
-              const walkFrame = isMoving ? Math.floor(oa.frame / (oa.action === "panicking" ? 2 : 4)) % 2 : 0;
-              // Convert pixel coords to percentage for responsive positioning
-              const pctX = (oa.x / CANVAS_W) * 100;
-              const pctY = (oa.y / CANVAS_H) * 100;
-              return (
-                <div
-                  key={oa.agent.id}
-                  className="absolute z-20 flex flex-col items-center cursor-pointer group"
-                  style={{
-                    left: `${pctX}%`, top: `${pctY}%`,
-                    transform: `translate(-50%, -50%) scaleX(${oa.direction === "left" ? -1 : 1})`,
-                    transition: isMoving ? "none" : "left 0.05s, top 0.05s",
-                  }}
-                  onClick={() => handleAgentClick(oa)}
+                <div key={floor} className="relative mx-auto cursor-pointer"
+                  style={{ width: "92%", height: 130, marginBottom: idx < 3 ? 8 : 0 }}
+                  onClick={() => { setCurrentFloor(floor); setViewMode("single"); }}
                 >
-                  {/* Shadow */}
-                  <div className="absolute bottom-0 w-6 h-1.5 rounded-full" style={{ transform: "translateY(10px)", backgroundColor: "hsl(0 0% 0% / 0.4)" }} />
-                  {/* Hover ring */}
-                  <div className="absolute inset-0 -m-2 rounded-full border-2 border-primary/0 group-hover:border-primary/50 transition-colors" style={{ transform: `scaleX(${oa.direction === "left" ? -1 : 1})` }} />
+                  {/* Floor background image */}
+                  <div className="absolute inset-0 rounded-sm overflow-hidden" style={{
+                    border: "3px solid hsl(210 30% 40% / 0.6)",
+                    boxShadow: "0 4px 12px hsl(0 0% 0% / 0.3), inset 0 0 0 1px hsl(0 0% 100% / 0.1)",
+                  }}>
+                    <img src={floorBgImages[floor]} alt={`${floor}F`}
+                      className="w-full h-full object-cover" style={{ imageRendering: "auto" }} draggable={false} />
 
-                  {/* Speech bubble - game style with white bg */}
-                  {oa.speechBubble && (
-                    <div className="absolute -top-9 left-1/2 whitespace-nowrap px-2 py-1 bg-white text-card-foreground rounded-lg font-pixel text-[6px] z-30 shadow-md"
-                      style={{ transform: `translateX(-50%) scaleX(${oa.direction === "left" ? -1 : 1})` }}>
-                      {oa.speechBubble}
-                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white rotate-45" />
+                    {/* Slight 3D wall effect - top */}
+                    <div className="absolute top-0 left-0 right-0 h-3" style={{
+                      background: "linear-gradient(180deg, hsl(210 20% 50% / 0.4) 0%, transparent 100%)",
+                    }} />
+                    {/* Left wall edge */}
+                    <div className="absolute top-0 left-0 w-2 h-full" style={{
+                      background: "linear-gradient(90deg, hsl(210 20% 60% / 0.3) 0%, transparent 100%)",
+                    }} />
+
+                    {/* Floor label */}
+                    <div className="absolute top-1.5 left-2 z-10">
+                      <div className="bg-accent/90 px-2 py-0.5 shadow-md">
+                        <span className="font-pixel text-[10px] text-accent-foreground font-bold">{floor}F</span>
+                      </div>
                     </div>
-                  )}
 
-                  {/* Character */}
-                  <div className="relative flex flex-col items-center" style={{ transform: isMoving ? `translateY(${walkFrame * -3}px)` : "none" }}>
-                    <img
-                      src={getAgentSprite(oa.agent.id, oa.agent.department)}
-                      alt={oa.agent.name}
-                      className="w-10 h-10 object-contain group-hover:scale-110 transition-transform drop-shadow-md"
-                      style={{ imageRendering: "auto" }}
-                      draggable={false}
-                    />
-                    <div className={`absolute top-0 -right-0.5 w-2 h-2 rounded-full border border-card ${
-                      oa.agent.status === "online" ? "bg-primary" : oa.agent.status === "busy" ? "bg-accent" : "bg-muted-foreground"
-                    }`} />
+                    {/* Department labels */}
+                    <div className="absolute top-1.5 right-2 z-10 flex gap-1">
+                      {fRooms.map(room => {
+                        const info = departmentInfo[room.department];
+                        return (
+                          <div key={room.department} className="bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded-sm">
+                            <span className="text-[8px]">{info.icon}</span>
+                            <span className="font-pixel text-[5px] ml-0.5 text-white">{info.label.toUpperCase()}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Agents on this floor */}
+                    {renderFloorAgents(floor, 100, 130)}
+
+                    {/* Day/Night overlay */}
+                    {phaseInfo.opacity > 0 && (
+                      <div className="absolute inset-0 pointer-events-none" style={{
+                        backgroundColor: phaseInfo.bg, opacity: phaseInfo.opacity * 0.7,
+                        mixBlendMode: "multiply",
+                      }} />
+                    )}
                   </div>
 
-                  {/* Name tag - game style */}
-                  <span className="font-pixel text-[5px] text-white mt-0.5 whitespace-nowrap bg-card/90 px-1 py-px rounded-sm shadow-sm" style={{ transform: `scaleX(${oa.direction === "left" ? -1 : 1})` }}>
-                    {oa.agent.name}
-                  </span>
-                </div>
-              );
-            })}
-
-            {/* Offline agents on this floor */}
-            {agents.filter(a => a.status === "offline" && getDeptFloor(a.department) === currentFloor).map((agent, i) => {
-              const room = rooms.find(r => r.department === agent.department);
-              if (!room) return null;
-              const offX = ((room.x + room.w - 30) / CANVAS_W) * 100;
-              const offY = ((room.y + room.h - 40 - i * 30) / CANVAS_H) * 100;
-              return (
-                <div
-                  key={agent.id}
-                  className="absolute z-10 flex flex-col items-center opacity-20 cursor-pointer hover:opacity-40 transition-opacity"
-                  style={{ left: `${offX}%`, top: `${offY}%` }}
-                  onClick={() => {
-                    setSelectedAgent({
-                      agent, floor: room.floor, x: room.x + room.w - 30, y: room.y + room.h - 40,
-                      targetX: room.x + room.w - 30, targetY: room.y + room.h - 40,
-                      action: "idle", deskX: room.x + 50, deskY: room.y + 80, deskFloor: room.floor,
-                      speechBubble: null, direction: "right", frame: 0,
-                    });
-                    setAssignTaskId("");
-                    setDialogOpen(true);
-                  }}
-                >
-                  <img src={getAgentSprite(agent.id, agent.department)} alt={agent.name} className="w-8 h-8 object-contain grayscale" draggable={false} />
-                  <span className="font-pixel text-[5px] text-muted-foreground">{agent.name}</span>
-                </div>
-              );
-            })}
-
-            {/* Day/Night overlay */}
-            {phaseInfo.opacity > 0 && (
-              <div className="absolute inset-0 pointer-events-none z-40" style={{
-                backgroundColor: phaseInfo.bg, opacity: phaseInfo.opacity,
-                transition: "background-color 2s, opacity 2s", mixBlendMode: "multiply",
-              }} />
-            )}
-
-            {/* Stars at night */}
-            {timePhase === "night" && (
-              <div className="absolute inset-0 pointer-events-none z-35">
-                {Array.from({ length: 15 }, (_, i) => (
-                  <div key={i} className="absolute rounded-full animate-sparkle" style={{
-                    left: `${5 + (i * 47) % 90}%`, top: `${3 + (i * 31) % 15}%`,
-                    width: 2, height: 2, backgroundColor: "hsl(45 80% 90% / 0.4)",
-                    animationDelay: `${i * 0.4}s`,
+                  {/* Blue glass side panel - isometric effect */}
+                  <div className="absolute -right-1 top-2 bottom-0 w-3" style={{
+                    background: "linear-gradient(180deg, hsl(210 60% 55% / 0.7) 0%, hsl(210 50% 40% / 0.5) 100%)",
+                    transform: "skewY(-2deg)",
+                    borderRight: "2px solid hsl(210 40% 30% / 0.5)",
                   }} />
-                ))}
-              </div>
-            )}
+                  {/* Bottom edge - floor thickness */}
+                  <div className="absolute -bottom-1 left-0 right-0 h-2" style={{
+                    background: "linear-gradient(180deg, hsl(210 20% 35% / 0.6) 0%, hsl(210 20% 25% / 0.8) 100%)",
+                    borderBottom: "2px solid hsl(210 30% 20% / 0.5)",
+                  }} />
+                </div>
+              );
+            })}
           </div>
         </div>
+      )}
 
-        {/* Floor minimap - vertical floor indicator */}
-        <div className="absolute bottom-3 right-3 z-50 pixel-border bg-card/90 backdrop-blur-sm p-2 flex flex-col gap-1" style={{ width: 50 }}>
-          <div className="font-pixel text-[4px] text-muted-foreground text-center mb-1">FLOORS</div>
-          {([4, 3, 2, 1] as FloorId[]).map(f => {
-            const count = floorAgentCount(f);
-            return (
-              <button
-                key={f}
-                onClick={() => setCurrentFloor(f)}
-                className={`w-full h-7 flex items-center justify-center gap-1 font-pixel text-[6px] transition-colors border ${
-                  currentFloor === f
-                    ? "bg-primary/20 border-primary text-primary"
-                    : "bg-muted/30 border-border text-muted-foreground hover:bg-muted/60"
-                }`}
-              >
-                {f}F
-                {count > 0 && <span className="text-[5px] opacity-60">·{count}</span>}
-              </button>
-            );
-          })}
+      {/* ===== SINGLE FLOOR VIEW ===== */}
+      {viewMode === "single" && (
+        <div className="relative" style={{ height: 480 }}>
+          <div ref={containerRef} className="pixel-border relative overflow-hidden select-none h-full" style={{ borderWidth: 4 }}>
+            <div className="relative w-full h-full">
+              <img src={floorBgImages[currentFloor]} alt={`Floor ${currentFloor}`}
+                className="absolute inset-0 w-full h-full object-cover" style={{ imageRendering: "auto" }} draggable={false} />
+
+              <div className="absolute top-3 left-3 z-30">
+                <div className="bg-accent px-2.5 py-1 shadow-[2px_2px_0_0_hsl(0_0%_0%/0.5)]">
+                  <span className="font-pixel text-[12px] text-accent-foreground font-bold">{currentFloor}F</span>
+                </div>
+              </div>
+
+              {floorRooms.map(room => {
+                const info = departmentInfo[room.department];
+                const labelPositions: Record<string, { x: string; y: string }> = {
+                  support: { x: "5%", y: "8%" }, devops: { x: "5%", y: "8%" },
+                  product: { x: "55%", y: "8%" }, design: { x: "5%", y: "8%" },
+                  qa: { x: "55%", y: "8%" }, engineering: { x: "5%", y: "8%" },
+                };
+                const pos = labelPositions[room.department] || { x: "10%", y: "10%" };
+                return (
+                  <div key={room.department} className="absolute z-10" style={{ left: pos.x, top: pos.y }}>
+                    <div className="bg-card/80 backdrop-blur-sm px-2 py-0.5 pixel-border" style={{ borderWidth: 2 }}>
+                      <span className="text-xs">{info.icon}</span>
+                      <span className="font-pixel text-[7px] ml-1" style={{ color: info.color }}>{info.label.toUpperCase()}</span>
+                      <span className="font-pixel text-[5px] text-muted-foreground ml-1">
+                        ({agents.filter(a => a.department === room.department && a.status !== "offline").length})
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {floorSpaces.map((space, si) => (
+                <div key={si} className="absolute z-10" style={{ left: "75%", top: "8%" }}>
+                  <div className="bg-card/80 backdrop-blur-sm px-2 py-0.5 pixel-border" style={{ borderWidth: 2 }}>
+                    <span className="text-xs">{space.type === "pantry" ? "🍳" : space.type === "meeting" ? "📋" : "🖧"}</span>
+                    <span className="font-pixel text-[6px] text-accent/80 ml-1">{space.type.toUpperCase().replace("-", " ")}</span>
+                  </div>
+                </div>
+              ))}
+
+              <AmbientSparkles canvasW={CANVAS_W} canvasH={CANVAS_H} />
+
+              {eventParticles.map(p => (
+                <div key={p.id} className="absolute pointer-events-none z-30 animate-sparkle"
+                  style={{ left: `${(p.x / CANVAS_W) * 100}%`, top: `${(p.y / CANVAS_H) * 100}%`, fontSize: 16, animationDelay: `${p.delay}s`, animationDuration: "3s" }}>
+                  {p.emoji}
+                </div>
+              ))}
+
+              {activeEvent?.type === "power-outage" && (
+                <div className="absolute inset-0 pointer-events-none z-35 animate-monitor-flicker" style={{ backgroundColor: "hsl(0 0% 0% / 0.5)" }} />
+              )}
+              {activeEvent?.type === "fire-drill" && (
+                <div className="absolute inset-0 pointer-events-none z-35 animate-pixel-pulse" style={{ border: "4px solid hsl(0 85% 55% / 0.6)" }} />
+              )}
+
+              {renderFloorAgents(currentFloor, CANVAS_W, CANVAS_H)}
+
+              {agents.filter(a => a.status === "offline" && getDeptFloor(a.department) === currentFloor).map((agent, i) => {
+                const room = rooms.find(r => r.department === agent.department);
+                if (!room) return null;
+                const offX = ((room.x + room.w - 30) / CANVAS_W) * 100;
+                const offY = ((room.y + room.h - 40 - i * 30) / CANVAS_H) * 100;
+                return (
+                  <div key={agent.id} className="absolute z-10 flex flex-col items-center opacity-20 cursor-pointer hover:opacity-40 transition-opacity"
+                    style={{ left: `${offX}%`, top: `${offY}%` }}
+                    onClick={() => {
+                      setSelectedAgent({ agent, floor: room.floor, x: room.x + room.w - 30, y: room.y + room.h - 40,
+                        targetX: room.x + room.w - 30, targetY: room.y + room.h - 40,
+                        action: "idle", deskX: room.x + 50, deskY: room.y + 80, deskFloor: room.floor,
+                        speechBubble: null, direction: "right", frame: 0 });
+                      setAssignTaskId(""); setDialogOpen(true);
+                    }}>
+                    <img src={getAgentSprite(agent.id, agent.department)} alt={agent.name} className="w-8 h-8 object-contain grayscale" draggable={false} />
+                    <span className="font-pixel text-[5px] text-muted-foreground">{agent.name}</span>
+                  </div>
+                );
+              })}
+
+              {phaseInfo.opacity > 0 && (
+                <div className="absolute inset-0 pointer-events-none z-40" style={{
+                  backgroundColor: phaseInfo.bg, opacity: phaseInfo.opacity,
+                  transition: "background-color 2s, opacity 2s", mixBlendMode: "multiply",
+                }} />
+              )}
+
+              {timePhase === "night" && (
+                <div className="absolute inset-0 pointer-events-none z-35">
+                  {Array.from({ length: 15 }, (_, i) => (
+                    <div key={i} className="absolute rounded-full animate-sparkle" style={{
+                      left: `${5 + (i * 47) % 90}%`, top: `${3 + (i * 31) % 15}%`,
+                      width: 2, height: 2, backgroundColor: "hsl(45 80% 90% / 0.4)",
+                      animationDelay: `${i * 0.4}s`,
+                    }} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Floor minimap */}
+          <div className="absolute bottom-3 right-3 z-50 pixel-border bg-card/90 backdrop-blur-sm p-2 flex flex-col gap-1" style={{ width: 50 }}>
+            <div className="font-pixel text-[4px] text-muted-foreground text-center mb-1">FLOORS</div>
+            {([4, 3, 2, 1] as FloorId[]).map(f => {
+              const count = floorAgentCount(f);
+              return (
+                <button key={f} onClick={() => setCurrentFloor(f)}
+                  className={`w-full h-7 flex items-center justify-center gap-1 font-pixel text-[6px] transition-colors border ${
+                    currentFloor === f ? "bg-primary/20 border-primary text-primary" : "bg-muted/30 border-border text-muted-foreground hover:bg-muted/60"
+                  }`}>
+                  {f}F {count > 0 && <span className="text-[5px] opacity-60">·{count}</span>}
+                </button>
+              );
+            })}
+            <button onClick={() => setViewMode("stacked")}
+              className="w-full h-6 flex items-center justify-center font-pixel text-[5px] border border-accent text-accent hover:bg-accent/20 transition-colors mt-1">
+              🏢 ALL
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Agent Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
