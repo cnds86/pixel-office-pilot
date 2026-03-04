@@ -518,6 +518,14 @@ export function PixelOffice() {
         <div className="font-pixel text-[7px] text-muted-foreground">
           👥 {officeAgents.filter(a => a.action !== "gone-home").length}/{agents.length} in office
         </div>
+        {!activeEvent && timePhase !== "night" && (
+          <button
+            onClick={() => triggerEvent(pickRandom(officeEvents))}
+            className="px-2 py-1 font-pixel text-[6px] pixel-border bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+          >
+            🎲 EVENT
+          </button>
+        )}
       </div>
 
       {/* Event Banner */}
