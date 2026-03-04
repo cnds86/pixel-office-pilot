@@ -736,7 +736,39 @@ export function PixelOffice() {
           {/* General ambient sparkles */}
           <AmbientSparkles canvasW={CANVAS_W} canvasH={CANVAS_H} />
 
-          {/* ===== AGENTS ===== */}
+          {/* ===== EVENT PARTICLES ===== */}
+          {eventParticles.map(p => (
+            <div
+              key={p.id}
+              className="absolute pointer-events-none z-30 animate-sparkle"
+              style={{
+                left: p.x,
+                top: p.y,
+                fontSize: 16,
+                animationDelay: `${p.delay}s`,
+                animationDuration: "3s",
+              }}
+            >
+              {p.emoji}
+            </div>
+          ))}
+
+          {/* Power outage overlay */}
+          {activeEvent?.type === "power-outage" && (
+            <div
+              className="absolute inset-0 pointer-events-none z-35 animate-monitor-flicker"
+              style={{ backgroundColor: "hsl(0 0% 0% / 0.5)" }}
+            />
+          )}
+
+          {/* Fire drill flashing border */}
+          {activeEvent?.type === "fire-drill" && (
+            <div
+              className="absolute inset-0 pointer-events-none z-35 animate-pixel-pulse"
+              style={{ border: "4px solid hsl(0 85% 55% / 0.6)", boxShadow: "inset 0 0 40px hsl(0 85% 55% / 0.15)" }}
+            />
+          )}
+
           {officeAgents.filter(oa => oa.action !== "gone-home").map((oa) => {
             const isWalking = oa.action === "walking";
             const walkFrame = isWalking ? Math.floor(oa.frame / 4) % 2 : 0;
