@@ -83,6 +83,9 @@ export function PixelCharacter({
   const isSleeping = action === "gone-home";
   const isPanicking = action === "panicking";
   const isCoffee = action === "coffee" || action === "snacking";
+  const isGym = action === "gym";
+  const isLibrary = action === "library";
+  const isLounge = action === "lounge";
 
   const legOffset = isMoving ? (walkFrame === 0 ? 2 : -2) : 0;
   const bodyBob = isMoving ? (walkFrame === 0 ? -1 : 1) : 0;
@@ -300,10 +303,17 @@ export function PixelCharacter({
           </>
         ) : (
           <>
-            <ellipse cx="14" cy={eyeY} rx={eyeR} ry={isCoffee ? eyeR+0.5 : eyeR} fill="#222" />
-            <ellipse cx="26" cy={eyeY} rx={eyeR} ry={isCoffee ? eyeR+0.5 : eyeR} fill="#222" />
+            <ellipse cx="14" cy={eyeY} rx={eyeR} ry={isCoffee || isGym ? eyeR+0.5 : eyeR} fill="#222" />
+            <ellipse cx="26" cy={eyeY} rx={eyeR} ry={isCoffee || isGym ? eyeR+0.5 : eyeR} fill="#222" />
             <circle cx="15" cy={eyeY-1} r="1" fill="white" opacity="0.8" />
             <circle cx="27" cy={eyeY-1} r="1" fill="white" opacity="0.8" />
+            {/* Half-closed eyes for library/lounge */}
+            {(isLibrary || isLounge) && (
+              <>
+                <rect x={14-eyeR} y={eyeY-eyeR} width={eyeR*2} height={eyeR} fill={colors.body} />
+                <rect x={26-eyeR} y={eyeY-eyeR} width={eyeR*2} height={eyeR} fill={colors.body} />
+              </>
+            )}
           </>
         )}
 
@@ -315,8 +325,12 @@ export function PixelCharacter({
           <ellipse cx="20" cy="20" rx="3" ry="2" fill="#222" />
         ) : isCoffee ? (
           <path d="M16,20 Q20,23 24,20" fill="none" stroke="#222" strokeWidth="1.5" strokeLinecap="round" />
-        ) : action === "celebrating" ? (
+        ) : isGym ? (
+          <path d="M15,19 Q20,17 25,19" fill="none" stroke="#222" strokeWidth="1.5" strokeLinecap="round" />
+        ) : action === "celebrating" || isLounge ? (
           <path d="M15,19 Q20,24 25,19" fill="#222" stroke="#222" strokeWidth="1" />
+        ) : isLibrary ? (
+          <circle cx="20" cy="20" r="1.5" fill="#222" />
         ) : (
           <line x1="16" y1="20" x2="24" y2="20" stroke="#222" strokeWidth="1.5" strokeLinecap="round" />
         )}
@@ -334,6 +348,33 @@ export function PixelCharacter({
           <g transform="translate(36, 18)">
             <rect x="0" y="0" width="6" height="7" rx="1" fill="#8B6914" stroke="#222" strokeWidth="1" />
             <rect x="1" y="-1" width="4" height="2" rx="1" fill="#A07818" />
+          </g>
+        )}
+
+        {/* Gym dumbbell */}
+        {isGym && (
+          <g transform="translate(36, 16)">
+            <rect x="0" y="3" width="10" height="2" rx="1" fill="#777" stroke="#222" strokeWidth="1" />
+            <rect x="-1" y="0" width="3" height="8" rx="1" fill="#555" stroke="#222" strokeWidth="1" />
+            <rect x="8" y="0" width="3" height="8" rx="1" fill="#555" stroke="#222" strokeWidth="1" />
+          </g>
+        )}
+
+        {/* Book for library */}
+        {isLibrary && (
+          <g transform="translate(36, 16)">
+            <rect x="0" y="0" width="7" height="9" rx="1" fill="#4A90D9" stroke="#222" strokeWidth="1" />
+            <line x1="3.5" y1="1" x2="3.5" y2="8" stroke="#222" strokeWidth="0.8" />
+            <rect x="1" y="2" width="2" height="1" rx="0.5" fill="white" opacity="0.5" />
+          </g>
+        )}
+
+        {/* Gamepad for lounge */}
+        {isLounge && (
+          <g transform="translate(36, 18)">
+            <rect x="0" y="0" width="8" height="5" rx="2" fill="#333" stroke="#222" strokeWidth="1" />
+            <circle cx="2.5" cy="2.5" r="1" fill="#4ADE80" />
+            <circle cx="5.5" cy="2.5" r="1" fill="#FF6B6B" />
           </g>
         )}
 
