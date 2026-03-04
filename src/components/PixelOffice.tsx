@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AgentChat } from "./AgentChat";
 
 // ─── Department Room Layout ───
 // The office is a wide scrollable canvas (1600x700 virtual px)
@@ -197,6 +198,7 @@ export function PixelOffice() {
   const [activeEvent, setActiveEvent] = useState<OfficeEvent | null>(null);
   const [eventTimer, setEventTimer] = useState(0);
   const [eventParticles, setEventParticles] = useState<{ id: number; x: number; y: number; emoji: string; delay: number }[]>([]);
+  const [chatAgent, setChatAgent] = useState<Agent | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Initialize agents
@@ -1037,6 +1039,10 @@ export function PixelOffice() {
                     onClick={() => sendTo(meetingRoom.x + randomBetween(50, 150), meetingRoom.y + randomBetween(80, 200), "📋 meeting!")}>
                     📋 Meeting
                   </Button>
+                  <Button size="sm" variant="default" className="font-pixel text-[7px] h-6"
+                    onClick={() => { setChatAgent(selectedAgent.agent); setDialogOpen(false); }}>
+                    💬 Chat
+                  </Button>
                 </div>
               </div>
 
@@ -1084,6 +1090,17 @@ export function PixelOffice() {
                 </div>
               )}
             </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Agent Chat Panel */}
+      <Dialog open={!!chatAgent} onOpenChange={(open) => { if (!open) setChatAgent(null); }}>
+        <DialogContent className="pixel-border max-w-sm bg-card border-border p-0 h-[480px] flex flex-col overflow-hidden">
+          <DialogTitle className="sr-only">Chat with {chatAgent?.name}</DialogTitle>
+          <DialogDescription className="sr-only">Chat conversation with agent</DialogDescription>
+          {chatAgent && (
+            <AgentChat agent={chatAgent} onClose={() => setChatAgent(null)} />
           )}
         </DialogContent>
       </Dialog>
