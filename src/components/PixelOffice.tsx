@@ -38,81 +38,94 @@ interface RoomDef {
   desks: { x: number; y: number }[];
 }
 
-const CANVAS_W = 800;
-const CANVAS_H = 420;
+const CANVAS_W = 1400;
+const CANVAS_H = 560;
 
 const rooms: RoomDef[] = [
-  // F1 - Support + Pantry
+  // ── F1 - Support + Lobby ──
   {
     department: "support", floor: 1,
-    x: 20, y: 40, w: 360, h: 340,
+    x: 20, y: 40, w: 320, h: 250,
     floorColor: "hsl(50 12% 14%)",
     desks: [
-      { x: 60, y: 100 }, { x: 160, y: 100 },
-      { x: 60, y: 210 }, { x: 160, y: 210 },
+      { x: 60, y: 80 }, { x: 160, y: 80 },
+      { x: 60, y: 170 }, { x: 160, y: 170 },
     ],
   },
-  // F2 - DevOps + Product
+  // ── F2 - DevOps + Product ──
   {
     department: "devops", floor: 2,
-    x: 20, y: 40, w: 340, h: 340,
+    x: 20, y: 40, w: 340, h: 240,
     floorColor: "hsl(30 15% 13%)",
     desks: [
-      { x: 60, y: 100 }, { x: 160, y: 100 },
-      { x: 60, y: 210 }, { x: 160, y: 210 },
+      { x: 60, y: 80 }, { x: 160, y: 80 }, { x: 260, y: 80 },
+      { x: 60, y: 170 },
     ],
   },
   {
     department: "product", floor: 2,
-    x: 380, y: 40, w: 300, h: 340,
+    x: 380, y: 40, w: 340, h: 240,
     floorColor: "hsl(270 12% 13%)",
     desks: [
-      { x: 60, y: 100 }, { x: 160, y: 100 },
-      { x: 60, y: 210 }, { x: 160, y: 210 },
+      { x: 60, y: 80 }, { x: 160, y: 80 }, { x: 260, y: 80 },
+      { x: 60, y: 170 },
     ],
   },
-  // F3 - Design + QA
+  // ── F3 - Design + QA ──
   {
     department: "design", floor: 3,
-    x: 20, y: 40, w: 360, h: 340,
+    x: 20, y: 40, w: 380, h: 240,
     floorColor: "hsl(320 15% 13%)",
     desks: [
-      { x: 60, y: 90 }, { x: 160, y: 90 }, { x: 260, y: 90 },
-      { x: 60, y: 200 }, { x: 160, y: 200 },
+      { x: 60, y: 80 }, { x: 160, y: 80 }, { x: 280, y: 80 },
+      { x: 60, y: 170 }, { x: 160, y: 170 },
     ],
   },
   {
     department: "qa", floor: 3,
-    x: 400, y: 40, w: 300, h: 340,
+    x: 420, y: 40, w: 340, h: 240,
     floorColor: "hsl(140 12% 13%)",
     desks: [
-      { x: 60, y: 90 }, { x: 160, y: 90 },
-      { x: 60, y: 200 }, { x: 160, y: 200 }, { x: 240, y: 200 },
+      { x: 60, y: 80 }, { x: 160, y: 80 }, { x: 260, y: 80 },
+      { x: 60, y: 170 }, { x: 160, y: 170 },
     ],
   },
-  // F4 - Engineering (big room, top floor)
+  // ── F4 - Engineering (large open floor) ──
   {
     department: "engineering", floor: 4,
-    x: 20, y: 40, w: 660, h: 340,
+    x: 20, y: 40, w: 560, h: 240,
     floorColor: "hsl(220 18% 14%)",
     desks: [
-      { x: 60, y: 90 }, { x: 160, y: 90 }, { x: 260, y: 90 }, { x: 360, y: 90 },
-      { x: 60, y: 200 }, { x: 160, y: 200 }, { x: 260, y: 200 }, { x: 360, y: 200 },
+      { x: 60, y: 80 }, { x: 160, y: 80 }, { x: 260, y: 80 }, { x: 380, y: 80 },
+      { x: 60, y: 170 }, { x: 160, y: 170 }, { x: 260, y: 170 }, { x: 380, y: 170 },
     ],
   },
 ];
 
-// Shared spaces per floor
-const sharedSpaces: Record<FloorId, { type: string; x: number; y: number; w: number; h: number }[]> = {
+// Shared spaces per floor — more rooms!
+const sharedSpaces: Record<FloorId, { type: string; label: string; icon: string; x: number; y: number; w: number; h: number }[]> = {
   1: [
-    { type: "pantry", x: 400, y: 40, w: 280, h: 340 },
+    { type: "pantry", label: "PANTRY", icon: "🍳", x: 360, y: 40, w: 280, h: 250 },
+    { type: "lobby", label: "LOBBY", icon: "🏢", x: 660, y: 40, w: 220, h: 250 },
+    { type: "mail-room", label: "MAIL ROOM", icon: "📬", x: 900, y: 40, w: 180, h: 120 },
+    { type: "gym", label: "GYM", icon: "🏋️", x: 900, y: 175, w: 180, h: 115 },
+    { type: "security", label: "SECURITY", icon: "🛡️", x: 1100, y: 40, w: 140, h: 250 },
   ],
   2: [
-    { type: "meeting", x: 700, y: 40, w: 80, h: 340 },
+    { type: "meeting", label: "MEETING A", icon: "📋", x: 740, y: 40, w: 200, h: 240 },
+    { type: "phone-booth", label: "PHONE BOOTHS", icon: "📞", x: 960, y: 40, w: 120, h: 120 },
+    { type: "print-room", label: "PRINT ROOM", icon: "🖨️", x: 960, y: 175, w: 120, h: 105 },
+    { type: "storage", label: "STORAGE", icon: "📦", x: 1100, y: 40, w: 140, h: 240 },
   ],
-  3: [],
+  3: [
+    { type: "workshop", label: "WORKSHOP", icon: "🔧", x: 780, y: 40, w: 220, h: 240 },
+    { type: "library", label: "LIBRARY", icon: "📚", x: 1020, y: 40, w: 200, h: 240 },
+  ],
   4: [
-    { type: "server-room", x: 700, y: 40, w: 80, h: 200 },
+    { type: "server-room", label: "SERVER ROOM", icon: "🖧", x: 600, y: 40, w: 200, h: 240 },
+    { type: "lab", label: "R&D LAB", icon: "🧬", x: 820, y: 40, w: 240, h: 240 },
+    { type: "meeting", label: "MEETING B", icon: "📊", x: 1080, y: 40, w: 160, h: 120 },
+    { type: "lounge", label: "DEV LOUNGE", icon: "🎮", x: 1080, y: 175, w: 160, h: 105 },
   ],
 };
 
@@ -217,7 +230,7 @@ function getDeptFloor(dept: Department): FloorId {
 }
 
 // Get pantry location (always F1)
-const pantrySpace = sharedSpaces[1][0];
+const pantrySpace = sharedSpaces[1].find(s => s.type === "pantry")!;
 
 export function PixelOffice() {
   const [officeAgents, setOfficeAgents] = useState<OfficeAgent[]>([]);
@@ -562,10 +575,10 @@ export function PixelOffice() {
       )}
 
       {/* Office Canvas */}
-      <div className="relative" style={{ height: 480 }}>
+      <div className="relative" style={{ height: 620 }}>
         <div
           ref={containerRef}
-          className="pixel-border bg-card relative overflow-hidden select-none h-full"
+          className="pixel-border bg-card relative overflow-x-auto overflow-y-hidden select-none h-full"
         >
           <div className="relative" style={{ width: CANVAS_W, height: CANVAS_H, minWidth: CANVAS_W }}>
             {/* Background - isometric style floor */}
@@ -692,7 +705,17 @@ export function PixelOffice() {
               <div key={si}>
                 <div className="absolute" style={{
                   left: space.x, top: space.y, width: space.w, height: space.h,
-                  backgroundColor: space.type === "pantry" ? "hsl(25 15% 12%)" : space.type === "meeting" ? "hsl(210 20% 14%)" : "hsl(200 15% 10%)",
+                  backgroundColor:
+                    space.type === "pantry" ? "hsl(25 15% 12%)" :
+                    space.type === "meeting" ? "hsl(210 20% 14%)" :
+                    space.type === "lobby" ? "hsl(40 10% 15%)" :
+                    space.type === "gym" ? "hsl(140 15% 12%)" :
+                    space.type === "library" ? "hsl(35 20% 14%)" :
+                    space.type === "workshop" ? "hsl(20 18% 13%)" :
+                    space.type === "lab" ? "hsl(180 15% 12%)" :
+                    space.type === "lounge" ? "hsl(260 15% 14%)" :
+                    space.type === "server-room" ? "hsl(200 15% 10%)" :
+                    "hsl(220 12% 13%)",
                   backgroundImage: "repeating-conic-gradient(hsl(0 0% 100% / 0.015) 0% 25%, transparent 0% 50%) 0 0 / 24px 24px",
                 }} />
                 {/* Walls */}
@@ -700,24 +723,25 @@ export function PixelOffice() {
                 <div className="absolute" style={{ left: space.x, top: space.y, width: 3, height: space.h, backgroundColor: "hsl(var(--border))" }} />
                 <div className="absolute" style={{ left: space.x + space.w - 3, top: space.y, width: 3, height: space.h, backgroundColor: "hsl(var(--border))" }} />
                 <div className="absolute" style={{ left: space.x, top: space.y + space.h - 3, width: space.w, height: 3, backgroundColor: "hsl(var(--border))" }} />
-
+                {/* Door */}
+                <div className="absolute" style={{ left: space.x, top: space.y + space.h / 2 - 18, width: 6, height: 36, backgroundColor: "hsl(25 15% 12%)" }} />
                 {/* Label */}
                 <div className="absolute z-10 flex items-center gap-1" style={{ left: space.x + 8, top: space.y + 8 }}>
-                  <span className="text-sm">{space.type === "pantry" ? "🍳" : space.type === "meeting" ? "📋" : "🖧"}</span>
-                  <span className="font-pixel text-[6px] text-accent/70">{space.type.toUpperCase().replace("-", " ")}</span>
+                  <span className="text-sm">{space.icon}</span>
+                  <span className="font-pixel text-[6px] text-accent/70">{space.label}</span>
                 </div>
 
                 {/* Pantry furniture */}
                 {space.type === "pantry" && (
                   <>
-                    <div className="absolute flex flex-col items-center" style={{ left: space.x + 30, top: space.y + 60 }}>
+                    <div className="absolute flex flex-col items-center" style={{ left: space.x + 30, top: space.y + 50 }}>
                       <div className="w-[30px] h-[36px] bg-muted pixel-border flex flex-col items-center justify-center" style={{ borderWidth: 2 }}>
                         <span className="text-sm">☕</span>
                         <div className="w-4 h-px bg-accent/40 animate-pixel-pulse" />
                       </div>
                       <span className="font-pixel text-[5px] text-muted-foreground mt-0.5">COFFEE</span>
                     </div>
-                    <div className="absolute flex flex-col items-center" style={{ left: space.x + 90, top: space.y + 60 }}>
+                    <div className="absolute flex flex-col items-center" style={{ left: space.x + 90, top: space.y + 50 }}>
                       <div className="w-[34px] h-[44px] bg-muted pixel-border flex flex-col items-center justify-center gap-0.5" style={{ borderWidth: 2 }}>
                         <div className="flex gap-px">
                           <div className="w-2 h-2 bg-destructive/20 rounded-sm" />
@@ -728,46 +752,195 @@ export function PixelOffice() {
                       </div>
                       <span className="font-pixel text-[5px] text-muted-foreground mt-0.5">SNACKS</span>
                     </div>
-                    <div className="absolute flex flex-col items-center" style={{ left: space.x + 160, top: space.y + 60 }}>
+                    <div className="absolute flex flex-col items-center" style={{ left: space.x + 160, top: space.y + 50 }}>
                       <div className="w-[28px] h-[40px] bg-muted pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
                         <span className="text-[8px]">🧊</span>
                       </div>
                       <span className="font-pixel text-[5px] text-muted-foreground mt-0.5">FRIDGE</span>
                     </div>
-                    <div className="absolute" style={{ left: space.x + 50, top: space.y + 200 }}>
+                    <div className="absolute" style={{ left: space.x + 50, top: space.y + 150 }}>
                       <div className="w-[120px] h-[28px] bg-secondary/15 pixel-border flex items-center justify-center gap-1" style={{ borderWidth: 2 }}>
                         <div className="w-3 h-5 bg-secondary/10 rounded-sm" />
-                        <div className="w-5 h-3 bg-secondary/8 rounded-sm" />
                         <div className="w-5 h-3 bg-secondary/8 rounded-sm" />
                         <div className="w-3 h-5 bg-secondary/10 rounded-sm" />
                       </div>
                       <span className="font-pixel text-[5px] text-muted-foreground mt-0.5 block text-center">LOUNGE</span>
                     </div>
-                    <CoffeeSteam originX={space.x + 45} originY={space.y + 55} />
+                    <CoffeeSteam originX={space.x + 45} originY={space.y + 45} />
                   </>
                 )}
 
-                {/* Meeting room furniture */}
+                {/* Meeting room */}
                 {space.type === "meeting" && (
-                  <div className="absolute" style={{ left: space.x + 10, top: space.y + 120 }}>
-                    <div className="w-[60px] h-[100px] bg-muted/40 pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
+                  <div className="absolute" style={{ left: space.x + space.w / 2 - 40, top: space.y + 50 }}>
+                    <div className="w-[80px] h-[50px] bg-muted/30 pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
                       <span className="text-lg">📊</span>
+                    </div>
+                    <div className="flex justify-between mt-2 px-1">
+                      {[0, 1, 2, 3].map(i => (<div key={i} className="w-3 h-3 bg-muted/40 rounded-sm" />))}
                     </div>
                   </div>
                 )}
 
                 {/* Server room */}
                 {space.type === "server-room" && (
-                  <div className="absolute flex flex-col gap-2" style={{ left: space.x + 15, top: space.y + 40 }}>
-                    {[0, 1, 2].map(i => (
-                      <div key={i} className="w-[50px] h-[40px] bg-muted pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
-                        <div className="flex gap-0.5">
-                          <div className="w-1 h-1 bg-primary rounded-full animate-pixel-pulse" />
-                          <div className="w-1 h-1 bg-accent rounded-full animate-pixel-pulse" style={{ animationDelay: "0.5s" }} />
-                          <div className="w-1 h-1 bg-primary rounded-full animate-pixel-pulse" style={{ animationDelay: "1s" }} />
-                        </div>
+                  <div className="absolute flex gap-3" style={{ left: space.x + 20, top: space.y + 50 }}>
+                    {[0, 1, 2, 3].map(i => (
+                      <div key={i} className="w-[30px] h-[130px] bg-muted pixel-border flex flex-col items-center justify-center gap-1" style={{ borderWidth: 2 }}>
+                        {[0, 1, 2, 3].map(j => (
+                          <div key={j} className="flex gap-0.5">
+                            <div className="w-1 h-1 bg-primary rounded-full animate-pixel-pulse" style={{ animationDelay: `${j * 0.3}s` }} />
+                            <div className="w-1 h-1 bg-accent rounded-full animate-pixel-pulse" style={{ animationDelay: `${j * 0.5}s` }} />
+                          </div>
+                        ))}
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Lobby */}
+                {space.type === "lobby" && (
+                  <>
+                    <div className="absolute" style={{ left: space.x + 40, top: space.y + 50 }}>
+                      <div className="w-[60px] h-[20px] bg-muted/30 pixel-border" style={{ borderWidth: 2 }} />
+                      <span className="font-pixel text-[5px] text-muted-foreground mt-0.5 block text-center">RECEPTION</span>
+                    </div>
+                    <div className="absolute" style={{ left: space.x + 30, top: space.y + 130 }}>
+                      <div className="w-[100px] h-[24px] bg-secondary/10 pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
+                        <span className="text-[8px]">🛋️</span>
+                      </div>
+                    </div>
+                    <div className="absolute" style={{ left: space.x + space.w / 2 - 10, top: space.y + 25 }}>
+                      <span className="text-lg">🪴</span>
+                    </div>
+                  </>
+                )}
+
+                {/* Gym */}
+                {space.type === "gym" && (
+                  <div className="absolute flex gap-3" style={{ left: space.x + 20, top: space.y + 30 }}>
+                    {["🏃", "🚴", "🏋️"].map((e, i) => (
+                      <div key={i} className="flex flex-col items-center">
+                        <span className="text-sm">{e}</span>
+                        <div className="w-[20px] h-[25px] bg-muted/30 pixel-border mt-1" style={{ borderWidth: 1 }} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Library */}
+                {space.type === "library" && (
+                  <>
+                    <div className="absolute flex gap-2" style={{ left: space.x + 15, top: space.y + 40 }}>
+                      {[0, 1, 2].map(i => (
+                        <div key={i} className="w-[40px] h-[80px] bg-muted/30 pixel-border flex flex-col items-center justify-center gap-px p-1" style={{ borderWidth: 2 }}>
+                          {[0, 1, 2, 3, 4].map(j => (
+                            <div key={j} className="w-full h-1.5 rounded-sm" style={{ backgroundColor: `hsl(${30 + j * 15} 30% ${20 + j * 3}%)` }} />
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="absolute" style={{ left: space.x + 50, top: space.y + 150 }}>
+                      <div className="w-[80px] h-[22px] bg-muted/20 pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
+                        <span className="font-pixel text-[5px] text-muted-foreground">READING</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Workshop */}
+                {space.type === "workshop" && (
+                  <div className="absolute flex flex-wrap gap-3" style={{ left: space.x + 20, top: space.y + 50 }}>
+                    {["🔩", "⚙️", "🔧", "🛠️"].map((e, i) => (
+                      <div key={i} className="w-[60px] h-[40px] bg-muted/20 pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
+                        <span className="text-sm">{e}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Lab */}
+                {space.type === "lab" && (
+                  <div className="absolute flex gap-3" style={{ left: space.x + 20, top: space.y + 50 }}>
+                    {["🧬", "🔬", "🧪"].map((e, i) => (
+                      <div key={i} className="w-[50px] h-[60px] bg-muted/20 pixel-border flex flex-col items-center justify-center gap-1" style={{ borderWidth: 2 }}>
+                        <span className="text-sm">{e}</span>
+                        <div className="w-4 h-px bg-primary/30 animate-pixel-pulse" style={{ animationDelay: `${i * 0.4}s` }} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Lounge */}
+                {space.type === "lounge" && (
+                  <div className="absolute flex gap-2" style={{ left: space.x + 15, top: space.y + 35 }}>
+                    {["🎮", "🛋️", "📺"].map((e, i) => (
+                      <div key={i} className="w-[35px] h-[30px] bg-muted/20 pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
+                        <span className="text-sm">{e}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Phone booths */}
+                {space.type === "phone-booth" && (
+                  <div className="absolute flex gap-2" style={{ left: space.x + 15, top: space.y + 40 }}>
+                    {[0, 1].map(i => (
+                      <div key={i} className="w-[35px] h-[50px] bg-muted/20 pixel-border flex flex-col items-center justify-center" style={{ borderWidth: 2 }}>
+                        <span className="text-sm">📞</span>
+                        <div className="w-2 h-2 bg-primary/20 rounded-full mt-1" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Print room */}
+                {space.type === "print-room" && (
+                  <div className="absolute flex gap-2" style={{ left: space.x + 15, top: space.y + 30 }}>
+                    <div className="w-[40px] h-[35px] bg-muted/20 pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
+                      <span className="text-sm">🖨️</span>
+                    </div>
+                    <div className="w-[30px] h-[35px] bg-muted/20 pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
+                      <span className="text-sm">📄</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Storage */}
+                {space.type === "storage" && (
+                  <div className="absolute flex flex-col gap-2" style={{ left: space.x + 20, top: space.y + 40 }}>
+                    {[0, 1, 2].map(i => (
+                      <div key={i} className="w-[80px] h-[30px] bg-muted/15 pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
+                        <span className="text-sm">📦</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Security */}
+                {space.type === "security" && (
+                  <div className="absolute flex flex-col items-center gap-2" style={{ left: space.x + 25, top: space.y + 50 }}>
+                    <div className="w-[60px] h-[40px] bg-muted/20 pixel-border flex items-center justify-center gap-1" style={{ borderWidth: 2 }}>
+                      <span className="text-[8px]">📹</span><span className="text-[8px]">📹</span>
+                    </div>
+                    <div className="w-[50px] h-[25px] bg-muted/15 pixel-border flex items-center justify-center" style={{ borderWidth: 2 }}>
+                      <span className="text-sm">🖥️</span>
+                    </div>
+                    <span className="font-pixel text-[5px] text-muted-foreground">MONITORS</span>
+                  </div>
+                )}
+
+                {/* Mail room */}
+                {space.type === "mail-room" && (
+                  <div className="absolute flex gap-2" style={{ left: space.x + 15, top: space.y + 35 }}>
+                    <div className="w-[50px] h-[40px] bg-muted/15 pixel-border flex flex-col items-center justify-center" style={{ borderWidth: 2 }}>
+                      <span className="text-sm">📬</span>
+                      <span className="font-pixel text-[4px] text-muted-foreground">IN</span>
+                    </div>
+                    <div className="w-[50px] h-[40px] bg-muted/15 pixel-border flex flex-col items-center justify-center" style={{ borderWidth: 2 }}>
+                      <span className="text-sm">📮</span>
+                      <span className="font-pixel text-[4px] text-muted-foreground">OUT</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -780,6 +953,49 @@ export function PixelOffice() {
                 <span className="font-pixel text-[6px] text-muted-foreground">ENTRANCE</span>
               </div>
             )}
+
+            {/* Hallway / Corridor at bottom */}
+            <div className="absolute" style={{
+              left: 20, top: 300, width: CANVAS_W - 40, height: 240,
+              backgroundColor: "hsl(220 12% 11%)",
+              backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 59px, hsl(0 0% 100% / 0.01) 59px, hsl(0 0% 100% / 0.01) 60px)",
+            }}>
+              {/* Corridor label */}
+              <div className="absolute top-2 left-4 z-10">
+                <span className="font-pixel text-[5px] text-muted-foreground/40">CORRIDOR • {currentFloor}F</span>
+              </div>
+              {/* Floor markers */}
+              {[0, 200, 400, 600, 800, 1000].map((x, i) => (
+                <div key={i} className="absolute bottom-2" style={{ left: x + 20 }}>
+                  <div className="w-1 h-3 bg-muted-foreground/10" />
+                </div>
+              ))}
+              {/* Elevator */}
+              <div className="absolute right-4 top-4 flex flex-col items-center">
+                <div className="w-[50px] h-[60px] bg-muted/20 pixel-border flex flex-col items-center justify-center gap-1" style={{ borderWidth: 2 }}>
+                  <span className="text-lg">🛗</span>
+                  <span className="font-pixel text-[5px] text-muted-foreground">ELEVATOR</span>
+                </div>
+              </div>
+              {/* Stairs */}
+              <div className="absolute left-8 top-4 flex flex-col items-center">
+                <div className="w-[40px] h-[50px] bg-muted/15 pixel-border flex flex-col items-center justify-center" style={{ borderWidth: 2 }}>
+                  <span className="text-sm">🪜</span>
+                  <span className="font-pixel text-[4px] text-muted-foreground">STAIRS</span>
+                </div>
+              </div>
+              {/* Water coolers */}
+              <div className="absolute" style={{ left: 300, top: 10 }}>
+                <span className="text-sm">🚰</span>
+              </div>
+              <div className="absolute" style={{ left: 700, top: 10 }}>
+                <span className="text-sm">🚰</span>
+              </div>
+              {/* Fire extinguisher */}
+              <div className="absolute" style={{ left: 500, top: 8 }}>
+                <span className="text-xs">🧯</span>
+              </div>
+            </div>
 
             {/* Ambient particles */}
             {floorRooms.map((room, ri) =>
