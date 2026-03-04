@@ -574,7 +574,7 @@ export function PixelOffice() {
           <AmbientSparkles canvasW={CANVAS_W} canvasH={CANVAS_H} />
 
           {/* ===== AGENTS ===== */}
-          {officeAgents.map((oa) => {
+          {officeAgents.filter(oa => oa.action !== "gone-home").map((oa) => {
             const isWalking = oa.action === "walking";
             const walkFrame = isWalking ? Math.floor(oa.frame / 4) % 2 : 0;
             return (
