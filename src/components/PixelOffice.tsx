@@ -95,7 +95,29 @@ const meetingRoom = { x: 1020, y: 0, w: 220, h: 320 };
 const CANVAS_W = 1260;
 const CANVAS_H = 680;
 
-type AgentAction = "working" | "walking" | "coffee" | "meeting" | "idle" | "printing" | "chatting" | "snacking" | "calling" | "gone-home";
+type AgentAction = "working" | "walking" | "coffee" | "meeting" | "idle" | "printing" | "chatting" | "snacking" | "calling" | "gone-home" | "panicking" | "celebrating";
+
+// ─── Random Office Events ───
+type OfficeEventType = "fire-drill" | "pizza-party" | "server-down" | "birthday" | "surprise-meeting" | "power-outage";
+
+interface OfficeEvent {
+  type: OfficeEventType;
+  label: string;
+  icon: string;
+  color: string;
+  duration: number; // seconds
+  description: string;
+  affectedDept?: Department; // if undefined, affects all
+}
+
+const officeEvents: OfficeEvent[] = [
+  { type: "fire-drill", label: "🔥 FIRE DRILL!", icon: "🚨", color: "hsl(0 85% 55%)", duration: 20, description: "Everyone evacuate! Head to the exit!" },
+  { type: "pizza-party", label: "🍕 PIZZA PARTY!", icon: "🎉", color: "hsl(45 100% 60%)", duration: 25, description: "Free pizza in the pantry! Everyone come!" },
+  { type: "server-down", label: "💥 SERVER DOWN!", icon: "🔴", color: "hsl(0 80% 45%)", duration: 18, description: "Production servers are down! DevOps to the rescue!", affectedDept: "devops" },
+  { type: "birthday", label: "🎂 BIRTHDAY PARTY!", icon: "🎈", color: "hsl(320 70% 55%)", duration: 22, description: "Happy birthday! Cake in the pantry!" },
+  { type: "surprise-meeting", label: "📢 ALL-HANDS MEETING!", icon: "📋", color: "hsl(270 60% 55%)", duration: 15, description: "Surprise all-hands! Everyone to the meeting room!" },
+  { type: "power-outage", label: "⚡ POWER OUTAGE!", icon: "🔌", color: "hsl(240 20% 30%)", duration: 12, description: "Lights are flickering! Backup power in 10 seconds..." },
+];
 
 type TimePhase = "morning" | "day" | "evening" | "night";
 
