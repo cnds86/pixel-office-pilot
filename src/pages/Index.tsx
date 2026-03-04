@@ -3,6 +3,7 @@ import { agents, tasks, milestones, activityLogs, getAgentById } from "@/data/mo
 import type { AgentStatus } from "@/data/mockData";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { PixelOffice } from "@/components/PixelOffice";
 
 const statusColor: Record<AgentStatus, string> = {
   online: "bg-primary",
@@ -33,6 +34,9 @@ const Index = () => {
           <h1 className="font-pixel text-sm md:text-base text-primary">MISSION CONTROL</h1>
           <p className="font-pixel-body text-lg text-muted-foreground mt-1">OpenClaw Project Dashboard</p>
         </div>
+
+        {/* Pixel Art Office Room */}
+        <PixelOffice />
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
