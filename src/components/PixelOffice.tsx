@@ -434,8 +434,6 @@ export function PixelOffice() {
                     </div>
                   );
                 })}
-                ))}
-
                 {/* Desks */}
                 {room.desks.map((desk, di) => (
                   <div key={di} className="absolute" style={{ left: room.x + desk.x - 22, top: room.y + desk.y - 14 }}>
