@@ -95,7 +95,29 @@ const meetingRoom = { x: 1020, y: 0, w: 220, h: 320 };
 const CANVAS_W = 1260;
 const CANVAS_H = 680;
 
-type AgentAction = "working" | "walking" | "coffee" | "meeting" | "idle" | "printing" | "chatting" | "snacking" | "calling" | "gone-home";
+type AgentAction = "working" | "walking" | "coffee" | "meeting" | "idle" | "printing" | "chatting" | "snacking" | "calling" | "gone-home" | "panicking" | "celebrating";
+
+// ─── Random Office Events ───
+type OfficeEventType = "fire-drill" | "pizza-party" | "server-down" | "birthday" | "surprise-meeting" | "power-outage";
+
+interface OfficeEvent {
+  type: OfficeEventType;
+  label: string;
+  icon: string;
+  color: string;
+  duration: number; // seconds
+  description: string;
+  affectedDept?: Department; // if undefined, affects all
+}
+
+const officeEvents: OfficeEvent[] = [
+  { type: "fire-drill", label: "🔥 FIRE DRILL!", icon: "🚨", color: "hsl(0 85% 55%)", duration: 20, description: "Everyone evacuate! Head to the exit!" },
+  { type: "pizza-party", label: "🍕 PIZZA PARTY!", icon: "🎉", color: "hsl(45 100% 60%)", duration: 25, description: "Free pizza in the pantry! Everyone come!" },
+  { type: "server-down", label: "💥 SERVER DOWN!", icon: "🔴", color: "hsl(0 80% 45%)", duration: 18, description: "Production servers are down! DevOps to the rescue!", affectedDept: "devops" },
+  { type: "birthday", label: "🎂 BIRTHDAY PARTY!", icon: "🎈", color: "hsl(320 70% 55%)", duration: 22, description: "Happy birthday! Cake in the pantry!" },
+  { type: "surprise-meeting", label: "📢 ALL-HANDS MEETING!", icon: "📋", color: "hsl(270 60% 55%)", duration: 15, description: "Surprise all-hands! Everyone to the meeting room!" },
+  { type: "power-outage", label: "⚡ POWER OUTAGE!", icon: "🔌", color: "hsl(240 20% 30%)", duration: 12, description: "Lights are flickering! Backup power in 10 seconds..." },
+];
 
 type TimePhase = "morning" | "day" | "evening" | "night";
 
@@ -135,12 +157,16 @@ const speechOptions: Record<AgentAction, string[]> = {
   snacking: ["🍪 cookie time!", "🥤 slurp...", "🌮 taco break"],
   calling: ["📞 on a call...", "🎙️ presenting..."],
   "gone-home": ["🏠 left for today", "👋 bye!"],
+  panicking: ["😱 RUN!!", "🚨 EVACUATE!", "😰 oh no!!", "🏃 hurry!"],
+  celebrating: ["🎉 woohoo!", "🥳 party!", "🍕 yummy!", "🎊 amazing!", "🎂 cake time!"],
 };
 
 const actionLabel: Record<AgentAction, string> = {
   working: "Working", walking: "Walking", coffee: "Coffee break", meeting: "In meeting",
   idle: "Idle", printing: "Printing", chatting: "Chatting", snacking: "Snacking", calling: "On a call",
   "gone-home": "Gone home",
+  panicking: "Panicking!",
+  celebrating: "Celebrating!",
 };
 
 const priorityColor: Record<string, string> = {
@@ -168,6 +194,9 @@ export function PixelOffice() {
   const [taskList, setTaskList] = useState<Task[]>(tasks);
   const [assignTaskId, setAssignTaskId] = useState<string>("");
   const [activeDept, setActiveDept] = useState<Department | "all">("all");
+  const [activeEvent, setActiveEvent] = useState<OfficeEvent | null>(null);
+  const [eventTimer, setEventTimer] = useState(0);
+  const [eventParticles, setEventParticles] = useState<{ id: number; x: number; y: number; emoji: string; delay: number }[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Initialize agents
@@ -197,7 +226,113 @@ export function PixelOffice() {
     setOfficeAgents(initial);
   }, []);
 
-  // Clock
+  // ─── Random Event Trigger ───
+  useEffect(() => {
+    if (timePhase === "night") return; // no events at night
+    const interval = setInterval(() => {
+      if (activeEvent) return; // don't stack events
+      const roll = Math.random();
+      if (roll < 0.08) { // ~8% chance every 15s
+        const event = pickRandom(officeEvents);
+        triggerEvent(event);
+      }
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [activeEvent, timePhase]);
+
+  // Event duration countdown
+  useEffect(() => {
+    if (!activeEvent) return;
+    setEventTimer(activeEvent.duration);
+    const countdown = setInterval(() => {
+      setEventTimer(prev => {
+        if (prev <= 1) {
+          clearInterval(countdown);
+          endEvent();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(countdown);
+  }, [activeEvent?.type]);
+
+  function triggerEvent(event: OfficeEvent) {
+    setActiveEvent(event);
+
+    // Generate particles based on event type
+    const particleEmojis: Record<OfficeEventType, string[]> = {
+      "fire-drill": ["🔥", "🚨", "💨", "🧯"],
+      "pizza-party": ["🍕", "🎉", "🍕", "🥤"],
+      "server-down": ["💥", "⚠️", "🔴", "💻"],
+      "birthday": ["🎈", "🎂", "🎊", "🎁", "🎈"],
+      "surprise-meeting": ["📢", "📋", "💼", "📊"],
+      "power-outage": ["⚡", "🔌", "💡", "🕯️"],
+    };
+    const emojis = particleEmojis[event.type];
+    setEventParticles(
+      Array.from({ length: 25 }, (_, i) => ({
+        id: i,
+        x: Math.random() * CANVAS_W,
+        y: Math.random() * CANVAS_H,
+        emoji: pickRandom(emojis),
+        delay: Math.random() * 3,
+      }))
+    );
+
+    // Move agents based on event
+    setOfficeAgents(prev => prev.map(oa => {
+      if (oa.action === "gone-home") return oa;
+
+      switch (event.type) {
+        case "fire-drill": {
+          // Everyone runs to bottom-left exit area
+          const tx = randomBetween(20, 100);
+          const ty = randomBetween(CANVAS_H - 60, CANVAS_H - 20);
+          return { ...oa, action: "panicking" as AgentAction, targetX: tx, targetY: ty, speechBubble: pickRandom(speechOptions.panicking), direction: tx > oa.x ? "right" : "left" };
+        }
+        case "pizza-party":
+        case "birthday": {
+          // Everyone goes to pantry
+          const tx = pantry.x + randomBetween(20, pantry.w - 20);
+          const ty = pantry.y + randomBetween(40, pantry.h - 20);
+          return { ...oa, action: "celebrating" as AgentAction, targetX: tx, targetY: ty, speechBubble: pickRandom(speechOptions.celebrating), direction: tx > oa.x ? "right" : "left" };
+        }
+        case "server-down": {
+          // DevOps panics, others watch
+          if (oa.agent.department === "devops") {
+            const devopsRoom = rooms.find(r => r.department === "devops")!;
+            const tx = devopsRoom.x + randomBetween(20, devopsRoom.w - 20);
+            const ty = devopsRoom.y + randomBetween(40, devopsRoom.h - 20);
+            return { ...oa, action: "panicking" as AgentAction, targetX: tx, targetY: ty, speechBubble: "🔥 FIXING SERVERS!", direction: tx > oa.x ? "right" : "left" };
+          }
+          return { ...oa, speechBubble: "😰 servers down?!", action: "idle" as AgentAction };
+        }
+        case "surprise-meeting": {
+          // Everyone to meeting room
+          const tx = meetingRoom.x + randomBetween(30, meetingRoom.w - 30);
+          const ty = meetingRoom.y + randomBetween(50, meetingRoom.h - 30);
+          return { ...oa, action: "walking" as AgentAction, targetX: tx, targetY: ty, speechBubble: "📢 all-hands!", direction: tx > oa.x ? "right" : "left" };
+        }
+        case "power-outage": {
+          return { ...oa, action: "panicking" as AgentAction, speechBubble: pickRandom(["😱 lights out!", "🕯️ so dark!", "⚡ what happened?"]) };
+        }
+        default:
+          return oa;
+      }
+    }));
+  }
+
+  function endEvent() {
+    setActiveEvent(null);
+    setEventParticles([]);
+    // Send everyone back to desks
+    setOfficeAgents(prev => prev.map(oa => {
+      if (oa.action === "gone-home") return oa;
+      return { ...oa, action: "walking" as AgentAction, targetX: oa.deskX, targetY: oa.deskY, speechBubble: "😮‍💨 back to work!", direction: oa.deskX > oa.x ? "right" : "left" };
+    }));
+  }
+
   useEffect(() => {
     let h = 9, m = 0;
     const interval = setInterval(() => {
@@ -217,6 +352,8 @@ export function PixelOffice() {
 
       setOfficeAgents(prev => prev.map(oa => {
         if (oa.action === "walking") return oa;
+        // Don't override event-driven behavior
+        if (activeEvent && (oa.action === "panicking" || oa.action === "celebrating")) return oa;
 
         // Night: all agents gone home
         if (phase === "night") {
@@ -286,7 +423,8 @@ export function PixelOffice() {
   useEffect(() => {
     const tick = setInterval(() => {
       setOfficeAgents(prev => prev.map(oa => {
-        if (oa.action !== "walking") return { ...oa, frame: oa.frame + 1 };
+        const isMoving = oa.action === "walking" || oa.action === "panicking" || oa.action === "celebrating";
+        if (!isMoving) return { ...oa, frame: oa.frame + 1 };
         const dx = oa.targetX - oa.x;
         const dy = oa.targetY - oa.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -305,7 +443,7 @@ export function PixelOffice() {
           return { ...oa, x: oa.targetX, y: oa.targetY, action: newAction, speechBubble: bubble, frame: 0 };
         }
 
-        const speed = 1.8;
+        const speed = oa.action === "panicking" ? 3.5 : oa.action === "celebrating" ? 2.5 : 1.8;
         return { ...oa, x: oa.x + (dx / dist) * speed, y: oa.y + (dy / dist) * speed, direction: dx > 0 ? "right" : "left", frame: oa.frame + 1 };
       }));
     }, 50);
@@ -380,7 +518,41 @@ export function PixelOffice() {
         <div className="font-pixel text-[7px] text-muted-foreground">
           👥 {officeAgents.filter(a => a.action !== "gone-home").length}/{agents.length} in office
         </div>
+        {!activeEvent && timePhase !== "night" && (
+          <button
+            onClick={() => triggerEvent(pickRandom(officeEvents))}
+            className="px-2 py-1 font-pixel text-[6px] pixel-border bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+          >
+            🎲 EVENT
+          </button>
+        )}
       </div>
+
+      {/* Event Banner */}
+      {activeEvent && (
+        <div
+          className="pixel-border p-2 mb-2 flex items-center justify-between animate-pixel-pulse"
+          style={{ backgroundColor: activeEvent.color, borderColor: activeEvent.color }}
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-xl">{activeEvent.icon}</span>
+            <div>
+              <span className="font-pixel text-[9px] text-primary-foreground">{activeEvent.label}</span>
+              <p className="font-pixel text-[6px] text-primary-foreground/80">{activeEvent.description}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-pixel text-[8px] text-primary-foreground">{eventTimer}s</span>
+            <button
+              onClick={endEvent}
+              className="font-pixel text-[6px] px-2 py-1 bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30 pixel-border"
+              style={{ borderWidth: 1 }}
+            >
+              DISMISS
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Office Canvas Wrapper */}
       <div className="relative" style={{ height: 520 }}>
@@ -573,10 +745,42 @@ export function PixelOffice() {
           {/* General ambient sparkles */}
           <AmbientSparkles canvasW={CANVAS_W} canvasH={CANVAS_H} />
 
-          {/* ===== AGENTS ===== */}
+          {/* ===== EVENT PARTICLES ===== */}
+          {eventParticles.map(p => (
+            <div
+              key={p.id}
+              className="absolute pointer-events-none z-30 animate-sparkle"
+              style={{
+                left: p.x,
+                top: p.y,
+                fontSize: 16,
+                animationDelay: `${p.delay}s`,
+                animationDuration: "3s",
+              }}
+            >
+              {p.emoji}
+            </div>
+          ))}
+
+          {/* Power outage overlay */}
+          {activeEvent?.type === "power-outage" && (
+            <div
+              className="absolute inset-0 pointer-events-none z-35 animate-monitor-flicker"
+              style={{ backgroundColor: "hsl(0 0% 0% / 0.5)" }}
+            />
+          )}
+
+          {/* Fire drill flashing border */}
+          {activeEvent?.type === "fire-drill" && (
+            <div
+              className="absolute inset-0 pointer-events-none z-35 animate-pixel-pulse"
+              style={{ border: "4px solid hsl(0 85% 55% / 0.6)", boxShadow: "inset 0 0 40px hsl(0 85% 55% / 0.15)" }}
+            />
+          )}
+
           {officeAgents.filter(oa => oa.action !== "gone-home").map((oa) => {
-            const isWalking = oa.action === "walking";
-            const walkFrame = isWalking ? Math.floor(oa.frame / 4) % 2 : 0;
+            const isMoving = oa.action === "walking" || oa.action === "panicking" || oa.action === "celebrating";
+            const walkFrame = isMoving ? Math.floor(oa.frame / (oa.action === "panicking" ? 2 : 4)) % 2 : 0;
             return (
               <div
                 key={oa.agent.id}
@@ -585,7 +789,7 @@ export function PixelOffice() {
                   left: oa.x,
                   top: oa.y,
                   transform: `translate(-50%, -50%) scaleX(${oa.direction === "left" ? -1 : 1})`,
-                  transition: isWalking ? "none" : "left 0.05s, top 0.05s",
+                  transition: isMoving ? "none" : "left 0.05s, top 0.05s",
                 }}
                 onClick={() => handleAgentClick(oa)}
               >
@@ -606,7 +810,7 @@ export function PixelOffice() {
                 )}
 
                 {/* Character */}
-                <div className="relative flex flex-col items-center" style={{ transform: isWalking ? `translateY(${walkFrame * -2}px)` : "none" }}>
+                <div className="relative flex flex-col items-center" style={{ transform: isMoving ? `translateY(${walkFrame * -2}px)` : "none" }}>
                   <span className="text-xl leading-none group-hover:scale-110 transition-transform">
                     {oa.agent.avatar}
                   </span>
