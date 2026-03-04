@@ -226,7 +226,113 @@ export function PixelOffice() {
     setOfficeAgents(initial);
   }, []);
 
-  // Clock
+  // ─── Random Event Trigger ───
+  useEffect(() => {
+    if (timePhase === "night") return; // no events at night
+    const interval = setInterval(() => {
+      if (activeEvent) return; // don't stack events
+      const roll = Math.random();
+      if (roll < 0.08) { // ~8% chance every 15s
+        const event = pickRandom(officeEvents);
+        triggerEvent(event);
+      }
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [activeEvent, timePhase]);
+
+  // Event duration countdown
+  useEffect(() => {
+    if (!activeEvent) return;
+    setEventTimer(activeEvent.duration);
+    const countdown = setInterval(() => {
+      setEventTimer(prev => {
+        if (prev <= 1) {
+          clearInterval(countdown);
+          endEvent();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(countdown);
+  }, [activeEvent?.type]);
+
+  function triggerEvent(event: OfficeEvent) {
+    setActiveEvent(event);
+
+    // Generate particles based on event type
+    const particleEmojis: Record<OfficeEventType, string[]> = {
+      "fire-drill": ["🔥", "🚨", "💨", "🧯"],
+      "pizza-party": ["🍕", "🎉", "🍕", "🥤"],
+      "server-down": ["💥", "⚠️", "🔴", "💻"],
+      "birthday": ["🎈", "🎂", "🎊", "🎁", "🎈"],
+      "surprise-meeting": ["📢", "📋", "💼", "📊"],
+      "power-outage": ["⚡", "🔌", "💡", "🕯️"],
+    };
+    const emojis = particleEmojis[event.type];
+    setEventParticles(
+      Array.from({ length: 25 }, (_, i) => ({
+        id: i,
+        x: Math.random() * CANVAS_W,
+        y: Math.random() * CANVAS_H,
+        emoji: pickRandom(emojis),
+        delay: Math.random() * 3,
+      }))
+    );
+
+    // Move agents based on event
+    setOfficeAgents(prev => prev.map(oa => {
+      if (oa.action === "gone-home") return oa;
+
+      switch (event.type) {
+        case "fire-drill": {
+          // Everyone runs to bottom-left exit area
+          const tx = randomBetween(20, 100);
+          const ty = randomBetween(CANVAS_H - 60, CANVAS_H - 20);
+          return { ...oa, action: "panicking" as AgentAction, targetX: tx, targetY: ty, speechBubble: pickRandom(speechOptions.panicking), direction: tx > oa.x ? "right" : "left" };
+        }
+        case "pizza-party":
+        case "birthday": {
+          // Everyone goes to pantry
+          const tx = pantry.x + randomBetween(20, pantry.w - 20);
+          const ty = pantry.y + randomBetween(40, pantry.h - 20);
+          return { ...oa, action: "celebrating" as AgentAction, targetX: tx, targetY: ty, speechBubble: pickRandom(speechOptions.celebrating), direction: tx > oa.x ? "right" : "left" };
+        }
+        case "server-down": {
+          // DevOps panics, others watch
+          if (oa.agent.department === "devops") {
+            const devopsRoom = rooms.find(r => r.department === "devops")!;
+            const tx = devopsRoom.x + randomBetween(20, devopsRoom.w - 20);
+            const ty = devopsRoom.y + randomBetween(40, devopsRoom.h - 20);
+            return { ...oa, action: "panicking" as AgentAction, targetX: tx, targetY: ty, speechBubble: "🔥 FIXING SERVERS!", direction: tx > oa.x ? "right" : "left" };
+          }
+          return { ...oa, speechBubble: "😰 servers down?!", action: "idle" as AgentAction };
+        }
+        case "surprise-meeting": {
+          // Everyone to meeting room
+          const tx = meetingRoom.x + randomBetween(30, meetingRoom.w - 30);
+          const ty = meetingRoom.y + randomBetween(50, meetingRoom.h - 30);
+          return { ...oa, action: "walking" as AgentAction, targetX: tx, targetY: ty, speechBubble: "📢 all-hands!", direction: tx > oa.x ? "right" : "left" };
+        }
+        case "power-outage": {
+          return { ...oa, action: "panicking" as AgentAction, speechBubble: pickRandom(["😱 lights out!", "🕯️ so dark!", "⚡ what happened?"]) };
+        }
+        default:
+          return oa;
+      }
+    }));
+  }
+
+  function endEvent() {
+    setActiveEvent(null);
+    setEventParticles([]);
+    // Send everyone back to desks
+    setOfficeAgents(prev => prev.map(oa => {
+      if (oa.action === "gone-home") return oa;
+      return { ...oa, action: "walking" as AgentAction, targetX: oa.deskX, targetY: oa.deskY, speechBubble: "😮‍💨 back to work!", direction: oa.deskX > oa.x ? "right" : "left" };
+    }));
+  }
+
   useEffect(() => {
     let h = 9, m = 0;
     const interval = setInterval(() => {
