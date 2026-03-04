@@ -1,4 +1,4 @@
-import { Gauge, ClipboardList, BarChart3 } from "lucide-react";
+import { Gauge, ClipboardList, BarChart3, Activity } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -16,6 +16,7 @@ const items = [
   { title: "Mission Control", url: "/", icon: Gauge },
   { title: "Task Board", url: "/tasks", icon: ClipboardList },
   { title: "Dept Stats", url: "/stats", icon: BarChart3 },
+  { title: "Analytics", url: "/analytics", icon: Activity },
 ];
 
 export function AppSidebar() {
