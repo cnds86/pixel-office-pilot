@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AgentChat } from "./AgentChat";
+import { PixelCharacter } from "./PixelCharacter";
 
 // ─── Floor & Room Layout ───
 // 4 floors, each floor is a separate view
@@ -1054,11 +1055,16 @@ export function PixelOffice() {
                   )}
 
                   {/* Character */}
-                  <div className="relative flex flex-col items-center" style={{ transform: isMoving ? `translateY(${walkFrame * -2}px)` : "none" }}>
-                    <span className="text-xl leading-none group-hover:scale-110 transition-transform">{oa.agent.avatar}</span>
-                    <div className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full ${
-                      oa.agent.status === "online" ? "bg-primary" : oa.agent.status === "busy" ? "bg-accent" : "bg-muted-foreground"
-                    }`} />
+                  <div className="relative flex flex-col items-center group-hover:scale-110 transition-transform">
+                    <PixelCharacter
+                      department={oa.agent.department}
+                      role={oa.agent.role}
+                      isMoving={isMoving}
+                      walkFrame={walkFrame}
+                      status={oa.agent.status}
+                      action={oa.action}
+                      size={36}
+                    />
                   </div>
 
                   {/* Name tag */}
@@ -1089,7 +1095,15 @@ export function PixelOffice() {
                     setDialogOpen(true);
                   }}
                 >
-                  <span className="text-sm grayscale">{agent.avatar}</span>
+                  <PixelCharacter
+                    department={agent.department}
+                    role={agent.role}
+                    isMoving={false}
+                    walkFrame={0}
+                    status="offline"
+                    action="idle"
+                    size={28}
+                  />
                   <span className="font-pixel text-[4px] text-muted-foreground">{agent.name}</span>
                 </div>
               );
