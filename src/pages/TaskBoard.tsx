@@ -8,7 +8,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, GripVertical } from "lucide-react";
+import {
+  DndContext,
+  DragOverlay,
+  closestCorners,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+  type DragOverEvent,
+} from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 
 const columns: { status: TaskStatus; label: string; icon: string }[] = [
   { status: "todo", label: "TO DO", icon: "📝" },
@@ -22,7 +36,112 @@ const priorityColor: Record<TaskPriority, string> = {
   low: "bg-muted text-muted-foreground",
 };
 
-const statusOrder: TaskStatus[] = ["todo", "in-progress", "done"];
+// Draggable Task Card
+function TaskCard({ task, openEditTask, deleteTask, overlay }: {
+  task: Task;
+  openEditTask: (t: Task) => void;
+  deleteTask: (id: string) => void;
+  overlay?: boolean;
+}) {
+  const agent = getAgentById(task.assigneeId);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  if (overlay) {
+    return (
+      <div className="pixel-border bg-primary/10 border-primary p-3 space-y-2 rotate-2 shadow-lg w-[280px]">
+        <div className="flex items-start gap-1">
+          <GripVertical className="h-3 w-3 text-primary mt-0.5 shrink-0" />
+          <p className="font-pixel text-[8px] text-foreground leading-relaxed flex-1">{task.title}</p>
+        </div>
+        <div className="flex items-center gap-1">
+          <Badge className={`${priorityColor[task.priority]} font-pixel text-[6px] px-1.5 py-0.5 rounded-none`}>
+            {task.priority.toUpperCase()}
+          </Badge>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-sm">{agent?.avatar}</span>
+          <span className="font-pixel text-[7px] text-muted-foreground">{agent?.name}</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="pixel-border bg-muted/30 p-3 space-y-2 hover:bg-muted/50 transition-colors group">
+      <div className="flex items-start justify-between gap-1">
+        <div className="flex items-start gap-1 flex-1">
+          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing mt-0.5 text-muted-foreground hover:text-foreground">
+            <GripVertical className="h-3 w-3" />
+          </button>
+          <p className="font-pixel text-[8px] text-foreground leading-relaxed flex-1">{task.title}</p>
+        </div>
+        <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
+          <button onClick={() => openEditTask(task)} className="text-muted-foreground hover:text-primary">
+            <Pencil className="h-3 w-3" />
+          </button>
+          <button onClick={() => deleteTask(task.id)} className="text-muted-foreground hover:text-destructive">
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+      <p className="font-pixel-body text-xs text-muted-foreground">{task.description}</p>
+      <div className="flex items-center gap-1 flex-wrap">
+        <Badge className={`${priorityColor[task.priority]} font-pixel text-[6px] px-1.5 py-0.5 rounded-none`}>
+          {task.priority.toUpperCase()}
+        </Badge>
+        {task.tags.map(tag => (
+          <Badge key={tag} variant="outline" className="font-pixel text-[6px] px-1.5 py-0.5 rounded-none border-border">
+            {tag}
+          </Badge>
+        ))}
+      </div>
+      <div className="flex items-center gap-1">
+        <span className="text-sm">{agent?.avatar}</span>
+        <span className="font-pixel text-[7px] text-muted-foreground">{agent?.name}</span>
+      </div>
+    </div>
+  );
+}
+
+// Droppable Column
+function KanbanColumn({ status, label, icon, tasks, openEditTask, deleteTask }: {
+  status: TaskStatus;
+  label: string;
+  icon: string;
+  tasks: Task[];
+  openEditTask: (t: Task) => void;
+  deleteTask: (id: string) => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: status });
+
+  return (
+    <div className={`pixel-border bg-card transition-colors ${isOver ? "ring-2 ring-primary/50" : ""}`}>
+      <div className="p-3 border-b-2 border-border flex items-center gap-2">
+        <span>{icon}</span>
+        <span className="font-pixel text-[9px] text-foreground">{label}</span>
+        <span className="font-pixel text-[8px] text-muted-foreground ml-auto">{tasks.length}</span>
+      </div>
+      <ScrollArea className="h-[400px] md:h-[500px]">
+        <div ref={setNodeRef} className="p-2 space-y-2 min-h-[100px]">
+          {tasks.map(task => (
+            <TaskCard key={task.id} task={task} openEditTask={openEditTask} deleteTask={deleteTask} />
+          ))}
+          {tasks.length === 0 && (
+            <p className="font-pixel text-[8px] text-muted-foreground text-center py-8">
+              {isOver ? "DROP HERE" : "NO TASKS"}
+            </p>
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
 
 export default function TaskBoard() {
   const [taskList, setTaskList] = useState<Task[]>(initialTasks);
@@ -30,7 +149,10 @@ export default function TaskBoard() {
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [form, setForm] = useState({ title: "", assigneeId: "", priority: "medium" as TaskPriority, description: "", tags: "" });
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const filtered = taskList.filter(t => {
     if (filterAgent !== "all" && t.assigneeId !== filterAgent) return false;
@@ -38,18 +160,7 @@ export default function TaskBoard() {
     return true;
   });
 
-  const moveTask = (taskId: string, direction: "left" | "right") => {
-    setTaskList(prev => prev.map(t => {
-      if (t.id !== taskId) return t;
-      const idx = statusOrder.indexOf(t.status);
-      const newIdx = direction === "right" ? Math.min(idx + 1, 2) : Math.max(idx - 1, 0);
-      return { ...t, status: statusOrder[newIdx] };
-    }));
-  };
-
-  const deleteTask = (taskId: string) => {
-    setTaskList(prev => prev.filter(t => t.id !== taskId));
-  };
+  const deleteTask = (taskId: string) => setTaskList(prev => prev.filter(t => t.id !== taskId));
 
   const openNewTask = () => {
     setEditingTask(null);
@@ -69,18 +180,29 @@ export default function TaskBoard() {
     if (editingTask) {
       setTaskList(prev => prev.map(t => t.id === editingTask.id ? { ...t, title: form.title, assigneeId: form.assigneeId, priority: form.priority, description: form.description, tags } : t));
     } else {
-      const newTask: Task = {
-        id: `t${Date.now()}`,
-        title: form.title,
-        assigneeId: form.assigneeId,
-        priority: form.priority,
-        status: "todo",
-        description: form.description,
-        tags,
-      };
+      const newTask: Task = { id: `t${Date.now()}`, title: form.title, assigneeId: form.assigneeId, priority: form.priority, status: "todo", description: form.description, tags };
       setTaskList(prev => [...prev, newTask]);
     }
     setDialogOpen(false);
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const task = taskList.find(t => t.id === event.active.id);
+    setActiveTask(task || null);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+    const overId = over.id as string;
+    const isColumn = columns.some(c => c.status === overId);
+    if (isColumn) {
+      setTaskList(prev => prev.map(t => t.id === active.id ? { ...t, status: overId as TaskStatus } : t));
+    }
+  };
+
+  const handleDragEnd = (_event: DragEndEvent) => {
+    setActiveTask(null);
   };
 
   return (
@@ -89,7 +211,7 @@ export default function TaskBoard() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="font-pixel text-sm md:text-base text-primary">TASK BOARD</h1>
-            <p className="font-pixel-body text-lg text-muted-foreground">Kanban • {taskList.length} tasks</p>
+            <p className="font-pixel-body text-lg text-muted-foreground">Kanban • {taskList.length} tasks • Drag to move</p>
           </div>
           <Button onClick={openNewTask} className="pixel-btn bg-primary text-primary-foreground">
             <Plus className="h-4 w-4 mr-1" /> NEW TASK
@@ -105,9 +227,7 @@ export default function TaskBoard() {
             <SelectContent className="bg-card pixel-border">
               <SelectItem value="all" className="font-pixel-body text-base">All Agents</SelectItem>
               {agents.map(a => (
-                <SelectItem key={a.id} value={a.id} className="font-pixel-body text-base">
-                  {a.avatar} {a.name}
-                </SelectItem>
+                <SelectItem key={a.id} value={a.id} className="font-pixel-body text-base">{a.avatar} {a.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -124,76 +244,25 @@ export default function TaskBoard() {
           </Select>
         </div>
 
-        {/* Kanban Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {columns.map(col => {
-            const colTasks = filtered.filter(t => t.status === col.status);
-            return (
-              <div key={col.status} className="pixel-border bg-card">
-                <div className="p-3 border-b-2 border-border flex items-center gap-2">
-                  <span>{col.icon}</span>
-                  <span className="font-pixel text-[9px] text-foreground">{col.label}</span>
-                  <span className="font-pixel text-[8px] text-muted-foreground ml-auto">{colTasks.length}</span>
-                </div>
-                <ScrollArea className="h-[400px] md:h-[500px]">
-                  <div className="p-2 space-y-2">
-                    {colTasks.map(task => {
-                      const agent = getAgentById(task.assigneeId);
-                      const sIdx = statusOrder.indexOf(task.status);
-                      return (
-                        <div key={task.id} className="pixel-border bg-muted/30 p-3 space-y-2 hover:bg-muted/50 transition-colors group">
-                          <div className="flex items-start justify-between gap-1">
-                            <p className="font-pixel text-[8px] text-foreground leading-relaxed flex-1">{task.title}</p>
-                            <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
-                              <button onClick={() => openEditTask(task)} className="text-muted-foreground hover:text-primary">
-                                <Pencil className="h-3 w-3" />
-                              </button>
-                              <button onClick={() => deleteTask(task.id)} className="text-muted-foreground hover:text-destructive">
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </div>
-                          </div>
-                          <p className="font-pixel-body text-xs text-muted-foreground">{task.description}</p>
-                          <div className="flex items-center gap-1 flex-wrap">
-                            <Badge className={`${priorityColor[task.priority]} font-pixel text-[6px] px-1.5 py-0.5 rounded-none`}>
-                              {task.priority.toUpperCase()}
-                            </Badge>
-                            {task.tags.map(tag => (
-                              <Badge key={tag} variant="outline" className="font-pixel text-[6px] px-1.5 py-0.5 rounded-none border-border">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1">
-                              <span className="text-sm">{agent?.avatar}</span>
-                              <span className="font-pixel text-[7px] text-muted-foreground">{agent?.name}</span>
-                            </div>
-                            <div className="flex gap-1">
-                              {sIdx > 0 && (
-                                <button onClick={() => moveTask(task.id, "left")} className="pixel-border bg-card p-1 hover:bg-muted">
-                                  <ChevronLeft className="h-3 w-3 text-muted-foreground" />
-                                </button>
-                              )}
-                              {sIdx < 2 && (
-                                <button onClick={() => moveTask(task.id, "right")} className="pixel-border bg-card p-1 hover:bg-muted">
-                                  <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {colTasks.length === 0 && (
-                      <p className="font-pixel text-[8px] text-muted-foreground text-center py-8">NO TASKS</p>
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
-            );
-          })}
-        </div>
+        {/* Kanban Columns with DnD */}
+        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {columns.map(col => (
+              <KanbanColumn
+                key={col.status}
+                status={col.status}
+                label={col.label}
+                icon={col.icon}
+                tasks={filtered.filter(t => t.status === col.status)}
+                openEditTask={openEditTask}
+                deleteTask={deleteTask}
+              />
+            ))}
+          </div>
+          <DragOverlay>
+            {activeTask ? <TaskCard task={activeTask} openEditTask={() => {}} deleteTask={() => {}} overlay /> : null}
+          </DragOverlay>
+        </DndContext>
       </div>
 
       {/* Add/Edit Task Dialog */}
@@ -217,9 +286,7 @@ export default function TaskBoard() {
               <div>
                 <label className="font-pixel text-[7px] text-muted-foreground">ASSIGNEE</label>
                 <Select value={form.assigneeId} onValueChange={v => setForm(f => ({ ...f, assigneeId: v }))}>
-                  <SelectTrigger className="pixel-border bg-muted font-pixel-body text-base mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="pixel-border bg-muted font-pixel-body text-base mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-card pixel-border">
                     {agents.map(a => (
                       <SelectItem key={a.id} value={a.id} className="font-pixel-body text-base">{a.avatar} {a.name}</SelectItem>
@@ -230,9 +297,7 @@ export default function TaskBoard() {
               <div>
                 <label className="font-pixel text-[7px] text-muted-foreground">PRIORITY</label>
                 <Select value={form.priority} onValueChange={v => setForm(f => ({ ...f, priority: v as TaskPriority }))}>
-                  <SelectTrigger className="pixel-border bg-muted font-pixel-body text-base mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="pixel-border bg-muted font-pixel-body text-base mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-card pixel-border">
                     <SelectItem value="high" className="font-pixel-body text-base">🔴 High</SelectItem>
                     <SelectItem value="medium" className="font-pixel-body text-base">🟡 Medium</SelectItem>
