@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { agents, tasks, departmentInfo } from "@/data/mockData";
 import type { Agent, Task, Department } from "@/data/mockData";
 import { AmbientSparkles } from "./OfficeParticles";
+import { getAgentSprite } from "@/data/agentSprites";
 import floorF1 from "@/assets/floor-f1-lobby.png";
 import floorF2 from "@/assets/floor-f2-operations.png";
 import floorF3 from "@/assets/floor-f3-creative.png";
@@ -683,8 +684,14 @@ export function PixelOffice() {
 
                   {/* Character */}
                   <div className="relative flex flex-col items-center" style={{ transform: isMoving ? `translateY(${walkFrame * -3}px)` : "none" }}>
-                    <span className="text-2xl leading-none group-hover:scale-110 transition-transform drop-shadow-md">{oa.agent.avatar}</span>
-                    <div className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-card ${
+                    <img
+                      src={getAgentSprite(oa.agent.id, oa.agent.department)}
+                      alt={oa.agent.name}
+                      className="w-10 h-10 object-contain group-hover:scale-110 transition-transform drop-shadow-md"
+                      style={{ imageRendering: "auto" }}
+                      draggable={false}
+                    />
+                    <div className={`absolute top-0 -right-0.5 w-2 h-2 rounded-full border border-card ${
                       oa.agent.status === "online" ? "bg-primary" : oa.agent.status === "busy" ? "bg-accent" : "bg-muted-foreground"
                     }`} />
                   </div>
@@ -719,7 +726,7 @@ export function PixelOffice() {
                     setDialogOpen(true);
                   }}
                 >
-                  <span className="text-lg grayscale">{agent.avatar}</span>
+                  <img src={getAgentSprite(agent.id, agent.department)} alt={agent.name} className="w-8 h-8 object-contain grayscale" draggable={false} />
                   <span className="font-pixel text-[5px] text-muted-foreground">{agent.name}</span>
                 </div>
               );
@@ -778,7 +785,7 @@ export function PixelOffice() {
             <>
               <DialogHeader>
                 <DialogTitle className="font-pixel text-sm text-primary flex items-center gap-3">
-                  <span className="text-3xl">{selectedAgent.agent.avatar}</span>
+                  <img src={getAgentSprite(selectedAgent.agent.id, selectedAgent.agent.department)} alt={selectedAgent.agent.name} className="w-12 h-12 object-contain" draggable={false} />
                   <div>
                     <div>{selectedAgent.agent.name}</div>
                     <div className="font-pixel-body text-xs text-muted-foreground font-normal mt-0.5">
