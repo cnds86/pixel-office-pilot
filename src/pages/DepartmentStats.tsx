@@ -2,7 +2,11 @@ import { AppLayout } from "@/components/AppLayout";
 import { agents, tasks, departmentInfo } from "@/data/mockData";
 import type { Department } from "@/data/mockData";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, RadarChart, Radar, PolarGrid,
+  PolarAngleAxis, PolarRadiusAxis, Legend
+} from "recharts";
 
 const departments = Object.keys(departmentInfo) as Department[];
 
@@ -63,6 +67,73 @@ const DepartmentStats = () => {
           <p className="font-pixel-body text-lg text-muted-foreground mt-1">
             Performance overview by department
           </p>
+        </div>
+
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {/* Productivity Bar Chart */}
+          <div className="pixel-border bg-card p-4 space-y-2">
+            <h2 className="font-pixel text-[8px] text-primary">PRODUCTIVITY BY DEPARTMENT</h2>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={stats.map(s => ({
+                name: departmentInfo[s.department].label,
+                productivity: s.productivity,
+                fill: departmentInfo[s.department].color,
+              }))}>
+                <XAxis dataKey="name" tick={{ fontSize: 8, fontFamily: '"Press Start 2P"' }} />
+                <YAxis tick={{ fontSize: 8 }} domain={[0, 100]} />
+                <Tooltip
+                  contentStyle={{ background: 'hsl(var(--card))', border: '2px solid hsl(var(--border))', fontFamily: '"Press Start 2P"', fontSize: 7 }}
+                />
+                <Bar dataKey="productivity" radius={[2, 2, 0, 0]}>
+                  {stats.map((s, i) => (
+                    <Cell key={i} fill={departmentInfo[s.department].color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Task Status Pie Chart */}
+          <div className="pixel-border bg-card p-4 space-y-2">
+            <h2 className="font-pixel text-[8px] text-primary">TASK STATUS OVERVIEW</h2>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: "Done", value: totalDone, fill: "hsl(var(--primary))" },
+                    { name: "In Progress", value: tasks.filter(t => t.status === "in-progress").length, fill: "hsl(var(--accent))" },
+                    { name: "Todo", value: tasks.filter(t => t.status === "todo").length, fill: "hsl(var(--muted))" },
+                  ]}
+                  cx="50%" cy="50%" innerRadius={40} outerRadius={70}
+                  dataKey="value" stroke="none"
+                >
+                </Pie>
+                <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '2px solid hsl(var(--border))', fontFamily: '"Press Start 2P"', fontSize: 7 }} />
+                <Legend wrapperStyle={{ fontSize: 8, fontFamily: '"Press Start 2P"' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Radar Chart */}
+          <div className="pixel-border bg-card p-4 space-y-2">
+            <h2 className="font-pixel text-[8px] text-primary">DEPARTMENT RADAR</h2>
+            <ResponsiveContainer width="100%" height={200}>
+              <RadarChart data={stats.map(s => ({
+                dept: departmentInfo[s.department].icon,
+                productivity: s.productivity,
+                agents: (s.online / Math.max(s.totalAgents, 1)) * 100,
+                tasks: Math.min(s.totalTasks * 10, 100),
+              }))}>
+                <PolarGrid stroke="hsl(var(--border))" />
+                <PolarAngleAxis dataKey="dept" tick={{ fontSize: 12 }} />
+                <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 7 }} />
+                <Radar name="Productivity" dataKey="productivity" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
+                <Radar name="Online %" dataKey="agents" stroke="hsl(var(--accent))" fill="hsl(var(--accent))" fillOpacity={0.2} />
+                <Legend wrapperStyle={{ fontSize: 7, fontFamily: '"Press Start 2P"' }} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Overall Summary Row */}
