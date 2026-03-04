@@ -802,7 +802,7 @@ export function PixelOffice() {
                 )}
 
                 {/* Character */}
-                <div className="relative flex flex-col items-center" style={{ transform: isWalking ? `translateY(${walkFrame * -2}px)` : "none" }}>
+                <div className="relative flex flex-col items-center" style={{ transform: isMoving ? `translateY(${walkFrame * -2}px)` : "none" }}>
                   <span className="text-xl leading-none group-hover:scale-110 transition-transform">
                     {oa.agent.avatar}
                   </span>
