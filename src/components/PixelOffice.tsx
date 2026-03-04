@@ -425,11 +425,15 @@ export function PixelOffice() {
                 </div>
 
                 {/* Ceiling lights */}
-                {[0.3, 0.7].map((pct, li) => (
-                  <div key={li} className="absolute" style={{ left: room.x + room.w * pct - 16, top: room.y + 4, width: 32, height: 6 }}>
-                    <div className="w-full h-1.5 bg-muted-foreground/30 rounded-full" />
-                    <div className="absolute top-6 left-1/2 -translate-x-1/2 w-40 h-48 opacity-[0.03] rounded-full" style={{ background: "radial-gradient(ellipse, hsl(45 100% 85%), transparent)" }} />
-                  </div>
+                {[0.3, 0.7].map((pct, li) => {
+                  const isLightOn = timePhase === "evening" || timePhase === "night";
+                  return (
+                    <div key={li} className="absolute" style={{ left: room.x + room.w * pct - 16, top: room.y + 4, width: 32, height: 6 }}>
+                      <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: isLightOn ? "hsl(45 80% 70% / 0.6)" : "hsl(0 0% 40% / 0.3)" }} />
+                      <div className="absolute top-6 left-1/2 -translate-x-1/2 w-40 h-48 rounded-full" style={{ opacity: isLightOn ? phaseInfo.lightIntensity : 0.03, background: `radial-gradient(ellipse, hsl(45 100% 85%), transparent)`, transition: "opacity 1s" }} />
+                    </div>
+                  );
+                })}
                 ))}
 
                 {/* Desks */}
