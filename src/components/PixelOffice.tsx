@@ -194,6 +194,9 @@ export function PixelOffice() {
   const [taskList, setTaskList] = useState<Task[]>(tasks);
   const [assignTaskId, setAssignTaskId] = useState<string>("");
   const [activeDept, setActiveDept] = useState<Department | "all">("all");
+  const [activeEvent, setActiveEvent] = useState<OfficeEvent | null>(null);
+  const [eventTimer, setEventTimer] = useState(0);
+  const [eventParticles, setEventParticles] = useState<{ id: number; x: number; y: number; emoji: string; delay: number }[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Initialize agents
