@@ -134,6 +134,7 @@ const speechOptions: Record<AgentAction, string[]> = {
   chatting: ["😄 haha nice!", "👋 hey!", "🍕 lunch plans?"],
   snacking: ["🍪 cookie time!", "🥤 slurp...", "🌮 taco break"],
   calling: ["📞 on a call...", "🎙️ presenting..."],
+  "gone-home": ["🏠 left for today", "👋 bye!"],
 };
 
 const actionLabel: Record<AgentAction, string> = {
