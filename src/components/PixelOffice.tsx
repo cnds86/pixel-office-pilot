@@ -95,7 +95,23 @@ const meetingRoom = { x: 1020, y: 0, w: 220, h: 320 };
 const CANVAS_W = 1260;
 const CANVAS_H = 680;
 
-type AgentAction = "working" | "walking" | "coffee" | "meeting" | "idle" | "printing" | "chatting" | "snacking" | "calling";
+type AgentAction = "working" | "walking" | "coffee" | "meeting" | "idle" | "printing" | "chatting" | "snacking" | "calling" | "gone-home";
+
+type TimePhase = "morning" | "day" | "evening" | "night";
+
+function getTimePhase(hour: number): TimePhase {
+  if (hour >= 6 && hour < 9) return "morning";
+  if (hour >= 9 && hour < 17) return "day";
+  if (hour >= 17 && hour < 20) return "evening";
+  return "night";
+}
+
+const phaseOverlay: Record<TimePhase, { bg: string; opacity: number; skyIcon: string; lightIntensity: number }> = {
+  morning: { bg: "hsl(30 60% 50%)", opacity: 0.05, skyIcon: "🌅", lightIntensity: 0.04 },
+  day: { bg: "transparent", opacity: 0, skyIcon: "☀️", lightIntensity: 0.03 },
+  evening: { bg: "hsl(25 80% 30%)", opacity: 0.12, skyIcon: "🌇", lightIntensity: 0.08 },
+  night: { bg: "hsl(230 60% 10%)", opacity: 0.25, skyIcon: "🌙", lightIntensity: 0.15 },
+};
 
 interface OfficeAgent {
   agent: Agent;
@@ -118,11 +134,13 @@ const speechOptions: Record<AgentAction, string[]> = {
   chatting: ["😄 haha nice!", "👋 hey!", "🍕 lunch plans?"],
   snacking: ["🍪 cookie time!", "🥤 slurp...", "🌮 taco break"],
   calling: ["📞 on a call...", "🎙️ presenting..."],
+  "gone-home": ["🏠 left for today", "👋 bye!"],
 };
 
 const actionLabel: Record<AgentAction, string> = {
   working: "Working", walking: "Walking", coffee: "Coffee break", meeting: "In meeting",
   idle: "Idle", printing: "Printing", chatting: "Chatting", snacking: "Snacking", calling: "On a call",
+  "gone-home": "Gone home",
 };
 
 const priorityColor: Record<string, string> = {
@@ -142,6 +160,9 @@ function randomBetween(a: number, b: number) {
 export function PixelOffice() {
   const [officeAgents, setOfficeAgents] = useState<OfficeAgent[]>([]);
   const [clock, setClock] = useState("09:00");
+  const clockHour = parseInt(clock.split(":")[0]);
+  const timePhase = getTimePhase(clockHour);
+  const phaseInfo = phaseOverlay[timePhase];
   const [selectedAgent, setSelectedAgent] = useState<OfficeAgent | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [taskList, setTaskList] = useState<Task[]>(tasks);
@@ -182,17 +203,42 @@ export function PixelOffice() {
     const interval = setInterval(() => {
       m += 5;
       if (m >= 60) { m = 0; h++; }
-      if (h > 18) { h = 9; m = 0; }
+      if (h >= 24) { h = 6; m = 0; }
       setClock(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
     }, 4000);
     return () => clearInterval(interval);
   }, []);
 
-  // Agent AI
+  // Agent AI — responds to time of day
   useEffect(() => {
     const interval = setInterval(() => {
+      const h = parseInt(clock.split(":")[0]);
+      const phase = getTimePhase(h);
+
       setOfficeAgents(prev => prev.map(oa => {
         if (oa.action === "walking") return oa;
+
+        // Night: all agents gone home
+        if (phase === "night") {
+          if (oa.action !== "gone-home") {
+            return { ...oa, action: "gone-home", speechBubble: pickRandom(speechOptions["gone-home"]) };
+          }
+          return oa;
+        }
+
+        // Morning: agents returning to work
+        if (phase === "morning" && oa.action === "gone-home") {
+          return { ...oa, action: "walking", targetX: oa.deskX, targetY: oa.deskY, speechBubble: "☕ good morning!", direction: "right" };
+        }
+
+        // Evening: some agents start leaving (random chance)
+        if (phase === "evening" && oa.action !== "gone-home") {
+          const leaveChance = Math.random();
+          if (leaveChance < 0.08) {
+            return { ...oa, action: "gone-home", speechBubble: pickRandom(speechOptions["gone-home"]) };
+          }
+        }
+
         const roll = Math.random();
         const room = rooms.find(r => r.department === oa.agent.department);
         if (!room) return oa;
@@ -234,7 +280,7 @@ export function PixelOffice() {
       }));
     }, 3500);
     return () => clearInterval(interval);
-  }, []);
+  }, [clock]);
 
   // Movement
   useEffect(() => {
@@ -325,9 +371,14 @@ export function PixelOffice() {
             </button>
           );
         })}
-        <div className="ml-auto font-pixel text-[8px] text-primary/80">🕐 {clock}</div>
+        <div className="ml-auto font-pixel text-[8px] text-primary/80 flex items-center gap-1">
+          <span>{phaseInfo.skyIcon}</span> {clock}
+          <span className="text-[6px] text-muted-foreground ml-1">
+            {timePhase === "morning" ? "MORNING" : timePhase === "day" ? "DAYTIME" : timePhase === "evening" ? "EVENING" : "NIGHT"}
+          </span>
+        </div>
         <div className="font-pixel text-[7px] text-muted-foreground">
-          👥 {agents.filter(a => a.status !== "offline").length}/{agents.length} online
+          👥 {officeAgents.filter(a => a.action !== "gone-home").length}/{agents.length} in office
         </div>
       </div>
 
@@ -374,13 +425,15 @@ export function PixelOffice() {
                 </div>
 
                 {/* Ceiling lights */}
-                {[0.3, 0.7].map((pct, li) => (
-                  <div key={li} className="absolute" style={{ left: room.x + room.w * pct - 16, top: room.y + 4, width: 32, height: 6 }}>
-                    <div className="w-full h-1.5 bg-muted-foreground/30 rounded-full" />
-                    <div className="absolute top-6 left-1/2 -translate-x-1/2 w-40 h-48 opacity-[0.03] rounded-full" style={{ background: "radial-gradient(ellipse, hsl(45 100% 85%), transparent)" }} />
-                  </div>
-                ))}
-
+                {[0.3, 0.7].map((pct, li) => {
+                  const isLightOn = timePhase === "evening" || timePhase === "night";
+                  return (
+                    <div key={li} className="absolute" style={{ left: room.x + room.w * pct - 16, top: room.y + 4, width: 32, height: 6 }}>
+                      <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: isLightOn ? "hsl(45 80% 70% / 0.6)" : "hsl(0 0% 40% / 0.3)" }} />
+                      <div className="absolute top-6 left-1/2 -translate-x-1/2 w-40 h-48 rounded-full" style={{ opacity: isLightOn ? phaseInfo.lightIntensity : 0.03, background: `radial-gradient(ellipse, hsl(45 100% 85%), transparent)`, transition: "opacity 1s" }} />
+                    </div>
+                  );
+                })}
                 {/* Desks */}
                 {room.desks.map((desk, di) => (
                   <div key={di} className="absolute" style={{ left: room.x + desk.x - 22, top: room.y + desk.y - 14 }}>
@@ -521,7 +574,7 @@ export function PixelOffice() {
           <AmbientSparkles canvasW={CANVAS_W} canvasH={CANVAS_H} />
 
           {/* ===== AGENTS ===== */}
-          {officeAgents.map((oa) => {
+          {officeAgents.filter(oa => oa.action !== "gone-home").map((oa) => {
             const isWalking = oa.action === "walking";
             const walkFrame = isWalking ? Math.floor(oa.frame / 4) % 2 : 0;
             return (
@@ -598,6 +651,39 @@ export function PixelOffice() {
               </div>
             );
           })}
+
+          {/* Day/Night overlay */}
+          {phaseInfo.opacity > 0 && (
+            <div
+              className="absolute inset-0 pointer-events-none z-40"
+              style={{
+                backgroundColor: phaseInfo.bg,
+                opacity: phaseInfo.opacity,
+                transition: "background-color 2s, opacity 2s",
+                mixBlendMode: "multiply",
+              }}
+            />
+          )}
+
+          {/* Stars at night */}
+          {timePhase === "night" && (
+            <div className="absolute inset-0 pointer-events-none z-35">
+              {Array.from({ length: 20 }, (_, i) => (
+                <div
+                  key={i}
+                  className="absolute rounded-full animate-sparkle"
+                  style={{
+                    left: `${5 + (i * 47) % 90}%`,
+                    top: `${3 + (i * 31) % 15}%`,
+                    width: 2,
+                    height: 2,
+                    backgroundColor: "hsl(45 80% 90% / 0.4)",
+                    animationDelay: `${i * 0.4}s`,
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
