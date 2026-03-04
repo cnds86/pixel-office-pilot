@@ -771,8 +771,8 @@ export function PixelOffice() {
           )}
 
           {officeAgents.filter(oa => oa.action !== "gone-home").map((oa) => {
-            const isWalking = oa.action === "walking";
-            const walkFrame = isWalking ? Math.floor(oa.frame / 4) % 2 : 0;
+            const isMoving = oa.action === "walking" || oa.action === "panicking" || oa.action === "celebrating";
+            const walkFrame = isMoving ? Math.floor(oa.frame / (oa.action === "panicking" ? 2 : 4)) % 2 : 0;
             return (
               <div
                 key={oa.agent.id}
