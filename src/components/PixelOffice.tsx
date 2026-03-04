@@ -443,7 +443,7 @@ export function PixelOffice() {
           return { ...oa, x: oa.targetX, y: oa.targetY, action: newAction, speechBubble: bubble, frame: 0 };
         }
 
-        const speed = 1.8;
+        const speed = oa.action === "panicking" ? 3.5 : oa.action === "celebrating" ? 2.5 : 1.8;
         return { ...oa, x: oa.x + (dx / dist) * speed, y: oa.y + (dy / dist) * speed, direction: dx > 0 ? "right" : "left", frame: oa.frame + 1 };
       }));
     }, 50);
