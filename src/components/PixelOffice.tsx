@@ -601,7 +601,7 @@ export function PixelOffice() {
 
         {/* Mini Map */}
         <div
-          className="fixed bottom-4 right-4 z-50 pixel-border bg-card/90 backdrop-blur-sm p-1.5 cursor-pointer"
+          className="sticky bottom-4 left-[calc(100%-196px)] z-50 pixel-border bg-card/90 backdrop-blur-sm p-1.5 cursor-pointer float-right mr-4 mb-4"
           style={{ width: 180, height: 100 }}
           onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
