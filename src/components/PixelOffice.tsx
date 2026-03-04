@@ -564,6 +564,106 @@ export function PixelOffice() {
             );
           })}
         </div>
+
+        {/* Mini Map */}
+        <div
+          className="absolute bottom-2 right-2 z-30 pixel-border bg-card/90 backdrop-blur-sm p-1.5 cursor-pointer"
+          style={{ width: 180, height: 100 }}
+          onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const clickX = ((e.clientX - rect.left - 6) / (180 - 12)) * CANVAS_W;
+            const clickY = ((e.clientY - rect.top - 6) / (100 - 12)) * CANVAS_H;
+            containerRef.current?.scrollTo({
+              left: clickX - containerRef.current.clientWidth / 2,
+              top: clickY - containerRef.current.clientHeight / 2,
+              behavior: "smooth",
+            });
+          }}
+        >
+          <div className="font-pixel text-[5px] text-muted-foreground mb-0.5">🗺️ MINIMAP</div>
+          <div className="relative w-full" style={{ height: 82 }}>
+            {/* Rooms */}
+            {rooms.map(room => {
+              const info = departmentInfo[room.department];
+              const scaleX = (180 - 12) / CANVAS_W;
+              const scaleY = 82 / CANVAS_H;
+              return (
+                <div
+                  key={room.department}
+                  className="absolute border border-border/50"
+                  style={{
+                    left: room.x * scaleX,
+                    top: room.y * scaleY,
+                    width: room.w * scaleX,
+                    height: room.h * scaleY,
+                    backgroundColor: room.floorColor,
+                    opacity: 0.7,
+                  }}
+                >
+                  <span className="font-pixel text-[3px] absolute top-px left-px" style={{ color: info.color }}>
+                    {info.icon}
+                  </span>
+                </div>
+              );
+            })}
+            {/* Shared spaces */}
+            {[meetingRoom, pantry].map((space, i) => {
+              const scaleX = (180 - 12) / CANVAS_W;
+              const scaleY = 82 / CANVAS_H;
+              return (
+                <div
+                  key={i}
+                  className="absolute border border-border/30"
+                  style={{
+                    left: space.x * scaleX,
+                    top: space.y * scaleY,
+                    width: space.w * scaleX,
+                    height: space.h * scaleY,
+                    backgroundColor: "hsl(210 15% 15%)",
+                    opacity: 0.5,
+                  }}
+                />
+              );
+            })}
+            {/* Agent dots */}
+            {officeAgents.map(oa => {
+              const scaleX = (180 - 12) / CANVAS_W;
+              const scaleY = 82 / CANVAS_H;
+              const dotColor = oa.agent.status === "online" ? "hsl(var(--primary))" : "hsl(var(--accent))";
+              return (
+                <div
+                  key={oa.agent.id}
+                  className={`absolute rounded-full ${oa.action === "walking" ? "animate-pixel-pulse" : ""}`}
+                  style={{
+                    left: oa.x * scaleX - 1.5,
+                    top: oa.y * scaleY - 1.5,
+                    width: 3,
+                    height: 3,
+                    backgroundColor: dotColor,
+                    transition: "left 0.05s, top 0.05s",
+                  }}
+                />
+              );
+            })}
+            {/* Viewport indicator */}
+            {containerRef.current && (() => {
+              const scaleX = (180 - 12) / CANVAS_W;
+              const scaleY = 82 / CANVAS_H;
+              const el = containerRef.current!;
+              return (
+                <div
+                  className="absolute border border-primary/60 rounded-sm pointer-events-none"
+                  style={{
+                    left: el.scrollLeft * scaleX,
+                    top: el.scrollTop * scaleY,
+                    width: el.clientWidth * scaleX,
+                    height: el.clientHeight * scaleY,
+                  }}
+                />
+              );
+            })()}
+          </div>
+        </div>
       </div>
 
       {/* Agent Dialog */}
