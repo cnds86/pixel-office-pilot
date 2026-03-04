@@ -1064,6 +1064,7 @@ export function PixelOffice() {
                       status={oa.agent.status}
                       action={oa.action}
                       size={36}
+                      agentId={oa.agent.id}
                     />
                   </div>
 
@@ -1103,6 +1104,7 @@ export function PixelOffice() {
                     status="offline"
                     action="idle"
                     size={28}
+                    agentId={agent.id}
                   />
                   <span className="font-pixel text-[4px] text-muted-foreground">{agent.name}</span>
                 </div>
