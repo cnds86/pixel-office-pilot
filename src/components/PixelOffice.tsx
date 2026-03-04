@@ -209,11 +209,36 @@ export function PixelOffice() {
     return () => clearInterval(interval);
   }, []);
 
-  // Agent AI
+  // Agent AI — responds to time of day
   useEffect(() => {
     const interval = setInterval(() => {
+      const h = parseInt(clock.split(":")[0]);
+      const phase = getTimePhase(h);
+
       setOfficeAgents(prev => prev.map(oa => {
         if (oa.action === "walking") return oa;
+
+        // Night: all agents gone home
+        if (phase === "night") {
+          if (oa.action !== "gone-home") {
+            return { ...oa, action: "gone-home", speechBubble: pickRandom(speechOptions["gone-home"]) };
+          }
+          return oa;
+        }
+
+        // Morning: agents returning to work
+        if (phase === "morning" && oa.action === "gone-home") {
+          return { ...oa, action: "walking", targetX: oa.deskX, targetY: oa.deskY, speechBubble: "☕ good morning!", direction: "right" };
+        }
+
+        // Evening: some agents start leaving (random chance)
+        if (phase === "evening" && oa.action !== "gone-home") {
+          const leaveChance = Math.random();
+          if (leaveChance < 0.08) {
+            return { ...oa, action: "gone-home", speechBubble: pickRandom(speechOptions["gone-home"]) };
+          }
+        }
+
         const roll = Math.random();
         const room = rooms.find(r => r.department === oa.agent.department);
         if (!room) return oa;
@@ -255,7 +280,7 @@ export function PixelOffice() {
       }));
     }, 3500);
     return () => clearInterval(interval);
-  }, []);
+  }, [clock]);
 
   // Movement
   useEffect(() => {
