@@ -371,9 +371,14 @@ export function PixelOffice() {
             </button>
           );
         })}
-        <div className="ml-auto font-pixel text-[8px] text-primary/80">🕐 {clock}</div>
+        <div className="ml-auto font-pixel text-[8px] text-primary/80 flex items-center gap-1">
+          <span>{phaseInfo.skyIcon}</span> {clock}
+          <span className="text-[6px] text-muted-foreground ml-1">
+            {timePhase === "morning" ? "MORNING" : timePhase === "day" ? "DAYTIME" : timePhase === "evening" ? "EVENING" : "NIGHT"}
+          </span>
+        </div>
         <div className="font-pixel text-[7px] text-muted-foreground">
-          👥 {agents.filter(a => a.status !== "offline").length}/{agents.length} online
+          👥 {officeAgents.filter(a => a.action !== "gone-home").length}/{agents.length} in office
         </div>
       </div>
 
