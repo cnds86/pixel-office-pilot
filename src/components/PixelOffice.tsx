@@ -331,11 +331,12 @@ export function PixelOffice() {
         </div>
       </div>
 
+      {/* Office Canvas Wrapper */}
+      <div className="relative" style={{ height: 520 }}>
       {/* Office Canvas */}
       <div
         ref={containerRef}
-        className="pixel-border bg-card relative overflow-auto select-none"
-        style={{ height: 520 }}
+        className="pixel-border bg-card relative overflow-auto select-none h-full"
       >
         <div className="relative" style={{ width: CANVAS_W, height: CANVAS_H, minWidth: CANVAS_W }}>
           {/* Background */}
