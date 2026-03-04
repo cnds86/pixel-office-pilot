@@ -423,7 +423,8 @@ export function PixelOffice() {
   useEffect(() => {
     const tick = setInterval(() => {
       setOfficeAgents(prev => prev.map(oa => {
-        if (oa.action !== "walking") return { ...oa, frame: oa.frame + 1 };
+        const isMoving = oa.action === "walking" || oa.action === "panicking" || oa.action === "celebrating";
+        if (!isMoving) return { ...oa, frame: oa.frame + 1 };
         const dx = oa.targetX - oa.x;
         const dy = oa.targetY - oa.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
