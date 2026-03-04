@@ -352,6 +352,8 @@ export function PixelOffice() {
 
       setOfficeAgents(prev => prev.map(oa => {
         if (oa.action === "walking") return oa;
+        // Don't override event-driven behavior
+        if (activeEvent && (oa.action === "panicking" || oa.action === "celebrating")) return oa;
 
         // Night: all agents gone home
         if (phase === "night") {
