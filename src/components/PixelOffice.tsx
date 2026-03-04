@@ -331,11 +331,12 @@ export function PixelOffice() {
         </div>
       </div>
 
+      {/* Office Canvas Wrapper */}
+      <div className="relative" style={{ height: 520 }}>
       {/* Office Canvas */}
       <div
         ref={containerRef}
-        className="pixel-border bg-card relative overflow-auto select-none"
-        style={{ height: 520 }}
+        className="pixel-border bg-card relative overflow-auto select-none h-full"
       >
         <div className="relative" style={{ width: CANVAS_W, height: CANVAS_H, minWidth: CANVAS_W }}>
           {/* Background */}
@@ -598,10 +599,11 @@ export function PixelOffice() {
             );
           })}
         </div>
+      </div>
 
-        {/* Mini Map */}
+        {/* Mini Map - inside wrapper, outside scroll */}
         <div
-          className="fixed bottom-4 right-4 z-50 pixel-border bg-card/90 backdrop-blur-sm p-1.5 cursor-pointer"
+          className="absolute bottom-4 right-4 z-50 pixel-border bg-card/90 backdrop-blur-sm p-1.5 cursor-pointer"
           style={{ width: 180, height: 100 }}
           onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
@@ -616,7 +618,6 @@ export function PixelOffice() {
         >
           <div className="font-pixel text-[5px] text-muted-foreground mb-0.5">🗺️ MINIMAP</div>
           <div className="relative w-full" style={{ height: 82 }}>
-            {/* Rooms */}
             {rooms.map(room => {
               const info = departmentInfo[room.department];
               const scaleX = (180 - 12) / CANVAS_W;
@@ -640,7 +641,6 @@ export function PixelOffice() {
                 </div>
               );
             })}
-            {/* Shared spaces */}
             {[meetingRoom, pantry].map((space, i) => {
               const scaleX = (180 - 12) / CANVAS_W;
               const scaleY = 82 / CANVAS_H;
@@ -659,7 +659,6 @@ export function PixelOffice() {
                 />
               );
             })}
-            {/* Agent dots */}
             {officeAgents.map(oa => {
               const scaleX = (180 - 12) / CANVAS_W;
               const scaleY = 82 / CANVAS_H;
@@ -679,7 +678,6 @@ export function PixelOffice() {
                 />
               );
             })}
-            {/* Viewport indicator */}
             {containerRef.current && (() => {
               const scaleX = (180 - 12) / CANVAS_W;
               const scaleY = 82 / CANVAS_H;
