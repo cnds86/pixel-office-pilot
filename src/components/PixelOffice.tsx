@@ -781,7 +781,7 @@ export function PixelOffice() {
                   left: oa.x,
                   top: oa.y,
                   transform: `translate(-50%, -50%) scaleX(${oa.direction === "left" ? -1 : 1})`,
-                  transition: isWalking ? "none" : "left 0.05s, top 0.05s",
+                  transition: isMoving ? "none" : "left 0.05s, top 0.05s",
                 }}
                 onClick={() => handleAgentClick(oa)}
               >
