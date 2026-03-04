@@ -203,7 +203,7 @@ export function PixelOffice() {
     const interval = setInterval(() => {
       m += 5;
       if (m >= 60) { m = 0; h++; }
-      if (h > 18) { h = 9; m = 0; }
+      if (h >= 24) { h = 6; m = 0; }
       setClock(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
     }, 4000);
     return () => clearInterval(interval);
