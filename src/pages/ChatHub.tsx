@@ -506,7 +506,10 @@ export default function ChatHub() {
               <label className="font-pixel text-[10px] text-muted-foreground mb-2 block">
                 👥 MEMBERS ({cfMembers.length} selected)
               </label>
-              <ScrollArea className="max-h-48 pixel-border p-2" style={{ borderWidth: 1 }}>
+              <div
+                className="h-64 overflow-y-auto pixel-border p-2 scrollbar-thin scrollbar-thumb-primary/40 scrollbar-track-transparent"
+                style={{ borderWidth: 1 }}
+              >
                 <div className="space-y-1">
                   {agents.map((a) => {
                     const checked = cfMembers.includes(a.id);
@@ -531,7 +534,7 @@ export default function ChatHub() {
                     );
                   })}
                 </div>
-              </ScrollArea>
+              </div>
             </div>
 
             <div className="flex gap-2 pt-1">
