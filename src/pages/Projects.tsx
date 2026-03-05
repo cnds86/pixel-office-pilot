@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { agents, tasks, departmentInfo, type Department } from "@/data/mockData";
 import { projects as initialProjects, type Project, type ProjectStatus } from "@/data/projectData";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,6 +46,8 @@ export default function Projects() {
   const [formStatus, setFormStatus] = useState<ProjectStatus>("active");
   const [formIcon, setFormIcon] = useState("📁");
   const [formDeadline, setFormDeadline] = useState("");
+  const [formAgentIds, setFormAgentIds] = useState<string[]>([]);
+  const [formTaskIds, setFormTaskIds] = useState<string[]>([]);
 
   const filtered = useMemo(() => {
     if (statusFilter === "all") return projectList;
@@ -78,6 +81,8 @@ export default function Projects() {
     setFormStatus("active");
     setFormIcon("📁");
     setFormDeadline("");
+    setFormAgentIds([]);
+    setFormTaskIds([]);
     setFormOpen(true);
   }
 
@@ -89,6 +94,8 @@ export default function Projects() {
     setFormStatus(p.status);
     setFormIcon(p.icon);
     setFormDeadline(p.deadline ?? "");
+    setFormAgentIds([...p.agentIds]);
+    setFormTaskIds([...p.taskIds]);
     setFormOpen(true);
   }
 
@@ -98,7 +105,7 @@ export default function Projects() {
       setProjectList((prev) =>
         prev.map((p) =>
           p.id === editingProject.id
-            ? { ...p, name: formName, description: formDesc, department: formDept, status: formStatus, icon: formIcon, deadline: formDeadline || undefined }
+            ? { ...p, name: formName, description: formDesc, department: formDept, status: formStatus, icon: formIcon, deadline: formDeadline || undefined, agentIds: formAgentIds, taskIds: formTaskIds }
             : p
         )
       );
@@ -111,8 +118,8 @@ export default function Projects() {
         department: formDept,
         icon: formIcon,
         color: departmentInfo[formDept].color,
-        taskIds: [],
-        agentIds: [],
+        taskIds: formTaskIds,
+        agentIds: formAgentIds,
         createdAt: new Date().toISOString().slice(0, 10),
         deadline: formDeadline || undefined,
       };
@@ -349,7 +356,7 @@ export default function Projects() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="pixel-border bg-card max-w-md">
+        <DialogContent className="pixel-border bg-card max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-pixel text-sm text-primary">
               {editingProject ? "✏️ Edit Project" : "➕ New Project"}
@@ -428,6 +435,77 @@ export default function Projects() {
                   className="font-pixel-body text-sm h-10"
                 />
               </div>
+            </div>
+
+            {/* Agent Selection */}
+            <div>
+              <label className="font-pixel text-[10px] text-muted-foreground mb-2 block">
+                👥 AGENTS ({formAgentIds.length} selected)
+              </label>
+              <ScrollArea className="max-h-36 pixel-border p-2" style={{ borderWidth: 1 }}>
+                <div className="space-y-1">
+                  {agents.map((a) => {
+                    const checked = formAgentIds.includes(a.id);
+                    return (
+                      <label
+                        key={a.id}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-muted/50 transition-colors"
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) => {
+                            if (v) setFormAgentIds((prev) => [...prev, a.id]);
+                            else setFormAgentIds((prev) => prev.filter((id) => id !== a.id));
+                          }}
+                        />
+                        <span className="text-base">{a.avatar}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-pixel text-[10px] truncate">{a.name}</div>
+                          <div className="font-pixel text-[8px] text-muted-foreground truncate">{a.specialty}</div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            </div>
+
+            {/* Task Selection */}
+            <div>
+              <label className="font-pixel text-[10px] text-muted-foreground mb-2 block">
+                📋 TASKS ({formTaskIds.length} selected)
+              </label>
+              <ScrollArea className="max-h-36 pixel-border p-2" style={{ borderWidth: 1 }}>
+                <div className="space-y-1">
+                  {tasks.map((t) => {
+                    const checked = formTaskIds.includes(t.id);
+                    const assignee = agents.find((a) => a.id === t.assigneeId);
+                    return (
+                      <label
+                        key={t.id}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-muted/50 transition-colors"
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) => {
+                            if (v) setFormTaskIds((prev) => [...prev, t.id]);
+                            else setFormTaskIds((prev) => prev.filter((id) => id !== t.id));
+                          }}
+                        />
+                        <span className="font-pixel text-[9px]">
+                          {t.status === "done" ? "✅" : t.status === "in-progress" ? "🔄" : "⬜"}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-pixel text-[10px] truncate">{t.title}</div>
+                          <div className="font-pixel text-[8px] text-muted-foreground truncate">
+                            {t.priority} · {assignee ? assignee.name : "Unassigned"}
+                          </div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
             </div>
 
             <Button className="w-full font-pixel text-[11px] h-10" onClick={saveProject} disabled={!formName.trim()}>
