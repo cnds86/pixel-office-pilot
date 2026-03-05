@@ -23,14 +23,14 @@ export function NotificationPopup({ notifications, onDismiss, onClearAll }: Noti
   if (visible.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 w-80">
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 w-96">
       {visible.map((n, i) => (
         <NotificationCard key={n.id} notification={n} onDismiss={onDismiss} index={i} />
       ))}
       {notifications.length > 1 && (
         <button
           onClick={onClearAll}
-          className="font-pixel text-[6px] text-muted-foreground hover:text-primary transition-colors text-right pr-1"
+          className="font-pixel text-[10px] text-muted-foreground hover:text-primary transition-colors text-right pr-1"
         >
           CLEAR ALL ({notifications.length})
         </button>
@@ -51,7 +51,6 @@ function NotificationCard({
   const agent = agents.find((a) => a.id === n.agentId);
   const channel = allChannels.find((c) => c.id === n.channelId);
 
-  // Auto-dismiss after 5s
   useEffect(() => {
     const timer = setTimeout(() => onDismiss(n.id), 5000);
     return () => clearTimeout(timer);
@@ -66,41 +65,41 @@ function NotificationCard({
 
   return (
     <div
-      className="pixel-border bg-card p-3 shadow-lg animate-in slide-in-from-right-5 fade-in duration-300"
+      className="pixel-border bg-card p-4 shadow-lg animate-in slide-in-from-right-5 fade-in duration-300"
       style={{
         borderWidth: 2,
         animationDelay: `${index * 80}ms`,
         animationFillMode: "both",
       }}
     >
-      <div className="flex items-start gap-2">
-        <span className="text-lg shrink-0">{agent?.avatar ?? "🤖"}</span>
+      <div className="flex items-start gap-3">
+        <span className="text-2xl shrink-0">{agent?.avatar ?? "🤖"}</span>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="font-pixel text-[7px] text-primary truncate">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-pixel text-[11px] text-primary truncate">
               {agent?.name ?? "Agent"}
             </span>
             <span
-              className={`font-pixel text-[5px] px-1.5 py-0.5 ${cfg.color} text-primary-foreground`}
+              className={`font-pixel text-[9px] px-2 py-0.5 ${cfg.color} text-primary-foreground`}
             >
               {cfg.icon} {cfg.label}
             </span>
           </div>
           {channel && (
-            <div className="font-pixel text-[5px] text-muted-foreground mb-1">
+            <div className="font-pixel text-[9px] text-muted-foreground mb-1">
               in {channel.name}
             </div>
           )}
-          <p className="font-pixel-body text-[11px] text-foreground leading-snug truncate">
+          <p className="font-pixel-body text-base text-foreground leading-snug truncate">
             {n.message}
           </p>
-          <div className="font-pixel text-[5px] text-muted-foreground mt-1">
+          <div className="font-pixel text-[9px] text-muted-foreground mt-1">
             {n.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </div>
         </div>
         <button
           onClick={() => onDismiss(n.id)}
-          className="font-pixel text-[7px] text-muted-foreground hover:text-foreground shrink-0"
+          className="font-pixel text-sm text-muted-foreground hover:text-foreground shrink-0"
         >
           ✕
         </button>
@@ -109,7 +108,6 @@ function NotificationCard({
   );
 }
 
-// Hook to manage notifications
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
