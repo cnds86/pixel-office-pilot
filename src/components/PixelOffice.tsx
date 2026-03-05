@@ -187,6 +187,11 @@ interface OfficeAgent {
   speechBubble: string | null;
   direction: "left" | "right";
   frame: number;
+  // Elevator transit
+  pendingFloor?: FloorId;
+  pendingTargetX?: number;
+  pendingTargetY?: number;
+  pendingAction?: string;
 }
 
 const speechOptions: Record<AgentAction, string[]> = {
@@ -257,6 +262,32 @@ export function PixelOffice() {
   const [eventParticles, setEventParticles] = useState<{ id: number; x: number; y: number; emoji: string; delay: number }[]>([]);
   const [chatAgent, setChatAgent] = useState<Agent | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [floorTransition, setFloorTransition] = useState<'idle' | 'exit' | 'enter'>('idle');
+  const [transitionDirection, setTransitionDirection] = useState<'up' | 'down'>('up');
+  const [elevatorAgentIds, setElevatorAgentIds] = useState<Set<string>>(new Set());
+  const [elevatorDoorOpen, setElevatorDoorOpen] = useState(true);
+  const [elevatorFloorIndicator, setElevatorFloorIndicator] = useState<FloorId>(4);
+
+  const ELEVATOR_X = 1306;
+  const ELEVATOR_Y = 336;
+
+  const switchFloor = (newFloor: FloorId) => {
+    if (newFloor === currentFloor || floorTransition !== 'idle') return;
+    const dir = newFloor > currentFloor ? 'up' : 'down';
+    setTransitionDirection(dir);
+    setFloorTransition('exit');
+    setElevatorDoorOpen(false);
+    setElevatorFloorIndicator(currentFloor);
+    setTimeout(() => {
+      setCurrentFloor(newFloor);
+      setFloorTransition('enter');
+      setElevatorFloorIndicator(newFloor);
+      setTimeout(() => {
+        setFloorTransition('idle');
+        setElevatorDoorOpen(true);
+      }, 400);
+    }, 350);
+  };
 
   // Initialize agents on their department floors
   useEffect(() => {
@@ -333,13 +364,13 @@ export function PixelOffice() {
         case "fire-drill": {
           const tx = randomBetween(20, 100);
           const ty = randomBetween(CANVAS_H - 60, CANVAS_H - 20);
-          return { ...oa, action: "panicking" as AgentAction, targetX: tx, targetY: ty, floor: 1, speechBubble: pickRandom(speechOptions.panicking), direction: tx > oa.x ? "right" : "left" };
+          return { ...oa, action: "panicking" as AgentAction, targetX: tx, targetY: ty, floor: 1 as FloorId, speechBubble: pickRandom(speechOptions.panicking), direction: (tx > oa.x ? "right" : "left") as "left" | "right" };
         }
         case "pizza-party":
         case "birthday": {
           const tx = pantrySpace.x + randomBetween(20, pantrySpace.w - 20);
           const ty = pantrySpace.y + randomBetween(40, pantrySpace.h - 20);
-          return { ...oa, action: "celebrating" as AgentAction, targetX: tx, targetY: ty, floor: 1, speechBubble: pickRandom(speechOptions.celebrating), direction: tx > oa.x ? "right" : "left" };
+          return { ...oa, action: "celebrating" as AgentAction, targetX: tx, targetY: ty, floor: 1 as FloorId, speechBubble: pickRandom(speechOptions.celebrating), direction: (tx > oa.x ? "right" : "left") as "left" | "right" };
         }
         case "server-down": {
           if (oa.agent.department === "devops") {
@@ -350,7 +381,7 @@ export function PixelOffice() {
         case "surprise-meeting": {
           const tx = randomBetween(720, 760);
           const ty = randomBetween(100, 300);
-          return { ...oa, action: "walking" as AgentAction, targetX: tx, targetY: ty, floor: 2, speechBubble: "📢 all-hands!", direction: tx > oa.x ? "right" : "left" };
+          return { ...oa, action: "walking" as AgentAction, targetX: tx, targetY: ty, floor: 2 as FloorId, speechBubble: "📢 all-hands!", direction: (tx > oa.x ? "right" : "left") as "left" | "right" };
         }
         case "power-outage":
           return { ...oa, action: "panicking" as AgentAction, speechBubble: pickRandom(["😱 lights out!", "🕯️ so dark!", "⚡ what happened?"]) };
@@ -365,7 +396,7 @@ export function PixelOffice() {
     setEventParticles([]);
     setOfficeAgents(prev => prev.map(oa => {
       if (oa.action === "gone-home") return oa;
-      return { ...oa, action: "walking" as AgentAction, targetX: oa.deskX, targetY: oa.deskY, floor: oa.deskFloor, speechBubble: "😮‍💨 back to work!", direction: oa.deskX > oa.x ? "right" : "left" };
+      return { ...oa, action: "walking" as AgentAction, targetX: oa.deskX, targetY: oa.deskY, floor: oa.deskFloor, speechBubble: "😮‍💨 back to work!", direction: (oa.deskX > oa.x ? "right" : "left") as "left" | "right" };
     }));
   }
 
@@ -387,6 +418,26 @@ export function PixelOffice() {
       const h = parseInt(clock.split(":")[0]);
       const phase = getTimePhase(h);
 
+      // Helper: route cross-floor moves through elevator
+      const crossFloorMove = (oa: OfficeAgent, targetFloor: FloorId, tx: number, ty: number, bubble: string): OfficeAgent => {
+        if (targetFloor === oa.floor) {
+          return { ...oa, action: "walking" as AgentAction, targetX: tx, targetY: ty, floor: targetFloor, speechBubble: bubble, direction: (tx > oa.x ? "right" : "left") as "left" | "right" };
+        }
+        // Walk to elevator on current floor first
+        return {
+          ...oa,
+          action: "walking" as AgentAction,
+          targetX: ELEVATOR_X,
+          targetY: ELEVATOR_Y,
+          speechBubble: "🛗 elevator...",
+          direction: (ELEVATOR_X > oa.x ? "right" : "left") as "left" | "right",
+          pendingFloor: targetFloor,
+          pendingTargetX: tx,
+          pendingTargetY: ty,
+          pendingAction: bubble,
+        };
+      };
+
       setOfficeAgents(prev => prev.map(oa => {
         if (oa.action === "walking") return oa;
         if (activeEvent && (oa.action === "panicking" || oa.action === "celebrating")) return oa;
@@ -396,7 +447,7 @@ export function PixelOffice() {
           return oa;
         }
         if (phase === "morning" && oa.action === "gone-home") {
-          return { ...oa, action: "walking", targetX: oa.deskX, targetY: oa.deskY, floor: oa.deskFloor, speechBubble: "☕ good morning!", direction: "right" };
+          return crossFloorMove(oa, oa.deskFloor, oa.deskX, oa.deskY, "☕ good morning!");
         }
         if (phase === "evening" && oa.action !== "gone-home" && Math.random() < 0.08) {
           return { ...oa, action: "gone-home", speechBubble: pickRandom(speechOptions["gone-home"]) };
@@ -413,7 +464,7 @@ export function PixelOffice() {
         if (roll < 0.28) {
           const tx = pantrySpace.x + randomBetween(30, pantrySpace.w - 30);
           const ty = pantrySpace.y + randomBetween(60, pantrySpace.h - 40);
-          return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: 1, speechBubble: pickRandom(speechOptions.coffee), direction: tx > oa.x ? "right" : "left" };
+          return crossFloorMove(oa, 1, tx, ty, pickRandom(speechOptions.coffee));
         }
         // Go to Gym (F1)
         if (roll < 0.34) {
@@ -421,7 +472,7 @@ export function PixelOffice() {
           if (gymSpace) {
             const tx = gymSpace.x + randomBetween(20, gymSpace.w - 20);
             const ty = gymSpace.y + randomBetween(20, gymSpace.h - 20);
-            return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: 1, speechBubble: "💪 gym time!", direction: tx > oa.x ? "right" : "left" };
+            return crossFloorMove(oa, 1, tx, ty, "💪 gym time!");
           }
         }
         // Go to Library (F3)
@@ -430,7 +481,7 @@ export function PixelOffice() {
           if (libSpace) {
             const tx = libSpace.x + randomBetween(20, libSpace.w - 20);
             const ty = libSpace.y + randomBetween(40, libSpace.h - 20);
-            return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: 3, speechBubble: "📚 reading time!", direction: tx > oa.x ? "right" : "left" };
+            return crossFloorMove(oa, 3, tx, ty, "📚 reading time!");
           }
         }
         // Go to Workshop (F3)
@@ -439,7 +490,7 @@ export function PixelOffice() {
           if (workshopSpace) {
             const tx = workshopSpace.x + randomBetween(20, workshopSpace.w - 20);
             const ty = workshopSpace.y + randomBetween(40, workshopSpace.h - 20);
-            return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: 3, speechBubble: "🔧 fixing stuff!", direction: tx > oa.x ? "right" : "left" };
+            return crossFloorMove(oa, 3, tx, ty, "🔧 fixing stuff!");
           }
         }
         // Go to Lounge (F4)
@@ -448,7 +499,7 @@ export function PixelOffice() {
           if (loungeSpace) {
             const tx = loungeSpace.x + randomBetween(20, loungeSpace.w - 20);
             const ty = loungeSpace.y + randomBetween(20, loungeSpace.h - 20);
-            return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: 4, speechBubble: "🎮 break time!", direction: tx > oa.x ? "right" : "left" };
+            return crossFloorMove(oa, 4, tx, ty, "🎮 break time!");
           }
         }
         // Go to Meeting room
@@ -456,10 +507,10 @@ export function PixelOffice() {
           const meetingSpaces = [...(sharedSpaces[2] || []), ...(sharedSpaces[4] || [])].filter(s => s.type === "meeting");
           const meetRoom = pickRandom(meetingSpaces);
           if (meetRoom) {
-            const mFloor = sharedSpaces[2]?.includes(meetRoom) ? 2 : 4;
+            const mFloor = (sharedSpaces[2]?.includes(meetRoom) ? 2 : 4) as FloorId;
             const tx = meetRoom.x + randomBetween(20, meetRoom.w - 20);
             const ty = meetRoom.y + randomBetween(40, meetRoom.h - 20);
-            return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: mFloor as FloorId, speechBubble: pickRandom(speechOptions.meeting), direction: tx > oa.x ? "right" : "left" };
+            return crossFloorMove(oa, mFloor, tx, ty, pickRandom(speechOptions.meeting));
           }
         }
         // Go to Mail Room (F1)
@@ -468,7 +519,7 @@ export function PixelOffice() {
           if (mailSpace) {
             const tx = mailSpace.x + randomBetween(20, mailSpace.w - 20);
             const ty = mailSpace.y + randomBetween(20, mailSpace.h - 20);
-            return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: 1, speechBubble: "📬 checking mail!", direction: tx > oa.x ? "right" : "left" };
+            return crossFloorMove(oa, 1, tx, ty, "📬 checking mail!");
           }
         }
         // Go to R&D Lab (F4)
@@ -477,18 +528,18 @@ export function PixelOffice() {
           if (labSpace) {
             const tx = labSpace.x + randomBetween(20, labSpace.w - 20);
             const ty = labSpace.y + randomBetween(40, labSpace.h - 20);
-            return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: 4, speechBubble: "🧬 experimenting!", direction: tx > oa.x ? "right" : "left" };
+            return crossFloorMove(oa, 4, tx, ty, "🧬 experimenting!");
           }
         }
         // Walk within own room
         if (roll < 0.72) {
           const tx = room.x + randomBetween(20, room.w - 20);
           const ty = room.y + randomBetween(40, room.h - 20);
-          return { ...oa, action: "walking", targetX: tx, targetY: ty, floor: room.floor, speechBubble: pickRandom(speechOptions.chatting), direction: tx > oa.x ? "right" : "left" };
+          return { ...oa, action: "walking" as AgentAction, targetX: tx, targetY: ty, floor: room.floor, speechBubble: pickRandom(speechOptions.chatting), direction: (tx > oa.x ? "right" : "left") as "left" | "right" };
         }
         // Return to desk
         if (roll < 0.85) {
-          return { ...oa, action: "walking", targetX: oa.deskX, targetY: oa.deskY, floor: oa.deskFloor, speechBubble: null, direction: oa.deskX > oa.x ? "right" : "left" };
+          return crossFloorMove(oa, oa.deskFloor, oa.deskX, oa.deskY, "🫡 back to work!");
         }
         return { ...oa, speechBubble: pickRandom(speechOptions.idle) };
       }));
@@ -499,53 +550,88 @@ export function PixelOffice() {
   // Movement
   useEffect(() => {
     const tick = setInterval(() => {
-      setOfficeAgents(prev => prev.map(oa => {
-        const isMoving = oa.action === "walking" || oa.action === "panicking" || oa.action === "celebrating";
-        if (!isMoving) return { ...oa, frame: oa.frame + 1 };
-        const dx = oa.targetX - oa.x;
-        const dy = oa.targetY - oa.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+      setOfficeAgents(prev => {
+        const newElevatorIds = new Set<string>();
+        const result = prev.map(oa => {
+          const isMoving = oa.action === "walking" || oa.action === "panicking" || oa.action === "celebrating";
+          if (!isMoving) return { ...oa, frame: oa.frame + 1 };
+          const dx = oa.targetX - oa.x;
+          const dy = oa.targetY - oa.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < 3) {
-          const atDesk = Math.abs(oa.targetX - oa.deskX) < 10 && Math.abs(oa.targetY - oa.deskY) < 10;
-          
-          // Detect which shared space the agent arrived at
-          const findSpace = (floor: FloorId) => {
-            return (sharedSpaces[floor] || []).find(s =>
-              oa.targetX >= s.x && oa.targetX <= s.x + s.w &&
-              oa.targetY >= s.y && oa.targetY <= s.y + s.h
-            );
-          };
-          const arrivedSpace = findSpace(oa.floor);
+          if (dist < 3) {
+            // Check if agent arrived at elevator with pending floor
+            if (oa.pendingFloor && Math.abs(oa.targetX - ELEVATOR_X) < 15 && Math.abs(oa.targetY - ELEVATOR_Y) < 15) {
+              newElevatorIds.add(oa.agent.id);
+              // Agent enters elevator - will be "hidden" briefly then appear on new floor
+              return {
+                ...oa,
+                x: ELEVATOR_X, y: ELEVATOR_Y,
+                action: "walking" as AgentAction,
+                floor: oa.pendingFloor,
+                targetX: oa.pendingTargetX!,
+                targetY: oa.pendingTargetY!,
+                speechBubble: oa.pendingAction || "🛗 ding!",
+                direction: (oa.pendingTargetX! > ELEVATOR_X ? "right" : "left") as "left" | "right",
+                pendingFloor: undefined,
+                pendingTargetX: undefined,
+                pendingTargetY: undefined,
+                pendingAction: undefined,
+                frame: 0,
+              };
+            }
 
-          let newAction: AgentAction = "idle";
-          let bubble: string | null = null;
-
-          if (atDesk) {
-            newAction = "working"; bubble = pickRandom(speechOptions.working);
-          } else if (arrivedSpace) {
-            const spaceActionMap: Record<string, AgentAction> = {
-              "pantry": "coffee", "gym": "gym", "library": "library",
-              "workshop": "workshop", "lounge": "lounge", "meeting": "meeting",
-              "mail-room": "mailing", "security": "security-check",
-              "phone-booth": "calling", "print-room": "printing",
-              "lab": "working", "server-room": "working", "lobby": "idle",
-              "storage": "idle",
+            const atDesk = Math.abs(oa.targetX - oa.deskX) < 10 && Math.abs(oa.targetY - oa.deskY) < 10;
+            
+            // Detect which shared space the agent arrived at
+            const findSpace = (floor: FloorId) => {
+              return (sharedSpaces[floor] || []).find(s =>
+                oa.targetX >= s.x && oa.targetX <= s.x + s.w &&
+                oa.targetY >= s.y && oa.targetY <= s.y + s.h
+              );
             };
-            newAction = spaceActionMap[arrivedSpace.type] || "idle";
-            bubble = pickRandom(speechOptions[newAction] || speechOptions.idle);
-          } else {
-            newAction = "chatting"; bubble = pickRandom(speechOptions.chatting);
-          }
-          return { ...oa, x: oa.targetX, y: oa.targetY, action: newAction, speechBubble: bubble, frame: 0 };
-        }
+            const arrivedSpace = findSpace(oa.floor);
 
-        const speed = oa.action === "panicking" ? 3.5 : oa.action === "celebrating" ? 2.5 : 1.8;
-        return { ...oa, x: oa.x + (dx / dist) * speed, y: oa.y + (dy / dist) * speed, direction: dx > 0 ? "right" : "left", frame: oa.frame + 1 };
-      }));
+            let newAction: AgentAction = "idle";
+            let bubble: string | null = null;
+
+            if (atDesk) {
+              newAction = "working"; bubble = pickRandom(speechOptions.working);
+            } else if (arrivedSpace) {
+              const spaceActionMap: Record<string, AgentAction> = {
+                "pantry": "coffee", "gym": "gym", "library": "library",
+                "workshop": "workshop", "lounge": "lounge", "meeting": "meeting",
+                "mail-room": "mailing", "security": "security-check",
+                "phone-booth": "calling", "print-room": "printing",
+                "lab": "working", "server-room": "working", "lobby": "idle",
+                "storage": "idle",
+              };
+              newAction = spaceActionMap[arrivedSpace.type] || "idle";
+              bubble = pickRandom(speechOptions[newAction] || speechOptions.idle);
+            } else {
+              newAction = "chatting"; bubble = pickRandom(speechOptions.chatting);
+            }
+            return { ...oa, x: oa.targetX, y: oa.targetY, action: newAction, speechBubble: bubble, frame: 0 };
+          }
+
+          // Track agents walking to elevator
+          if (oa.pendingFloor) {
+            newElevatorIds.add(oa.agent.id);
+          }
+
+          const speed = oa.action === "panicking" ? 3.5 : oa.action === "celebrating" ? 2.5 : 1.8;
+          const dir: "left" | "right" = dx > 0 ? "right" : "left";
+          return { ...oa, x: oa.x + (dx / dist) * speed, y: oa.y + (dy / dist) * speed, direction: dir, frame: oa.frame + 1 };
+        });
+        // Update elevator agent tracking
+        if (newElevatorIds.size !== elevatorAgentIds.size || [...newElevatorIds].some(id => !elevatorAgentIds.has(id))) {
+          setTimeout(() => setElevatorAgentIds(newElevatorIds), 0);
+        }
+        return result;
+      });
     }, 50);
     return () => clearInterval(tick);
-  }, []);
+  }, [elevatorAgentIds]);
 
   const handleAgentClick = (oa: OfficeAgent) => {
     setSelectedAgent(oa);
@@ -565,7 +651,7 @@ export function PixelOffice() {
     if (!selectedAgent) return;
     setOfficeAgents(prev => prev.map(oa =>
       oa.agent.id === selectedAgent.agent.id
-        ? { ...oa, action: "walking" as const, targetX: tx, targetY: ty, floor: floor ?? oa.floor, speechBubble: bubble, direction: tx > oa.x ? "right" : "left" }
+        ? { ...oa, action: "walking" as const, targetX: tx, targetY: ty, floor: floor ?? oa.floor, speechBubble: bubble, direction: (tx > oa.x ? "right" : "left") as "left" | "right" }
         : oa
     ));
     setDialogOpen(false);
@@ -624,7 +710,7 @@ export function PixelOffice() {
           return (
             <button
               key={f}
-              onClick={() => setCurrentFloor(f)}
+              onClick={() => switchFloor(f)}
               className={`relative px-4 py-2 font-pixel text-[10px] transition-all border-2 ${
                 isActive
                   ? "bg-primary text-primary-foreground border-primary z-10 shadow-[3px_3px_0_0_hsl(var(--primary)/0.4)]"
@@ -676,7 +762,16 @@ export function PixelOffice() {
           ref={containerRef}
           className="pixel-border bg-card relative overflow-x-auto overflow-y-hidden select-none h-full"
         >
-          <div className="relative" style={{ width: CANVAS_W, height: CANVAS_H, minWidth: CANVAS_W }}>
+          <div className="relative" style={{
+            width: CANVAS_W, height: CANVAS_H, minWidth: CANVAS_W,
+            transition: floorTransition !== 'idle' ? 'transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease' : 'none',
+            transform: floorTransition === 'exit'
+              ? `translateY(${transitionDirection === 'up' ? '40px' : '-40px'})` 
+              : floorTransition === 'enter'
+              ? 'translateY(0)'
+              : 'none',
+            opacity: floorTransition === 'exit' ? 0 : 1,
+          }}>
             {/* Background - isometric style floor */}
             <div className="absolute inset-0" style={{
               backgroundColor: "hsl(220 15% 10%)",
@@ -1068,10 +1163,56 @@ export function PixelOffice() {
               ))}
               {/* Elevator */}
               <div className="absolute right-4 top-4 flex flex-col items-center">
-                <div className="w-[50px] h-[60px] bg-muted/20 pixel-border flex flex-col items-center justify-center gap-1" style={{ borderWidth: 2 }}>
-                  <span className="text-lg">🛗</span>
-                  <span className="font-pixel text-[5px] text-muted-foreground">ELEVATOR</span>
+                {/* Floor indicator */}
+                <div className="w-[50px] h-[14px] bg-card/80 pixel-border flex items-center justify-center gap-0.5 mb-0.5" style={{ borderWidth: 1 }}>
+                  {([1,2,3,4] as FloorId[]).map(f => (
+                    <div key={f} className="font-pixel text-[4px]" style={{
+                      color: f === elevatorFloorIndicator ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground) / 0.3)',
+                      textShadow: f === elevatorFloorIndicator ? '0 0 4px hsl(var(--primary) / 0.5)' : 'none',
+                    }}>{f}</div>
+                  ))}
                 </div>
+                {/* Elevator shaft */}
+                <div className="w-[50px] h-[60px] bg-muted/10 pixel-border relative overflow-hidden" style={{ borderWidth: 2 }}>
+                  {/* Doors */}
+                  <div className="absolute inset-0 flex">
+                    <div className="h-full bg-muted/40" style={{
+                      width: elevatorDoorOpen ? '4px' : '50%',
+                      transition: 'width 0.4s cubic-bezier(0.4,0,0.2,1)',
+                      borderRight: '1px solid hsl(var(--border))',
+                    }} />
+                    <div className="flex-1" />
+                    <div className="h-full bg-muted/40" style={{
+                      width: elevatorDoorOpen ? '4px' : '50%',
+                      transition: 'width 0.4s cubic-bezier(0.4,0,0.2,1)',
+                      borderLeft: '1px solid hsl(var(--border))',
+                    }} />
+                  </div>
+                  {/* Interior when open */}
+                  {elevatorDoorOpen && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+                      <span className="text-lg">🛗</span>
+                    </div>
+                  )}
+                  {/* Agents in elevator indicator */}
+                  {elevatorAgentIds.size > 0 && !elevatorDoorOpen && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="flex gap-0.5">
+                        {Array.from(elevatorAgentIds).slice(0, 3).map((_, i) => (
+                          <div key={i} className="w-2 h-3 rounded-sm animate-pixel-pulse" style={{
+                            backgroundColor: 'hsl(var(--primary) / 0.6)',
+                            animationDelay: `${i * 0.2}s`,
+                          }} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* Ding light */}
+                  {floorTransition === 'enter' && (
+                    <div className="absolute top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-primary animate-ping" />
+                  )}
+                </div>
+                <span className="font-pixel text-[5px] text-muted-foreground mt-0.5">ELEVATOR</span>
               </div>
               {/* Stairs */}
               <div className="absolute left-8 top-4 flex flex-col items-center">
@@ -1237,7 +1378,7 @@ export function PixelOffice() {
             return (
               <button
                 key={f}
-                onClick={() => setCurrentFloor(f)}
+                onClick={() => switchFloor(f)}
                 className={`w-full h-7 flex items-center justify-center gap-1 font-pixel text-[6px] transition-colors border ${
                   currentFloor === f
                     ? "bg-primary/20 border-primary text-primary"
