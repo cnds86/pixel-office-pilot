@@ -24,25 +24,30 @@ export interface ChatMsg {
   taskTitle?: string;
 }
 
-// DM channels — one per agent
-export const dmChannels: ChatChannel[] = [
-  { id: "dm-a1", type: "dm", name: "ClawBot-α", icon: "🤖", memberIds: ["a1"], lastMessage: "Done! Code pushed. ⚡", lastTimestamp: "2m ago", unread: 1 },
-  { id: "dm-h1", type: "dm", name: "Alex Chen", icon: "👾", memberIds: ["h1"], lastMessage: "Let's sync at 3pm", lastTimestamp: "10m ago", unread: 0 },
-  { id: "dm-a3", type: "dm", name: "TestRunner", icon: "🧪", memberIds: ["a3"], lastMessage: "All 47 tests passed ✓", lastTimestamp: "15m ago", unread: 2 },
-  { id: "dm-a5", type: "dm", name: "DeployBot", icon: "🚀", memberIds: ["a5"], lastMessage: "Staging is live!", lastTimestamp: "20m ago", unread: 0 },
-  { id: "dm-h2", type: "dm", name: "Mika Tanaka", icon: "🎮", memberIds: ["h2"], lastMessage: "PR is ready for review", lastTimestamp: "1h ago", unread: 0 },
-];
+// DM channels — generated from ALL agents
+export function generateDmChannels(): ChatChannel[] {
+  return agents.map((a) => ({
+    id: `dm-${a.id}`,
+    type: "dm" as ChannelType,
+    name: a.name,
+    icon: a.avatar,
+    memberIds: [a.id],
+    lastMessage: undefined,
+    lastTimestamp: undefined,
+    unread: 0,
+  }));
+}
 
-// Group channels
-export const groupChannels: ChatChannel[] = [
+// Initial group channels
+export const initialGroupChannels: ChatChannel[] = [
   { id: "grp-eng", type: "group", name: "🔧 Engineering Team", icon: "⚡", description: "All engineering discussions", memberIds: ["a1", "a6", "a7", "a8", "h1", "h2", "h3", "h9"], lastMessage: "ByteCrunch: Optimization done!", lastTimestamp: "5m ago", unread: 3 },
   { id: "grp-design", type: "group", name: "🎨 Design Crew", icon: "🎨", description: "Design reviews and feedback", memberIds: ["a2", "a10", "a11", "h10", "h11"], lastMessage: "LayoutAI: New grid system ready", lastTimestamp: "12m ago", unread: 1 },
   { id: "grp-devops", type: "group", name: "🚀 DevOps Squad", icon: "🚀", description: "Deployments, infra, monitoring", memberIds: ["a5", "a14", "a15", "h14"], lastMessage: "CloudGuard: SSL renewed ✓", lastTimestamp: "30m ago", unread: 0 },
   { id: "grp-all", type: "group", name: "📢 All Hands", icon: "📢", description: "Company-wide announcements", memberIds: agents.map(a => a.id), lastMessage: "Morgan Cho: Q2 roadmap published!", lastTimestamp: "1h ago", unread: 5 },
 ];
 
-// Topic channels
-export const topicChannels: ChatChannel[] = [
+// Initial topic channels
+export const initialTopicChannels: ChatChannel[] = [
   { id: "top-auth", type: "topic", name: "# auth-module", icon: "🔐", description: "OAuth2 implementation discussion", memberIds: ["h3", "a1", "h1", "a6"], lastMessage: "Sam: Token refresh logic is tricky", lastTimestamp: "8m ago", unread: 2 },
   { id: "top-ui", type: "topic", name: "# ui-components", icon: "🧩", description: "Component library & design system", memberIds: ["a2", "a10", "h10", "h2"], lastMessage: "PixelForge: Button variants done", lastTimestamp: "20m ago", unread: 0 },
   { id: "top-perf", type: "topic", name: "# performance", icon: "⚡", description: "Performance audits & optimization", memberIds: ["a7", "a3", "h9", "a12"], lastMessage: "ByteCrunch: Bundle size -40%!", lastTimestamp: "45m ago", unread: 1 },
@@ -50,6 +55,10 @@ export const topicChannels: ChatChannel[] = [
   { id: "top-bugs", type: "topic", name: "# bug-reports", icon: "🐛", description: "Bug tracking and triage", memberIds: ["a12", "a3", "h12", "h13"], lastMessage: "BugHunter: Found race condition", lastTimestamp: "2h ago", unread: 4 },
 ];
 
+// Keep for backward compat
+export const dmChannels = generateDmChannels();
+export const groupChannels = initialGroupChannels;
+export const topicChannels = initialTopicChannels;
 export const allChannels: ChatChannel[] = [...dmChannels, ...groupChannels, ...topicChannels];
 
 // Mock conversation responses per channel type
@@ -128,7 +137,6 @@ export function getMockResponse(channelId: string, agentId: string): string {
     const pool = topicResponses[channelId] || topicResponses["top-bugs"];
     return pickRandom(pool);
   }
-  // DM fallback
   const dmFallback = [
     "Got it! I'll work on that right away. 💪",
     "Interesting idea! Let me prototype something.",
@@ -139,9 +147,8 @@ export function getMockResponse(channelId: string, agentId: string): string {
   return pickRandom(dmFallback);
 }
 
-// Generate initial messages for each channel
-export function getInitialMessages(channelId: string): ChatMsg[] {
-  const channel = allChannels.find(c => c.id === channelId);
+export function getInitialMessages(channelId: string, channelList: ChatChannel[]): ChatMsg[] {
+  const channel = channelList.find(c => c.id === channelId);
   if (!channel) return [];
 
   const now = Date.now();
