@@ -211,19 +211,19 @@ export default function ChatHub() {
     <AppLayout>
       <div className="flex h-[calc(100vh-2rem)] gap-0 m-4">
         {/* ─── Sidebar ──────────────────────────────── */}
-        <div className="w-72 shrink-0 pixel-border bg-card flex flex-col">
-          <div className="p-3 border-b border-border">
-            <h2 className="font-pixel text-[10px] text-primary">💬 CHAT HUB</h2>
-            <p className="font-pixel text-[6px] text-muted-foreground mt-1">
+        <div className="w-80 shrink-0 pixel-border bg-card flex flex-col">
+          <div className="p-4 border-b border-border">
+            <h2 className="font-pixel text-sm text-primary">💬 CHAT HUB</h2>
+            <p className="font-pixel text-[10px] text-muted-foreground mt-1">
               DMs · Groups · Topics
             </p>
           </div>
 
-          <Tabs value={tab} onValueChange={(v) => setTab(v as ChannelType)} className="px-2 pt-2">
-            <TabsList className="w-full grid grid-cols-3 h-7">
-              <TabsTrigger value="dm" className="font-pixel text-[6px] h-6">DM</TabsTrigger>
-              <TabsTrigger value="group" className="font-pixel text-[6px] h-6">GROUP</TabsTrigger>
-              <TabsTrigger value="topic" className="font-pixel text-[6px] h-6">TOPIC</TabsTrigger>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as ChannelType)} className="px-3 pt-3">
+            <TabsList className="w-full grid grid-cols-3 h-9">
+              <TabsTrigger value="dm" className="font-pixel text-[10px] h-8">DM</TabsTrigger>
+              <TabsTrigger value="group" className="font-pixel text-[10px] h-8">GROUP</TabsTrigger>
+              <TabsTrigger value="topic" className="font-pixel text-[10px] h-8">TOPIC</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -233,24 +233,24 @@ export default function ChatHub() {
                 <button
                   key={ch.id}
                   onClick={() => setActiveChannelId(ch.id)}
-                  className={`w-full text-left px-3 py-2 transition-colors flex items-center gap-2 ${
+                  className={`w-full text-left px-3 py-3 transition-colors flex items-center gap-3 ${
                     activeChannelId === ch.id
                       ? "bg-primary/10 text-primary pixel-border-glow"
                       : "hover:bg-muted/50 text-foreground"
                   }`}
                   style={{ borderWidth: activeChannelId === ch.id ? 2 : 0 }}
                 >
-                  <span className="text-sm">{ch.icon}</span>
+                  <span className="text-lg">{ch.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <div className="font-pixel text-[7px] truncate">{ch.name}</div>
+                    <div className="font-pixel text-[11px] truncate">{ch.name}</div>
                     {ch.lastMessage && (
-                      <div className="font-pixel-body text-[10px] text-muted-foreground truncate">
+                      <div className="font-pixel-body text-sm text-muted-foreground truncate">
                         {ch.lastMessage}
                       </div>
                     )}
                   </div>
                   {ch.unread > 0 && (
-                    <Badge className="font-pixel text-[5px] h-4 min-w-4 justify-center bg-primary text-primary-foreground">
+                    <Badge className="font-pixel text-[9px] h-5 min-w-5 justify-center bg-primary text-primary-foreground">
                       {ch.unread}
                     </Badge>
                   )}
@@ -261,10 +261,10 @@ export default function ChatHub() {
 
           {/* Created tasks */}
           {createdTasks.length > 0 && (
-            <div className="p-2 border-t border-border">
+            <div className="p-3 border-t border-border">
               <button
                 onClick={() => setTaskDialogOpen(true)}
-                className="w-full font-pixel text-[6px] text-accent hover:text-primary transition-colors text-left"
+                className="w-full font-pixel text-[10px] text-accent hover:text-primary transition-colors text-left"
               >
                 📋 {createdTasks.length} task(s) created
               </button>
@@ -277,29 +277,29 @@ export default function ChatHub() {
           {activeChannel ? (
             <>
               {/* Header */}
-              <div className="p-3 border-b border-border bg-muted/20 flex items-center gap-3">
-                <span className="text-lg">{activeChannel.icon}</span>
+              <div className="p-4 border-b border-border bg-muted/20 flex items-center gap-3">
+                <span className="text-2xl">{activeChannel.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="font-pixel text-[9px] text-primary truncate">
+                  <div className="font-pixel text-sm text-primary truncate">
                     {activeChannel.name}
                   </div>
                   {activeChannel.description && (
-                    <div className="font-pixel text-[6px] text-muted-foreground">
+                    <div className="font-pixel text-[10px] text-muted-foreground">
                       {activeChannel.description}
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   {activeChannel.memberIds.slice(0, 5).map((mid) => {
                     const a = getAgent(mid);
                     return a ? (
-                      <span key={mid} className="text-xs" title={a.name}>
+                      <span key={mid} className="text-base" title={a.name}>
                         {a.avatar}
                       </span>
                     ) : null;
                   })}
                   {activeChannel.memberIds.length > 5 && (
-                    <span className="font-pixel text-[6px] text-muted-foreground">
+                    <span className="font-pixel text-[10px] text-muted-foreground">
                       +{activeChannel.memberIds.length - 5}
                     </span>
                   )}
@@ -307,7 +307,7 @@ export default function ChatHub() {
               </div>
 
               {/* Messages */}
-              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
                 {messages.map((msg) => {
                   const isUser = msg.senderId === "user";
                   const agent = !isUser ? getAgent(msg.senderId) : null;
@@ -318,7 +318,7 @@ export default function ChatHub() {
                       className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[75%] px-3 py-2 pixel-border ${
+                        className={`max-w-[75%] px-4 py-3 pixel-border ${
                           msg.isTask
                             ? "bg-accent/20 border-accent"
                             : isUser
@@ -328,28 +328,28 @@ export default function ChatHub() {
                         style={{ borderWidth: 2 }}
                       >
                         {!isUser && agent && (
-                          <div className="flex items-center gap-1 mb-1">
-                            <span className="text-xs">{agent.avatar}</span>
-                            <span className="font-pixel text-[6px] text-primary">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span className="text-base">{agent.avatar}</span>
+                            <span className="font-pixel text-[10px] text-primary">
                               {agent.name}
                             </span>
                           </div>
                         )}
                         {msg.isTask && (
-                          <div className="flex items-center gap-1 mb-1">
-                            <Badge className="font-pixel text-[5px] bg-accent text-accent-foreground">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge className="font-pixel text-[9px] bg-accent text-accent-foreground">
                               📋 TASK
                             </Badge>
-                            <span className="font-pixel text-[6px] text-accent">
+                            <span className="font-pixel text-[10px] text-accent">
                               {msg.taskTitle}
                             </span>
                           </div>
                         )}
-                        <span className="font-pixel-body text-xs leading-relaxed">
+                        <span className="font-pixel-body text-base leading-relaxed">
                           {msg.isTask ? msg.content.replace(/^\/task\s+/i, "") : msg.content}
                         </span>
                         <div
-                          className={`font-pixel text-[5px] mt-1 ${
+                          className={`font-pixel text-[9px] mt-1.5 ${
                             isUser ? "text-primary-foreground/60" : "text-muted-foreground"
                           }`}
                         >
@@ -366,10 +366,10 @@ export default function ChatHub() {
                 {isTyping && activeChannel && (
                   <div className="flex justify-start">
                     <div
-                      className="bg-muted px-3 py-2 pixel-border"
+                      className="bg-muted px-4 py-3 pixel-border"
                       style={{ borderWidth: 2 }}
                     >
-                      <span className="font-pixel-body text-xs text-muted-foreground animate-pulse">
+                      <span className="font-pixel-body text-base text-muted-foreground animate-pulse">
                         typing...
                       </span>
                     </div>
@@ -378,7 +378,7 @@ export default function ChatHub() {
               </div>
 
               {/* Input */}
-              <div className="p-3 border-t border-border bg-muted/20">
+              <div className="p-4 border-t border-border bg-muted/20">
                 <div className="flex gap-2">
                   <Input
                     ref={inputRef}
@@ -390,19 +390,19 @@ export default function ChatHub() {
                         ? `Message ${activeChannel.name}...`
                         : `Message ${activeChannel.name}... (use /task to create task)`
                     }
-                    className="font-pixel-body text-xs h-8 bg-background"
+                    className="font-pixel-body text-base h-10 bg-background"
                     disabled={isTyping}
                   />
                   <Button
                     size="sm"
-                    className="font-pixel text-[7px] h-8 px-4"
+                    className="font-pixel text-[11px] h-10 px-5"
                     onClick={sendMessage}
                     disabled={!input.trim() || isTyping}
                   >
                     SEND
                   </Button>
                 </div>
-                <div className="font-pixel text-[5px] text-muted-foreground mt-1">
+                <div className="font-pixel text-[9px] text-muted-foreground mt-2">
                   💡 Use <span className="text-primary">/task [title]</span> to create a task
                 </div>
               </div>
@@ -410,8 +410,8 @@ export default function ChatHub() {
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
-                <span className="text-4xl">💬</span>
-                <p className="font-pixel text-[8px] text-muted-foreground mt-2">
+                <span className="text-5xl">💬</span>
+                <p className="font-pixel text-sm text-muted-foreground mt-3">
                   Select a channel to start chatting
                 </p>
               </div>
@@ -424,10 +424,10 @@ export default function ChatHub() {
       <Dialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen}>
         <DialogContent className="pixel-border bg-card max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-pixel text-[10px] text-primary">
+            <DialogTitle className="font-pixel text-sm text-primary">
               📋 Created Tasks
             </DialogTitle>
-            <DialogDescription className="font-pixel text-[7px] text-muted-foreground">
+            <DialogDescription className="font-pixel text-[11px] text-muted-foreground">
               Tasks created from chat this session
             </DialogDescription>
           </DialogHeader>
@@ -435,9 +435,9 @@ export default function ChatHub() {
             {createdTasks.map((t, i) => {
               const agent = getAgent(t.assigneeId);
               return (
-                <div key={i} className="px-3 py-2 bg-muted pixel-border" style={{ borderWidth: 2 }}>
-                  <div className="font-pixel text-[7px] text-foreground">{t.title}</div>
-                  <div className="font-pixel text-[5px] text-muted-foreground mt-1">
+                <div key={i} className="px-3 py-3 bg-muted pixel-border" style={{ borderWidth: 2 }}>
+                  <div className="font-pixel text-[11px] text-foreground">{t.title}</div>
+                  <div className="font-pixel text-[9px] text-muted-foreground mt-1">
                     → {agent?.avatar} {agent?.name}
                   </div>
                 </div>
