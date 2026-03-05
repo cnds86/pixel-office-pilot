@@ -25,6 +25,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { NotificationPopup, useNotifications } from "@/components/NotificationPopup";
 
 // ─── Task quick-create from /task command ──────────────────────────
 interface QuickTask {
@@ -50,6 +51,7 @@ export default function ChatHub() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { notifications, push: pushNotif, dismiss: dismissNotif, clearAll: clearNotifs } = useNotifications();
 
   const activeChannel = useMemo(
     () => allChannels.find((c) => c.id === activeChannelId),
@@ -121,11 +123,12 @@ export default function ChatHub() {
       // Agent acknowledges
       setIsTyping(true);
       setTimeout(() => {
+        const ackContent = `Got it! I'll work on "${taskTitle}" right away. 💪`;
         const ackMsg: ChatMsg = {
           id: `ack-${Date.now()}`,
           channelId: activeChannelId,
           senderId: assignee,
-          content: `Got it! I'll work on "${taskTitle}" right away. 💪`,
+          content: ackContent,
           timestamp: new Date(),
         };
         setMessageStore((prev) => ({
@@ -133,6 +136,7 @@ export default function ChatHub() {
           [activeChannelId]: [...(prev[activeChannelId] || []), ackMsg],
         }));
         setIsTyping(false);
+        pushNotif({ agentId: assignee, channelId: activeChannelId, message: ackContent, type: "task-done" });
       }, 800);
       return;
     }
@@ -171,6 +175,7 @@ export default function ChatHub() {
         [activeChannelId]: [...(prev[activeChannelId] || []), agentMsg],
       }));
       setIsTyping(false);
+      pushNotif({ agentId: responderId, channelId: activeChannelId, message: response, type: "reply" });
 
       // In group/topic channels, sometimes a second agent chimes in
       if (activeChannel.type !== "dm" && Math.random() > 0.5 && responderIds.length > 1) {
@@ -180,11 +185,12 @@ export default function ChatHub() {
         setTimeout(() => {
           setIsTyping(true);
           setTimeout(() => {
+            const secondResponse = getMockResponse(activeChannelId, secondId);
             const secondMsg: ChatMsg = {
               id: `a2-${Date.now()}`,
               channelId: activeChannelId,
               senderId: secondId,
-              content: getMockResponse(activeChannelId, secondId),
+              content: secondResponse,
               timestamp: new Date(),
             };
             setMessageStore((prev) => ({
@@ -192,11 +198,12 @@ export default function ChatHub() {
               [activeChannelId]: [...(prev[activeChannelId] || []), secondMsg],
             }));
             setIsTyping(false);
+            pushNotif({ agentId: secondId, channelId: activeChannelId, message: secondResponse, type: "reply" });
           }, 600 + Math.random() * 800);
         }, 300);
       }
     }, delay);
-  }, [input, isTyping, activeChannel, activeChannelId, toast]);
+  }, [input, isTyping, activeChannel, activeChannelId, toast, pushNotif]);
 
   const getAgent = (id: string): Agent | undefined => agents.find((a) => a.id === id);
 
@@ -439,6 +446,12 @@ export default function ChatHub() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <NotificationPopup
+        notifications={notifications}
+        onDismiss={dismissNotif}
+        onClearAll={clearNotifs}
+      />
     </AppLayout>
   );
 }
