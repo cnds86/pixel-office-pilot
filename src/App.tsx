@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import TaskBoard from "./pages/TaskBoard";
 import DepartmentStats from "./pages/DepartmentStats";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
+import ChatHub from "./pages/ChatHub";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/tasks" element={<TaskBoard />} />
           <Route path="/stats" element={<DepartmentStats />} />
           <Route path="/analytics" element={<AnalyticsDashboard />} />
+          <Route path="/chat" element={<ChatHub />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
