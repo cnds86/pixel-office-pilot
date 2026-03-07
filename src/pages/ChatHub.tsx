@@ -324,8 +324,18 @@ export default function ChatHub() {
           {activeChannel ? (
             <>
               {/* Header */}
-              <div className="p-4 border-b border-border bg-muted/20 flex items-center gap-3">
-                <span className="text-2xl">{activeChannel.icon}</span>
+              <div className="p-3 sm:p-4 border-b border-border bg-muted/20 flex items-center gap-2 sm:gap-3">
+                {isMobile && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="font-pixel text-[10px] h-8 px-2 shrink-0"
+                    onClick={() => setShowChannelList(true)}
+                  >
+                    ← BACK
+                  </Button>
+                )}
+                <span className="text-xl sm:text-2xl">{activeChannel.icon}</span>
                 <div className="flex-1 min-w-0">
                   <div className="font-pixel text-sm text-primary truncate">{activeChannel.name}</div>
                   {activeChannel.description && (
