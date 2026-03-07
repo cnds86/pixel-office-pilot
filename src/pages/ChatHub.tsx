@@ -245,9 +245,9 @@ export default function ChatHub() {
 
   return (
     <AppLayout>
-      <div className="flex h-[calc(100vh-2rem)] gap-0 m-4">
+      <div className="flex h-[calc(100vh-5rem)] sm:h-[calc(100vh-2rem)] gap-0 sm:m-4">
         {/* ─── Sidebar ──────────────────────────────── */}
-        <div className="w-80 shrink-0 pixel-border bg-card flex flex-col">
+        <div className={`${isMobile ? (showChannelList ? 'w-full' : 'hidden') : 'w-80 shrink-0'} pixel-border bg-card flex flex-col`}>
           <div className="p-4 border-b border-border">
             <h2 className="font-pixel text-sm text-primary">💬 CHAT HUB</h2>
             <p className="font-pixel text-[10px] text-muted-foreground mt-1">DMs · Groups · Topics</p>
