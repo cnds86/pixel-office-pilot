@@ -23,7 +23,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <kbd className="font-pixel text-[5px] text-muted-foreground/70 bg-muted px-1 py-0.5 rounded-sm">/</kbd>
             </button>
           </header>
-          <main className="flex-1 overflow-auto p-4 md:p-6">
+          <main className="flex-1 overflow-auto p-2 sm:p-4 md:p-6">
             {children}
           </main>
         </div>

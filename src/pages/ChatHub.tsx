@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { agents, type Agent } from "@/data/mockData";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   generateDmChannels,
   initialGroupChannels,
@@ -68,6 +69,8 @@ export default function ChatHub() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const [showChannelList, setShowChannelList] = useState(true);
   const { notifications, push: pushNotif, dismiss: dismissNotif, clearAll: clearNotifs } = useNotifications();
 
   const activeChannel = useMemo(
@@ -242,9 +245,9 @@ export default function ChatHub() {
 
   return (
     <AppLayout>
-      <div className="flex h-[calc(100vh-2rem)] gap-0 m-4">
+      <div className="flex h-[calc(100vh-5rem)] sm:h-[calc(100vh-2rem)] gap-0 sm:m-4">
         {/* ─── Sidebar ──────────────────────────────── */}
-        <div className="w-80 shrink-0 pixel-border bg-card flex flex-col">
+        <div className={`${isMobile ? (showChannelList ? 'w-full' : 'hidden') : 'w-80 shrink-0'} pixel-border bg-card flex flex-col`}>
           <div className="p-4 border-b border-border">
             <h2 className="font-pixel text-sm text-primary">💬 CHAT HUB</h2>
             <p className="font-pixel text-[10px] text-muted-foreground mt-1">DMs · Groups · Topics</p>
@@ -275,13 +278,16 @@ export default function ChatHub() {
               {channelsByTab[tab].map((ch) => (
                 <button
                   key={ch.id}
-                  onClick={() => setActiveChannelId(ch.id)}
                   className={`w-full text-left px-3 py-3 transition-colors flex items-center gap-3 ${
                     activeChannelId === ch.id
                       ? "bg-primary/10 text-primary pixel-border-glow"
                       : "hover:bg-muted/50 text-foreground"
                   }`}
                   style={{ borderWidth: activeChannelId === ch.id ? 2 : 0 }}
+                  onClick={() => {
+                    setActiveChannelId(ch.id);
+                    if (isMobile) setShowChannelList(false);
+                  }}
                 >
                   <span className="text-lg">{ch.icon}</span>
                   <div className="flex-1 min-w-0">
@@ -313,19 +319,29 @@ export default function ChatHub() {
         </div>
 
         {/* ─── Chat Area ────────────────────────────── */}
-        <div className="flex-1 flex flex-col pixel-border border-l-0 bg-background">
+        <div className={`${isMobile ? (showChannelList ? 'hidden' : 'w-full') : 'flex-1'} flex flex-col pixel-border ${isMobile ? '' : 'border-l-0'} bg-background`}>
           {activeChannel ? (
             <>
               {/* Header */}
-              <div className="p-4 border-b border-border bg-muted/20 flex items-center gap-3">
-                <span className="text-2xl">{activeChannel.icon}</span>
+              <div className="p-3 sm:p-4 border-b border-border bg-muted/20 flex items-center gap-2 sm:gap-3">
+                {isMobile && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="font-pixel text-[10px] h-8 px-2 shrink-0"
+                    onClick={() => setShowChannelList(true)}
+                  >
+                    ← BACK
+                  </Button>
+                )}
+                <span className="text-xl sm:text-2xl">{activeChannel.icon}</span>
                 <div className="flex-1 min-w-0">
                   <div className="font-pixel text-sm text-primary truncate">{activeChannel.name}</div>
                   {activeChannel.description && (
                     <div className="font-pixel text-[10px] text-muted-foreground">{activeChannel.description}</div>
                   )}
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="hidden sm:flex items-center gap-1.5">
                   {activeChannel.memberIds.slice(0, 5).map((mid) => {
                     const a = getAgent(mid);
                     return a ? <span key={mid} className="text-base" title={a.name}>{a.avatar}</span> : null;

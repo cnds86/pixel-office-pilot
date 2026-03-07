@@ -324,7 +324,7 @@ const AnalyticsDashboard = () => {
         {/* Agent Status Grid */}
         <div className="pixel-border bg-card p-4 space-y-3">
           <h2 className="font-pixel text-[8px] text-primary">👥 AGENT STATUS GRID</h2>
-          <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-15 gap-1.5">
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-10 lg:grid-cols-15 gap-1.5">
             {agents.map(agent => {
               const isOnline = agent.status === "online";
               const isBusy = agent.status === "busy";
