@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { agents, type Agent } from "@/data/mockData";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   generateDmChannels,
   initialGroupChannels,
