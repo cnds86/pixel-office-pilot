@@ -278,7 +278,6 @@ export default function ChatHub() {
               {channelsByTab[tab].map((ch) => (
                 <button
                   key={ch.id}
-                  onClick={() => setActiveChannelId(ch.id)}
                   className={`w-full text-left px-3 py-3 transition-colors flex items-center gap-3 ${
                     activeChannelId === ch.id
                       ? "bg-primary/10 text-primary pixel-border-glow"
