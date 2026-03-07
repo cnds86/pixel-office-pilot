@@ -19,6 +19,7 @@ const items = [
   { title: "Analytics", url: "/analytics", icon: Activity },
   { title: "Chat Hub", url: "/chat", icon: MessageSquare },
   { title: "Projects", url: "/projects", icon: FolderKanban },
+  { title: "Meetings", url: "/meetings", icon: Users },
 ];
 
 export function AppSidebar() {
