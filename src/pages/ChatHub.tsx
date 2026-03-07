@@ -69,6 +69,8 @@ export default function ChatHub() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const [showChannelList, setShowChannelList] = useState(true);
   const { notifications, push: pushNotif, dismiss: dismissNotif, clearAll: clearNotifs } = useNotifications();
 
   const activeChannel = useMemo(
