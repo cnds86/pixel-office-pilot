@@ -1,4 +1,4 @@
-import { Gauge, ClipboardList, BarChart3, Activity, MessageSquare, FolderKanban } from "lucide-react";
+import { Gauge, ClipboardList, BarChart3, Activity, MessageSquare, FolderKanban, Users } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -19,6 +19,7 @@ const items = [
   { title: "Analytics", url: "/analytics", icon: Activity },
   { title: "Chat Hub", url: "/chat", icon: MessageSquare },
   { title: "Projects", url: "/projects", icon: FolderKanban },
+  { title: "Meetings", url: "/meetings", icon: Users },
 ];
 
 export function AppSidebar() {

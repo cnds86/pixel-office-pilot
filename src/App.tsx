@@ -9,6 +9,7 @@ import DepartmentStats from "./pages/DepartmentStats";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import ChatHub from "./pages/ChatHub";
 import Projects from "./pages/Projects";
+import MeetingDebate from "./pages/MeetingDebate";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/analytics" element={<AnalyticsDashboard />} />
           <Route path="/chat" element={<ChatHub />} />
           <Route path="/projects" element={<Projects />} />
+          <Route path="/meetings" element={<MeetingDebate />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
