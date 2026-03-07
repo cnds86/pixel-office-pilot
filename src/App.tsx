@@ -9,6 +9,7 @@ import DepartmentStats from "./pages/DepartmentStats";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import ChatHub from "./pages/ChatHub";
 import Projects from "./pages/Projects";
+import MeetingDebate from "./pages/MeetingDebate";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
