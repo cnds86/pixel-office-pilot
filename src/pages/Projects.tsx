@@ -135,22 +135,22 @@ export default function Projects() {
 
   return (
     <AppLayout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="font-pixel text-lg text-primary">📂 PROJECTS</h1>
+            <h1 className="font-pixel text-sm sm:text-lg text-primary">📂 PROJECTS</h1>
             <p className="font-pixel text-[10px] text-muted-foreground mt-1">
               Manage all your projects, tasks, and teams
             </p>
           </div>
-          <Button className="font-pixel text-[11px] h-10 px-5" onClick={openNewProject}>
+          <Button className="font-pixel text-[11px] h-10 px-5 w-full sm:w-auto" onClick={openNewProject}>
             + NEW PROJECT
           </Button>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <div className="pixel-border bg-card p-4" style={{ borderWidth: 2 }}>
             <div className="font-pixel text-2xl text-primary">{totalProjects}</div>
             <div className="font-pixel text-[10px] text-muted-foreground">TOTAL</div>

@@ -342,7 +342,7 @@ export default function ChatHub() {
                     <div className="font-pixel text-[10px] text-muted-foreground">{activeChannel.description}</div>
                   )}
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="hidden sm:flex items-center gap-1.5">
                   {activeChannel.memberIds.slice(0, 5).map((mid) => {
                     const a = getAgent(mid);
                     return a ? <span key={mid} className="text-base" title={a.name}>{a.avatar}</span> : null;
