@@ -320,7 +320,7 @@ export default function ChatHub() {
         </div>
 
         {/* ─── Chat Area ────────────────────────────── */}
-        <div className="flex-1 flex flex-col pixel-border border-l-0 bg-background">
+        <div className={`${isMobile ? (showChannelList ? 'hidden' : 'w-full') : 'flex-1'} flex flex-col pixel-border ${isMobile ? '' : 'border-l-0'} bg-background`}>
           {activeChannel ? (
             <>
               {/* Header */}
