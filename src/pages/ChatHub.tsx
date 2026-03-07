@@ -285,6 +285,10 @@ export default function ChatHub() {
                       : "hover:bg-muted/50 text-foreground"
                   }`}
                   style={{ borderWidth: activeChannelId === ch.id ? 2 : 0 }}
+                  onClick={() => {
+                    setActiveChannelId(ch.id);
+                    if (isMobile) setShowChannelList(false);
+                  }}
                 >
                   <span className="text-lg">{ch.icon}</span>
                   <div className="flex-1 min-w-0">
