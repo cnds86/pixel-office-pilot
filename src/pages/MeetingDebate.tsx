@@ -702,6 +702,11 @@ export default function MeetingDebate() {
                           {m.members.length > 4 && <span className="text-xs text-muted-foreground">+{m.members.length - 4}</span>}
                           <span className="ml-auto text-[10px] text-muted-foreground">{m.createdAt}</span>
                         </div>
+                        {m.scheduledAt && (
+                          <div className="flex items-center gap-1 mt-1 text-[10px] text-primary font-pixel">
+                            <CalendarIcon className="w-3 h-3" /> {format(m.scheduledAt, "dd MMM yyyy HH:mm")}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
