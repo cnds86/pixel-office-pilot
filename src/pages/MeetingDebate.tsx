@@ -433,6 +433,7 @@ export default function MeetingDebate() {
         if (d.status !== "active" || d.timerPaused || d.timerRemaining <= 0) return d;
         const newRemaining = d.timerRemaining - 1;
         if (newRemaining <= 0) {
+          playTimerAlert();
           // Round time's up - advance to next round or end
           const nextRound = d.currentRound + 1;
           const proAgent = pickRandom(d.proMembers);
