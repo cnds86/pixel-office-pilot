@@ -395,13 +395,16 @@ export default function MeetingDebate() {
 
   const createMeeting = () => {
     if (!newMeetingTitle.trim() || selectedMembers.length === 0) return;
+    const scheduled = buildScheduledDate(meetingScheduledDate, meetingScheduledTime);
+    const scheduledLabel = scheduled ? ` — Scheduled: ${format(scheduled, "dd MMM yyyy HH:mm")}` : "";
     const m: MeetingRoom = {
       id: `meet-${Date.now()}`,
       title: newMeetingTitle,
       members: selectedMembers,
-      messages: [{ sender: "system", content: `Meeting "${newMeetingTitle}" created`, timestamp: now(), type: "system" }],
+      messages: [{ sender: "system", content: `Meeting "${newMeetingTitle}" created${scheduledLabel}`, timestamp: now(), type: "system" }],
       status: "waiting",
       createdAt: now(),
+      scheduledAt: scheduled,
       timerDuration: meetingTimerDuration,
       timerRemaining: meetingTimerDuration,
       timerPaused: false,
@@ -411,8 +414,10 @@ export default function MeetingDebate() {
     setShowMeetingForm(false);
     setNewMeetingTitle("");
     setSelectedMembers([]);
+    setMeetingScheduledDate(undefined);
+    setMeetingScheduledTime("");
     setMobileDetail(true);
-    toast({ title: "🏢 Meeting Created", description: newMeetingTitle });
+    toast({ title: "🏢 Meeting Created", description: `${newMeetingTitle}${scheduledLabel}` });
   };
 
   const startMeeting = (id: string) => {
