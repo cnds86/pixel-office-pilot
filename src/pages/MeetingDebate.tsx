@@ -1164,7 +1164,7 @@ export default function MeetingDebate() {
                   {summarySearch ? "No summaries match your search" : "No completed meetings or debates yet"}
                 </div>
               )}
-              {meetings.filter(m => m.status === "ended").map(m => (
+              {filteredEndedMeetings.map(m => (
                 <Card key={m.id} className="border-accent/30">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-2">
