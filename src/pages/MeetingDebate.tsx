@@ -16,7 +16,7 @@ import {
   Users, Swords, Vote, FileText, Plus, Play, Square, Send,
   ThumbsUp, ThumbsDown, CheckCircle2, Clock, MessageSquare,
   ChevronRight, Sparkles, ArrowLeft, Timer, Pause, RotateCcw,
-  Copy, Download, ClipboardCheck, CalendarIcon
+  Copy, Download, ClipboardCheck, CalendarIcon, Search, X
 } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -333,8 +333,42 @@ export default function MeetingDebate() {
   // Mobile detail view
   const [mobileDetail, setMobileDetail] = useState(false);
 
+  // Search & filter state
+  const [meetingSearch, setMeetingSearch] = useState("");
+  const [debateSearch, setDebateSearch] = useState("");
+  const [summarySearch, setSummarySearch] = useState("");
+  const [meetingStatusFilter, setMeetingStatusFilter] = useState<"all" | "waiting" | "active" | "ended">("all");
+  const [debateStatusFilter, setDebateStatusFilter] = useState<"all" | "setup" | "active" | "voting" | "ended">("all");
+
   const currentMeeting = meetings.find(m => m.id === activeMeeting);
   const currentDebate = debates.find(d => d.id === activeDebate);
+
+  // Filtered lists
+  const filteredMeetings = meetings.filter(m => {
+    const matchesSearch = !meetingSearch || m.title.toLowerCase().includes(meetingSearch.toLowerCase()) ||
+      (m.scheduledAt && format(m.scheduledAt, "dd MMM yyyy").toLowerCase().includes(meetingSearch.toLowerCase())) ||
+      m.createdAt.toLowerCase().includes(meetingSearch.toLowerCase());
+    const matchesStatus = meetingStatusFilter === "all" || m.status === meetingStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const filteredDebates = debates.filter(d => {
+    const matchesSearch = !debateSearch || d.topic.toLowerCase().includes(debateSearch.toLowerCase()) ||
+      (d.scheduledAt && format(d.scheduledAt, "dd MMM yyyy").toLowerCase().includes(debateSearch.toLowerCase())) ||
+      d.createdAt.toLowerCase().includes(debateSearch.toLowerCase());
+    const matchesStatus = debateStatusFilter === "all" || d.status === debateStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const filteredEndedMeetings = meetings.filter(m => m.status === "ended" && (
+    !summarySearch || m.title.toLowerCase().includes(summarySearch.toLowerCase()) ||
+    (m.scheduledAt && format(m.scheduledAt, "dd MMM yyyy").toLowerCase().includes(summarySearch.toLowerCase()))
+  ));
+
+  const filteredEndedDebates = debates.filter(d => d.status === "ended" && (
+    !summarySearch || d.topic.toLowerCase().includes(summarySearch.toLowerCase()) ||
+    (d.scheduledAt && format(d.scheduledAt, "dd MMM yyyy").toLowerCase().includes(summarySearch.toLowerCase()))
+  ));
 
   // auto-scroll meeting
   useEffect(() => {
@@ -675,13 +709,40 @@ export default function MeetingDebate() {
                 <Button onClick={() => setShowMeetingForm(true)} className="w-full font-pixel text-xs gap-2">
                   <Plus className="w-3 h-3" /> New Meeting
                 </Button>
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                  <Input
+                    value={meetingSearch}
+                    onChange={e => setMeetingSearch(e.target.value)}
+                    placeholder="Search meetings..."
+                    className="font-pixel-body text-xs pl-7 pr-7 h-8"
+                  />
+                  {meetingSearch && (
+                    <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-8 w-7" onClick={() => setMeetingSearch("")}>
+                      <X className="w-3 h-3" />
+                    </Button>
+                  )}
+                </div>
+                <div className="flex gap-1 flex-wrap">
+                  {(["all", "waiting", "active", "ended"] as const).map(s => (
+                    <Button
+                      key={s}
+                      variant={meetingStatusFilter === s ? "default" : "outline"}
+                      size="sm"
+                      className="font-pixel text-[9px] h-6 px-2"
+                      onClick={() => setMeetingStatusFilter(s)}
+                    >
+                      {s === "all" ? "All" : s}
+                    </Button>
+                  ))}
+                </div>
                 <div className="flex-1 overflow-y-auto scrollbar-thin space-y-2">
-                  {meetings.length === 0 && (
+                  {filteredMeetings.length === 0 && (
                     <div className="text-center text-muted-foreground font-pixel-body text-sm py-8">
-                      No meetings yet.<br />Create one to start!
+                      {meetings.length === 0 ? <>No meetings yet.<br />Create one to start!</> : "No meetings match your search"}
                     </div>
                   )}
-                  {meetings.map(m => (
+                  {filteredMeetings.map(m => (
                     <Card
                       key={m.id}
                       className={`cursor-pointer transition-all hover:border-primary/50 ${activeMeeting === m.id ? "border-primary bg-primary/5" : ""}`}
@@ -826,13 +887,40 @@ export default function MeetingDebate() {
                 <Button onClick={() => setShowDebateForm(true)} variant="destructive" className="w-full font-pixel text-xs gap-2">
                   <Plus className="w-3 h-3" /> New Debate
                 </Button>
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                  <Input
+                    value={debateSearch}
+                    onChange={e => setDebateSearch(e.target.value)}
+                    placeholder="Search debates..."
+                    className="font-pixel-body text-xs pl-7 pr-7 h-8"
+                  />
+                  {debateSearch && (
+                    <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-8 w-7" onClick={() => setDebateSearch("")}>
+                      <X className="w-3 h-3" />
+                    </Button>
+                  )}
+                </div>
+                <div className="flex gap-1 flex-wrap">
+                  {(["all", "setup", "active", "voting", "ended"] as const).map(s => (
+                    <Button
+                      key={s}
+                      variant={debateStatusFilter === s ? "destructive" : "outline"}
+                      size="sm"
+                      className="font-pixel text-[9px] h-6 px-2"
+                      onClick={() => setDebateStatusFilter(s)}
+                    >
+                      {s === "all" ? "All" : s}
+                    </Button>
+                  ))}
+                </div>
                 <div className="flex-1 overflow-y-auto scrollbar-thin space-y-2">
-                  {debates.length === 0 && (
+                  {filteredDebates.length === 0 && (
                     <div className="text-center text-muted-foreground font-pixel-body text-sm py-8">
-                      No debates yet.<br />Start one!
+                      {debates.length === 0 ? <>No debates yet.<br />Start one!</> : "No debates match your search"}
                     </div>
                   )}
-                  {debates.map(d => (
+                  {filteredDebates.map(d => (
                     <Card
                       key={d.id}
                       className={`cursor-pointer transition-all hover:border-destructive/50 ${activeDebate === d.id ? "border-destructive bg-destructive/5" : ""}`}
@@ -1051,16 +1139,32 @@ export default function MeetingDebate() {
 
           {/* ═══ SUMMARIES TAB ═══ */}
           <TabsContent value="summaries" className="flex-1 m-0 p-3 overflow-y-auto scrollbar-thin">
-            <h2 className="font-pixel text-xs text-accent mb-3 flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> MEETING SUMMARIES & ACTION ITEMS
-            </h2>
+            <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+              <h2 className="font-pixel text-xs text-accent flex items-center gap-1">
+                <Sparkles className="w-3 h-3" /> MEETING SUMMARIES & ACTION ITEMS
+              </h2>
+              <div className="relative w-full sm:w-56">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                <Input
+                  value={summarySearch}
+                  onChange={e => setSummarySearch(e.target.value)}
+                  placeholder="Search summaries..."
+                  className="font-pixel-body text-xs pl-7 pr-7 h-8"
+                />
+                {summarySearch && (
+                  <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-8 w-7" onClick={() => setSummarySearch("")}>
+                    <X className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            </div>
             <div className="space-y-3">
-              {meetings.filter(m => m.status === "ended").length === 0 && debates.filter(d => d.status === "ended").length === 0 && (
+              {filteredEndedMeetings.length === 0 && filteredEndedDebates.length === 0 && (
                 <div className="text-center text-muted-foreground font-pixel-body text-sm py-8">
-                  No completed meetings or debates yet
+                  {summarySearch ? "No summaries match your search" : "No completed meetings or debates yet"}
                 </div>
               )}
-              {meetings.filter(m => m.status === "ended").map(m => (
+              {filteredEndedMeetings.map(m => (
                 <Card key={m.id} className="border-accent/30">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-2">
@@ -1090,7 +1194,7 @@ export default function MeetingDebate() {
                   </CardContent>
                 </Card>
               ))}
-              {debates.filter(d => d.status === "ended").map(d => (
+              {filteredEndedDebates.map(d => (
                 <Card key={d.id} className="border-destructive/30">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-2">
