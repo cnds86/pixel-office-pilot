@@ -33,6 +33,7 @@ interface MeetingRoom {
   summary?: string;
   actionItems?: string[];
   createdAt: string;
+  scheduledAt?: Date;
   timerDuration: number; // total seconds
   timerRemaining: number; // seconds left
   timerPaused: boolean;
