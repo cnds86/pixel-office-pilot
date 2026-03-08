@@ -21,6 +21,10 @@ import ActivityFeed from "./pages/ActivityFeed";
 import GatewayManagement from "./pages/GatewayManagement";
 import SkillsMarketplace from "./pages/SkillsMarketplace";
 import TagsCustomFields from "./pages/TagsCustomFields";
+import SubTasksXP from "./pages/SubTasksXP";
+import WorkflowPacks from "./pages/WorkflowPacks";
+import TaskReports from "./pages/TaskReports";
+import CompanySettings from "./pages/CompanySettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
