@@ -29,6 +29,9 @@ interface MeetingRoom {
   summary?: string;
   actionItems?: string[];
   createdAt: string;
+  timerDuration: number; // total seconds
+  timerRemaining: number; // seconds left
+  timerPaused: boolean;
 }
 
 interface MeetingMsg {
