@@ -1194,7 +1194,7 @@ export default function MeetingDebate() {
                   </CardContent>
                 </Card>
               ))}
-              {debates.filter(d => d.status === "ended").map(d => (
+              {filteredEndedDebates.map(d => (
                 <Card key={d.id} className="border-destructive/30">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-2">
