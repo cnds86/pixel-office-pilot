@@ -15,7 +15,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Users, Swords, Vote, FileText, Plus, Play, Square, Send,
   ThumbsUp, ThumbsDown, CheckCircle2, Clock, MessageSquare,
-  ChevronRight, Sparkles, ArrowLeft, Timer, Pause, RotateCcw
+  ChevronRight, Sparkles, ArrowLeft, Timer, Pause, RotateCcw,
+  Copy, Download, ClipboardCheck
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
