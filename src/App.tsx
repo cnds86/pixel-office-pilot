@@ -14,6 +14,9 @@ import OrgChart from "./pages/OrgChart";
 import BudgetControl from "./pages/BudgetControl";
 import Governance from "./pages/Governance";
 import GoalAlignment from "./pages/GoalAlignment";
+import HeartbeatMonitor from "./pages/HeartbeatMonitor";
+import TicketSystem from "./pages/TicketSystem";
+import AgentCoordination from "./pages/AgentCoordination";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +39,9 @@ const App = () => (
           <Route path="/budget" element={<BudgetControl />} />
           <Route path="/governance" element={<Governance />} />
           <Route path="/goals" element={<GoalAlignment />} />
+          <Route path="/heartbeat" element={<HeartbeatMonitor />} />
+          <Route path="/tickets" element={<TicketSystem />} />
+          <Route path="/coordination" element={<AgentCoordination />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
