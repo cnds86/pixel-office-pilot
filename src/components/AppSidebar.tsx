@@ -1,4 +1,4 @@
-import { Gauge, ClipboardList, BarChart3, Activity, MessageSquare, FolderKanban, Users, Network, DollarSign, Shield, Target, Heart, Ticket, GitBranch } from "lucide-react";
+import { Gauge, ClipboardList, BarChart3, Activity, MessageSquare, FolderKanban, Users, Network, DollarSign, Shield, Target, Heart, Ticket, GitBranch, Radio, Server, Sparkles, Settings2 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { CompanySwitcher } from "@/components/CompanySwitcher";
@@ -32,6 +32,10 @@ const paperclipItems = [
   { title: "Heartbeat", url: "/heartbeat", icon: Heart },
   { title: "Tickets", url: "/tickets", icon: Ticket },
   { title: "Coordination", url: "/coordination", icon: GitBranch },
+  { title: "Activity", url: "/activity", icon: Radio },
+  { title: "Gateways", url: "/gateways", icon: Server },
+  { title: "Skills", url: "/skills", icon: Sparkles },
+  { title: "Tags", url: "/tags", icon: Settings2 },
 ];
 
 export function AppSidebar() {

@@ -17,6 +17,10 @@ import GoalAlignment from "./pages/GoalAlignment";
 import HeartbeatMonitor from "./pages/HeartbeatMonitor";
 import TicketSystem from "./pages/TicketSystem";
 import AgentCoordination from "./pages/AgentCoordination";
+import ActivityFeed from "./pages/ActivityFeed";
+import GatewayManagement from "./pages/GatewayManagement";
+import SkillsMarketplace from "./pages/SkillsMarketplace";
+import TagsCustomFields from "./pages/TagsCustomFields";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +46,10 @@ const App = () => (
           <Route path="/heartbeat" element={<HeartbeatMonitor />} />
           <Route path="/tickets" element={<TicketSystem />} />
           <Route path="/coordination" element={<AgentCoordination />} />
+          <Route path="/activity" element={<ActivityFeed />} />
+          <Route path="/gateways" element={<GatewayManagement />} />
+          <Route path="/skills" element={<SkillsMarketplace />} />
+          <Route path="/tags" element={<TagsCustomFields />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
