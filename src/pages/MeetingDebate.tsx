@@ -16,8 +16,11 @@ import {
   Users, Swords, Vote, FileText, Plus, Play, Square, Send,
   ThumbsUp, ThumbsDown, CheckCircle2, Clock, MessageSquare,
   ChevronRight, Sparkles, ArrowLeft, Timer, Pause, RotateCcw,
-  Copy, Download, ClipboardCheck
+  Copy, Download, ClipboardCheck, CalendarIcon
 } from "lucide-react";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
 
 /* ── Types ── */
@@ -30,6 +33,7 @@ interface MeetingRoom {
   summary?: string;
   actionItems?: string[];
   createdAt: string;
+  scheduledAt?: Date;
   timerDuration: number; // total seconds
   timerRemaining: number; // seconds left
   timerPaused: boolean;
@@ -51,6 +55,7 @@ interface Debate {
   status: "setup" | "active" | "voting" | "ended";
   verdict?: string;
   createdAt: string;
+  scheduledAt?: Date;
   roundDuration: number; // seconds per round
   timerRemaining: number;
   timerPaused: boolean;
@@ -218,6 +223,75 @@ function TimerSelector({ value, onChange, label }: { value: number; onChange: (v
   );
 }
 
+/* ── Schedule Picker Component ── */
+function SchedulePicker({ date, onDateChange, time, onTimeChange }: {
+  date: Date | undefined; onDateChange: (d: Date | undefined) => void;
+  time: string; onTimeChange: (t: string) => void;
+}) {
+  return (
+    <div>
+      <p className="text-sm font-pixel text-muted-foreground mb-1.5 flex items-center gap-1">
+        <CalendarIcon className="w-3 h-3" /> Schedule (optional)
+      </p>
+      <div className="flex gap-2 items-center">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`font-pixel text-[10px] h-8 px-2 justify-start ${!date ? "text-muted-foreground" : ""}`}
+            >
+              <CalendarIcon className="w-3 h-3 mr-1" />
+              {date ? format(date, "dd MMM yyyy") : "Pick date"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={onDateChange}
+              disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+              initialFocus
+              className="p-3 pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+        <Input
+          type="time"
+          value={time}
+          onChange={e => onTimeChange(e.target.value)}
+          className="font-pixel-body text-xs h-8 w-28"
+        />
+        {(date || time) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-muted-foreground font-pixel text-[10px]"
+            onClick={() => { onDateChange(undefined); onTimeChange(""); }}
+          >
+            Clear
+          </Button>
+        )}
+      </div>
+      {date && time && (
+        <p className="text-[10px] text-primary font-pixel mt-1 flex items-center gap-1">
+          <Clock className="w-3 h-3" /> Scheduled: {format(date, "dd MMM yyyy")} at {time}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function buildScheduledDate(date: Date | undefined, time: string): Date | undefined {
+  if (!date) return undefined;
+  const scheduled = new Date(date);
+  if (time) {
+    const [h, m] = time.split(":").map(Number);
+    scheduled.setHours(h, m, 0, 0);
+  }
+  return scheduled;
+}
+
 /* ── Component ── */
 export default function MeetingDebate() {
   const { toast } = useToast();
@@ -234,6 +308,8 @@ export default function MeetingDebate() {
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const meetingScrollRef = useRef<HTMLDivElement>(null);
   const [meetingTimerDuration, setMeetingTimerDuration] = useState(600); // default 10min
+  const [meetingScheduledDate, setMeetingScheduledDate] = useState<Date | undefined>();
+  const [meetingScheduledTime, setMeetingScheduledTime] = useState("");
 
   // Debate state
   const [debates, setDebates] = useState<Debate[]>([]);
@@ -244,6 +320,8 @@ export default function MeetingDebate() {
   const [conMembers, setConMembers] = useState<string[]>([]);
   const [isDebating, setIsDebating] = useState(false);
   const [debateRoundDuration, setDebateRoundDuration] = useState(120); // default 2min per round
+  const [debateScheduledDate, setDebateScheduledDate] = useState<Date | undefined>();
+  const [debateScheduledTime, setDebateScheduledTime] = useState("");
 
   // Poll state
   const [polls, setPolls] = useState<Poll[]>([]);
@@ -317,13 +395,16 @@ export default function MeetingDebate() {
 
   const createMeeting = () => {
     if (!newMeetingTitle.trim() || selectedMembers.length === 0) return;
+    const scheduled = buildScheduledDate(meetingScheduledDate, meetingScheduledTime);
+    const scheduledLabel = scheduled ? ` — Scheduled: ${format(scheduled, "dd MMM yyyy HH:mm")}` : "";
     const m: MeetingRoom = {
       id: `meet-${Date.now()}`,
       title: newMeetingTitle,
       members: selectedMembers,
-      messages: [{ sender: "system", content: `Meeting "${newMeetingTitle}" created`, timestamp: now(), type: "system" }],
+      messages: [{ sender: "system", content: `Meeting "${newMeetingTitle}" created${scheduledLabel}`, timestamp: now(), type: "system" }],
       status: "waiting",
       createdAt: now(),
+      scheduledAt: scheduled,
       timerDuration: meetingTimerDuration,
       timerRemaining: meetingTimerDuration,
       timerPaused: false,
@@ -333,8 +414,10 @@ export default function MeetingDebate() {
     setShowMeetingForm(false);
     setNewMeetingTitle("");
     setSelectedMembers([]);
+    setMeetingScheduledDate(undefined);
+    setMeetingScheduledTime("");
     setMobileDetail(true);
-    toast({ title: "🏢 Meeting Created", description: newMeetingTitle });
+    toast({ title: "🏢 Meeting Created", description: `${newMeetingTitle}${scheduledLabel}` });
   };
 
   const startMeeting = (id: string) => {
@@ -385,6 +468,7 @@ export default function MeetingDebate() {
   /* ── Debate Functions ── */
   const createDebate = () => {
     if (!debateTopic.trim() || proMembers.length === 0 || conMembers.length === 0) return;
+    const scheduled = buildScheduledDate(debateScheduledDate, debateScheduledTime);
     const d: Debate = {
       id: `debate-${Date.now()}`,
       topic: debateTopic,
@@ -392,6 +476,7 @@ export default function MeetingDebate() {
       rounds: [],
       status: "setup",
       createdAt: now(),
+      scheduledAt: scheduled,
       roundDuration: debateRoundDuration,
       timerRemaining: debateRoundDuration,
       timerPaused: false,
@@ -403,8 +488,11 @@ export default function MeetingDebate() {
     setDebateTopic("");
     setProMembers([]);
     setConMembers([]);
+    setDebateScheduledDate(undefined);
+    setDebateScheduledTime("");
     setMobileDetail(true);
-    toast({ title: "⚔️ Debate Created", description: debateTopic });
+    const scheduledLabel = scheduled ? ` — ${format(scheduled, "dd MMM HH:mm")}` : "";
+    toast({ title: "⚔️ Debate Created", description: `${debateTopic}${scheduledLabel}` });
   };
 
   const startDebate = (id: string) => {
@@ -614,6 +702,11 @@ export default function MeetingDebate() {
                           {m.members.length > 4 && <span className="text-xs text-muted-foreground">+{m.members.length - 4}</span>}
                           <span className="ml-auto text-[10px] text-muted-foreground">{m.createdAt}</span>
                         </div>
+                        {m.scheduledAt && (
+                          <div className="flex items-center gap-1 mt-1 text-[10px] text-primary font-pixel">
+                            <CalendarIcon className="w-3 h-3" /> {format(m.scheduledAt, "dd MMM yyyy HH:mm")}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
@@ -640,6 +733,11 @@ export default function MeetingDebate() {
                               return <span key={id} className="text-sm">{a?.avatar}</span>;
                             })}
                           </div>
+                          {currentMeeting.scheduledAt && (
+                            <p className="text-[10px] text-muted-foreground font-pixel flex items-center gap-1 mt-0.5">
+                              <CalendarIcon className="w-3 h-3" /> {format(currentMeeting.scheduledAt, "dd MMM yyyy HH:mm")}
+                            </p>
+                          )}
                         </div>
                         {currentMeeting.status === "waiting" && (
                           <Button size="sm" onClick={() => startMeeting(currentMeeting.id)} className="font-pixel text-[10px] gap-1">
@@ -754,6 +852,11 @@ export default function MeetingDebate() {
                             {d.status}
                           </Badge>
                         </div>
+                        {d.scheduledAt && (
+                          <div className="flex items-center gap-1 mt-1 text-[10px] text-destructive font-pixel">
+                            <CalendarIcon className="w-3 h-3" /> {format(d.scheduledAt, "dd MMM yyyy HH:mm")}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
@@ -1028,6 +1131,7 @@ export default function MeetingDebate() {
           </DialogHeader>
           <div className="space-y-3">
             <Input value={newMeetingTitle} onChange={e => setNewMeetingTitle(e.target.value)} placeholder="Meeting title..." className="font-pixel-body" />
+            <SchedulePicker date={meetingScheduledDate} onDateChange={setMeetingScheduledDate} time={meetingScheduledTime} onTimeChange={setMeetingScheduledTime} />
             <TimerSelector value={meetingTimerDuration} onChange={setMeetingTimerDuration} label="Meeting Duration" />
             <AgentSelector selected={selectedMembers} onToggle={id => toggleMember(id, selectedMembers, setSelectedMembers)} label="Select Participants" />
           </div>
@@ -1045,6 +1149,7 @@ export default function MeetingDebate() {
           </DialogHeader>
           <div className="space-y-3">
             <Input value={debateTopic} onChange={e => setDebateTopic(e.target.value)} placeholder="Debate topic..." className="font-pixel-body" />
+            <SchedulePicker date={debateScheduledDate} onDateChange={setDebateScheduledDate} time={debateScheduledTime} onTimeChange={setDebateScheduledTime} />
             <TimerSelector value={debateRoundDuration} onChange={setDebateRoundDuration} label="Time per Round" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <AgentSelector selected={proMembers} onToggle={id => toggleMember(id, proMembers, setProMembers)} label="👍 PRO Team" />
