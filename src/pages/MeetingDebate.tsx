@@ -709,13 +709,40 @@ export default function MeetingDebate() {
                 <Button onClick={() => setShowMeetingForm(true)} className="w-full font-pixel text-xs gap-2">
                   <Plus className="w-3 h-3" /> New Meeting
                 </Button>
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                  <Input
+                    value={meetingSearch}
+                    onChange={e => setMeetingSearch(e.target.value)}
+                    placeholder="Search meetings..."
+                    className="font-pixel-body text-xs pl-7 pr-7 h-8"
+                  />
+                  {meetingSearch && (
+                    <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-8 w-7" onClick={() => setMeetingSearch("")}>
+                      <X className="w-3 h-3" />
+                    </Button>
+                  )}
+                </div>
+                <div className="flex gap-1 flex-wrap">
+                  {(["all", "waiting", "active", "ended"] as const).map(s => (
+                    <Button
+                      key={s}
+                      variant={meetingStatusFilter === s ? "default" : "outline"}
+                      size="sm"
+                      className="font-pixel text-[9px] h-6 px-2"
+                      onClick={() => setMeetingStatusFilter(s)}
+                    >
+                      {s === "all" ? "All" : s}
+                    </Button>
+                  ))}
+                </div>
                 <div className="flex-1 overflow-y-auto scrollbar-thin space-y-2">
-                  {meetings.length === 0 && (
+                  {filteredMeetings.length === 0 && (
                     <div className="text-center text-muted-foreground font-pixel-body text-sm py-8">
-                      No meetings yet.<br />Create one to start!
+                      {meetings.length === 0 ? <>No meetings yet.<br />Create one to start!</> : "No meetings match your search"}
                     </div>
                   )}
-                  {meetings.map(m => (
+                  {filteredMeetings.map(m => (
                     <Card
                       key={m.id}
                       className={`cursor-pointer transition-all hover:border-primary/50 ${activeMeeting === m.id ? "border-primary bg-primary/5" : ""}`}
