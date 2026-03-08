@@ -15,8 +15,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Users, Swords, Vote, FileText, Plus, Play, Square, Send,
   ThumbsUp, ThumbsDown, CheckCircle2, Clock, MessageSquare,
-  ChevronRight, Sparkles, ArrowLeft
+  ChevronRight, Sparkles, ArrowLeft, Timer, Pause, RotateCcw
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 /* ── Types ── */
 interface MeetingRoom {
@@ -28,6 +29,9 @@ interface MeetingRoom {
   summary?: string;
   actionItems?: string[];
   createdAt: string;
+  timerDuration: number; // total seconds
+  timerRemaining: number; // seconds left
+  timerPaused: boolean;
 }
 
 interface MeetingMsg {
@@ -46,6 +50,10 @@ interface Debate {
   status: "setup" | "active" | "voting" | "ended";
   verdict?: string;
   createdAt: string;
+  roundDuration: number; // seconds per round
+  timerRemaining: number;
+  timerPaused: boolean;
+  currentRound: number;
 }
 
 interface DebateRound {
@@ -139,6 +147,76 @@ function now() {
   return new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 }
 
+function formatTimer(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
+/* ── Timer Display Component ── */
+function TimerDisplay({ remaining, total, paused, onPause, onResume, onReset, variant = "primary" }: {
+  remaining: number; total: number; paused: boolean;
+  onPause: () => void; onResume: () => void; onReset: () => void;
+  variant?: "primary" | "destructive";
+}) {
+  const pct = total > 0 ? (remaining / total) * 100 : 0;
+  const isLow = remaining <= 30;
+  const colorClass = variant === "destructive" ? "text-destructive" : "text-primary";
+  const progressColor = isLow ? "bg-destructive" : variant === "destructive" ? "bg-destructive" : "bg-primary";
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className={`flex items-center gap-1 font-pixel text-sm ${isLow ? "text-destructive animate-pulse" : colorClass}`}>
+        <Timer className="w-3 h-3" />
+        <span>{formatTimer(remaining)}</span>
+      </div>
+      <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+        <div className={`h-full ${progressColor} transition-all duration-1000`} style={{ width: `${pct}%` }} />
+      </div>
+      <div className="flex gap-0.5">
+        {paused ? (
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onResume}><Play className="w-3 h-3" /></Button>
+        ) : (
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onPause}><Pause className="w-3 h-3" /></Button>
+        )}
+        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onReset}><RotateCcw className="w-3 h-3" /></Button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Timer Duration Selector ── */
+function TimerSelector({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
+  const presets = [
+    { label: "2m", value: 120 },
+    { label: "5m", value: 300 },
+    { label: "10m", value: 600 },
+    { label: "15m", value: 900 },
+    { label: "30m", value: 1800 },
+  ];
+  return (
+    <div>
+      <p className="text-sm font-pixel text-muted-foreground mb-1.5 flex items-center gap-1">
+        <Timer className="w-3 h-3" /> {label}
+      </p>
+      <div className="flex gap-1.5 flex-wrap">
+        {presets.map(p => (
+          <Button
+            key={p.value}
+            type="button"
+            variant={value === p.value ? "default" : "outline"}
+            size="sm"
+            className="font-pixel text-[10px] h-7 px-2"
+            onClick={() => onChange(p.value)}
+          >
+            {p.label}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ── Component ── */
 export default function MeetingDebate() {
   const { toast } = useToast();
@@ -154,6 +232,7 @@ export default function MeetingDebate() {
   const [newMeetingTitle, setNewMeetingTitle] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const meetingScrollRef = useRef<HTMLDivElement>(null);
+  const [meetingTimerDuration, setMeetingTimerDuration] = useState(600); // default 10min
 
   // Debate state
   const [debates, setDebates] = useState<Debate[]>([]);
@@ -163,6 +242,7 @@ export default function MeetingDebate() {
   const [proMembers, setProMembers] = useState<string[]>([]);
   const [conMembers, setConMembers] = useState<string[]>([]);
   const [isDebating, setIsDebating] = useState(false);
+  const [debateRoundDuration, setDebateRoundDuration] = useState(120); // default 2min per round
 
   // Poll state
   const [polls, setPolls] = useState<Poll[]>([]);
@@ -182,7 +262,58 @@ export default function MeetingDebate() {
     meetingScrollRef.current?.scrollTo({ top: meetingScrollRef.current.scrollHeight, behavior: "smooth" });
   }, [currentMeeting?.messages]);
 
-  /* ── Meeting Functions ── */
+  // Meeting timer countdown
+  useEffect(() => {
+    const activeMeetings = meetings.filter(m => m.status === "active" && !m.timerPaused && m.timerRemaining > 0);
+    if (activeMeetings.length === 0) return;
+    const interval = setInterval(() => {
+      setMeetings(prev => prev.map(m => {
+        if (m.status !== "active" || m.timerPaused || m.timerRemaining <= 0) return m;
+        const newRemaining = m.timerRemaining - 1;
+        if (newRemaining <= 0) {
+          return {
+            ...m, timerRemaining: 0, status: "ended" as const,
+            summary: `Meeting "${m.title}" auto-ended (time's up) with ${m.messages.filter(msg => msg.type === "message").length} messages.`,
+            actionItems: ["Review discussion points", "Schedule follow-up if needed", "Share notes with team"],
+            messages: [...m.messages, { sender: "system", content: "⏰ Time's up! Meeting auto-ended.", timestamp: now(), type: "system" as const }],
+          };
+        }
+        return { ...m, timerRemaining: newRemaining };
+      }));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [meetings]);
+
+  // Debate timer countdown
+  useEffect(() => {
+    const activeDebates = debates.filter(d => d.status === "active" && !d.timerPaused && d.timerRemaining > 0);
+    if (activeDebates.length === 0) return;
+    const interval = setInterval(() => {
+      setDebates(prev => prev.map(d => {
+        if (d.status !== "active" || d.timerPaused || d.timerRemaining <= 0) return d;
+        const newRemaining = d.timerRemaining - 1;
+        if (newRemaining <= 0) {
+          // Round time's up - advance to next round or end
+          const nextRound = d.currentRound + 1;
+          const proAgent = pickRandom(d.proMembers);
+          const conAgent = pickRandom(d.conMembers);
+          const round: DebateRound = {
+            round: nextRound,
+            proArg: { agentId: proAgent, content: pickRandom(debateProArgs) },
+            conArg: { agentId: conAgent, content: pickRandom(debateConArgs) },
+          };
+          if (nextRound >= 3) {
+            return { ...d, timerRemaining: 0, rounds: [...d.rounds, round], currentRound: nextRound, status: "voting" as const };
+          }
+          return { ...d, timerRemaining: d.roundDuration, rounds: [...d.rounds, round], currentRound: nextRound };
+        }
+        return { ...d, timerRemaining: newRemaining };
+      }));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [debates]);
+
+
   const createMeeting = () => {
     if (!newMeetingTitle.trim() || selectedMembers.length === 0) return;
     const m: MeetingRoom = {
@@ -192,6 +323,9 @@ export default function MeetingDebate() {
       messages: [{ sender: "system", content: `Meeting "${newMeetingTitle}" created`, timestamp: now(), type: "system" }],
       status: "waiting",
       createdAt: now(),
+      timerDuration: meetingTimerDuration,
+      timerRemaining: meetingTimerDuration,
+      timerPaused: false,
     };
     setMeetings(prev => [...prev, m]);
     setActiveMeeting(m.id);
@@ -257,6 +391,10 @@ export default function MeetingDebate() {
       rounds: [],
       status: "setup",
       createdAt: now(),
+      roundDuration: debateRoundDuration,
+      timerRemaining: debateRoundDuration,
+      timerPaused: false,
+      currentRound: 0,
     };
     setDebates(prev => [...prev, d]);
     setActiveDebate(d.id);
@@ -269,33 +407,22 @@ export default function MeetingDebate() {
   };
 
   const startDebate = (id: string) => {
-    setIsDebating(true);
-    const debate = debates.find(d => d.id === id);
-    if (!debate) return;
+    setDebates(prev => prev.map(d => d.id === id ? {
+      ...d, status: "active" as const, currentRound: 0, timerRemaining: d.roundDuration, timerPaused: false
+    } : d));
+  };
 
-    setDebates(prev => prev.map(d => d.id === id ? { ...d, status: "active" as const } : d));
-
-    // Simulate 3 rounds
-    let roundCount = 0;
-    const interval = setInterval(() => {
-      roundCount++;
-      const proAgent = pickRandom(debate.proMembers);
-      const conAgent = pickRandom(debate.conMembers);
-      const round: DebateRound = {
-        round: roundCount,
-        proArg: { agentId: proAgent, content: pickRandom(debateProArgs) },
-        conArg: { agentId: conAgent, content: pickRandom(debateConArgs) },
-      };
-      setDebates(prev => prev.map(d => d.id === id ? { ...d, rounds: [...d.rounds, round] } : d));
-
-      if (roundCount >= 3) {
-        clearInterval(interval);
-        setTimeout(() => {
-          setDebates(prev => prev.map(d => d.id === id ? { ...d, status: "voting" as const } : d));
-          setIsDebating(false);
-        }, 1000);
-      }
-    }, 2000);
+  const toggleMeetingTimer = (id: string) => {
+    setMeetings(prev => prev.map(m => m.id === id ? { ...m, timerPaused: !m.timerPaused } : m));
+  };
+  const resetMeetingTimer = (id: string) => {
+    setMeetings(prev => prev.map(m => m.id === id ? { ...m, timerRemaining: m.timerDuration } : m));
+  };
+  const toggleDebateTimer = (id: string) => {
+    setDebates(prev => prev.map(d => d.id === id ? { ...d, timerPaused: !d.timerPaused } : d));
+  };
+  const resetDebateTimer = (id: string) => {
+    setDebates(prev => prev.map(d => d.id === id ? { ...d, timerRemaining: d.roundDuration } : d));
   };
 
   const concludeDebate = (id: string, verdict: string) => {
@@ -436,30 +563,42 @@ export default function MeetingDebate() {
               <div className="flex-1 flex flex-col min-h-0 border-2 border-border rounded bg-card/50">
                 {currentMeeting ? (
                   <>
-                    <div className="flex items-center justify-between p-3 border-b-2 border-border">
-                      {isMobile && (
-                        <Button variant="ghost" size="sm" onClick={() => setMobileDetail(false)} className="mr-2">
-                          <ArrowLeft className="w-4 h-4" />
-                        </Button>
-                      )}
-                      <div className="flex-1">
-                        <h3 className="font-pixel text-xs text-primary">{currentMeeting.title}</h3>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          {currentMeeting.members.slice(0, 6).map(id => {
-                            const a = getAgentById(id);
-                            return <span key={id} className="text-sm">{a?.avatar}</span>;
-                          })}
+                    <div className="flex flex-col p-3 border-b-2 border-border gap-2">
+                      <div className="flex items-center justify-between">
+                        {isMobile && (
+                          <Button variant="ghost" size="sm" onClick={() => setMobileDetail(false)} className="mr-2">
+                            <ArrowLeft className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <div className="flex-1">
+                          <h3 className="font-pixel text-xs text-primary">{currentMeeting.title}</h3>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            {currentMeeting.members.slice(0, 6).map(id => {
+                              const a = getAgentById(id);
+                              return <span key={id} className="text-sm">{a?.avatar}</span>;
+                            })}
+                          </div>
                         </div>
+                        {currentMeeting.status === "waiting" && (
+                          <Button size="sm" onClick={() => startMeeting(currentMeeting.id)} className="font-pixel text-[10px] gap-1">
+                            <Play className="w-3 h-3" /> Start
+                          </Button>
+                        )}
+                        {currentMeeting.status === "active" && (
+                          <Button size="sm" variant="destructive" onClick={() => endMeeting(currentMeeting.id)} className="font-pixel text-[10px] gap-1">
+                            <Square className="w-3 h-3" /> End
+                          </Button>
+                        )}
                       </div>
-                      {currentMeeting.status === "waiting" && (
-                        <Button size="sm" onClick={() => startMeeting(currentMeeting.id)} className="font-pixel text-[10px] gap-1">
-                          <Play className="w-3 h-3" /> Start
-                        </Button>
-                      )}
                       {currentMeeting.status === "active" && (
-                        <Button size="sm" variant="destructive" onClick={() => endMeeting(currentMeeting.id)} className="font-pixel text-[10px] gap-1">
-                          <Square className="w-3 h-3" /> End
-                        </Button>
+                        <TimerDisplay
+                          remaining={currentMeeting.timerRemaining}
+                          total={currentMeeting.timerDuration}
+                          paused={currentMeeting.timerPaused}
+                          onPause={() => toggleMeetingTimer(currentMeeting.id)}
+                          onResume={() => toggleMeetingTimer(currentMeeting.id)}
+                          onReset={() => resetMeetingTimer(currentMeeting.id)}
+                        />
                       )}
                     </div>
 
@@ -564,21 +703,39 @@ export default function MeetingDebate() {
               <div className="flex-1 flex flex-col min-h-0 border-2 border-border rounded bg-card/50">
                 {currentDebate ? (
                   <>
-                    <div className="flex items-center justify-between p-3 border-b-2 border-border">
-                      {isMobile && (
-                        <Button variant="ghost" size="sm" onClick={() => setMobileDetail(false)} className="mr-2">
-                          <ArrowLeft className="w-4 h-4" />
-                        </Button>
-                      )}
-                      <div className="flex-1">
-                        <h3 className="font-pixel text-xs text-destructive flex items-center gap-1">
-                          <Swords className="w-3 h-3" /> {currentDebate.topic}
-                        </h3>
+                    <div className="flex flex-col p-3 border-b-2 border-border gap-2">
+                      <div className="flex items-center justify-between">
+                        {isMobile && (
+                          <Button variant="ghost" size="sm" onClick={() => setMobileDetail(false)} className="mr-2">
+                            <ArrowLeft className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <div className="flex-1">
+                          <h3 className="font-pixel text-xs text-destructive flex items-center gap-1">
+                            <Swords className="w-3 h-3" /> {currentDebate.topic}
+                          </h3>
+                        </div>
+                        {currentDebate.status === "setup" && (
+                          <Button size="sm" variant="destructive" onClick={() => startDebate(currentDebate.id)} className="font-pixel text-[10px] gap-1">
+                            <Play className="w-3 h-3" /> Start
+                          </Button>
+                        )}
                       </div>
-                      {currentDebate.status === "setup" && (
-                        <Button size="sm" variant="destructive" onClick={() => startDebate(currentDebate.id)} className="font-pixel text-[10px] gap-1">
-                          <Play className="w-3 h-3" /> Start
-                        </Button>
+                      {currentDebate.status === "active" && (
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <Badge variant="outline" className="font-pixel text-[10px]">
+                            Round {currentDebate.currentRound + 1}/3
+                          </Badge>
+                          <TimerDisplay
+                            remaining={currentDebate.timerRemaining}
+                            total={currentDebate.roundDuration}
+                            paused={currentDebate.timerPaused}
+                            onPause={() => toggleDebateTimer(currentDebate.id)}
+                            onResume={() => toggleDebateTimer(currentDebate.id)}
+                            onReset={() => resetDebateTimer(currentDebate.id)}
+                            variant="destructive"
+                          />
+                        </div>
                       )}
                     </div>
 
@@ -622,10 +779,12 @@ export default function MeetingDebate() {
                         );
                       })}
 
-                      {isDebating && (
+                      {currentDebate.status === "active" && (
                         <div className="flex items-center gap-2 text-muted-foreground justify-center py-4">
                           <Swords className="w-4 h-4 animate-pulse" />
-                          <span className="font-pixel text-xs animate-pulse">Debate in progress...</span>
+                          <span className="font-pixel text-xs animate-pulse">
+                            Round {currentDebate.currentRound + 1}/3 — waiting for timer...
+                          </span>
                         </div>
                       )}
 
@@ -793,6 +952,7 @@ export default function MeetingDebate() {
           </DialogHeader>
           <div className="space-y-3">
             <Input value={newMeetingTitle} onChange={e => setNewMeetingTitle(e.target.value)} placeholder="Meeting title..." className="font-pixel-body" />
+            <TimerSelector value={meetingTimerDuration} onChange={setMeetingTimerDuration} label="Meeting Duration" />
             <AgentSelector selected={selectedMembers} onToggle={id => toggleMember(id, selectedMembers, setSelectedMembers)} label="Select Participants" />
           </div>
           <DialogFooter>
@@ -809,6 +969,7 @@ export default function MeetingDebate() {
           </DialogHeader>
           <div className="space-y-3">
             <Input value={debateTopic} onChange={e => setDebateTopic(e.target.value)} placeholder="Debate topic..." className="font-pixel-body" />
+            <TimerSelector value={debateRoundDuration} onChange={setDebateRoundDuration} label="Time per Round" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <AgentSelector selected={proMembers} onToggle={id => toggleMember(id, proMembers, setProMembers)} label="👍 PRO Team" />
               <AgentSelector selected={conMembers} onToggle={id => toggleMember(id, conMembers, setConMembers)} label="👎 CON Team" />
