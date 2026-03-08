@@ -2,6 +2,8 @@ import { Gauge, ClipboardList, BarChart3, Activity, MessageSquare, FolderKanban,
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { CompanySwitcher } from "@/components/CompanySwitcher";
+import { useCompany } from "@/contexts/CompanyContext";
+import { useGlobalNotifications } from "@/contexts/NotificationContext";
 import {
   Sidebar,
   SidebarContent,
