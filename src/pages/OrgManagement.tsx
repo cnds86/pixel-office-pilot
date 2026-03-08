@@ -448,6 +448,73 @@ export default function OrgManagement() {
                     })}
                   </div>
                 </TabsContent>
+
+                {/* Audit Log Tab */}
+                <TabsContent value="audit" className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      Complete history of changes in {selectedOrg.name}
+                    </p>
+                    <Select value={auditFilter} onValueChange={v => setAuditFilter(v as AuditAction | "all")}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Filter actions" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Actions</SelectItem>
+                        <SelectItem value="role_changed">Role Changes</SelectItem>
+                        <SelectItem value="member_invited">Invites</SelectItem>
+                        <SelectItem value="member_removed">Removals</SelectItem>
+                        <SelectItem value="invite_cancelled">Cancelled Invites</SelectItem>
+                        <SelectItem value="org_created">Org Created</SelectItem>
+                        <SelectItem value="org_deleted">Org Deleted</SelectItem>
+                        <SelectItem value="org_edited">Org Edited</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {(() => {
+                    const filtered = auditLogs
+                      .filter(l => l.orgId === selectedOrg.id)
+                      .filter(l => auditFilter === "all" || l.action === auditFilter);
+
+                    if (filtered.length === 0) return (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <ScrollText className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                        <p className="font-pixel text-xs">No audit logs yet</p>
+                      </div>
+                    );
+
+                    return (
+                      <div className="space-y-1">
+                        {filtered.map(log => {
+                          const meta = auditActionMeta[log.action];
+                          const ActionIcon = meta.icon;
+                          return (
+                            <div key={log.id} className="flex items-start gap-3 p-3 rounded-md hover:bg-muted/50 transition-colors border border-transparent hover:border-border">
+                              <div className={`mt-0.5 p-1.5 rounded-md bg-muted ${meta.color}`}>
+                                <ActionIcon className="h-3.5 w-3.5" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className={`text-[9px] px-1.5 py-0 ${meta.color}`}>{meta.label}</Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(log.timestamp).toLocaleString()}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-foreground mt-1">
+                                  <span className="font-medium">{log.actor}</span>
+                                  {" → "}
+                                  <span className="font-medium">{log.target}</span>
+                                </p>
+                                <p className="text-xs text-muted-foreground">{log.details}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </TabsContent>
               </Tabs>
             </CardContent>
           </Card>
