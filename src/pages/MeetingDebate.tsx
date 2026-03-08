@@ -223,6 +223,75 @@ function TimerSelector({ value, onChange, label }: { value: number; onChange: (v
   );
 }
 
+/* ── Schedule Picker Component ── */
+function SchedulePicker({ date, onDateChange, time, onTimeChange }: {
+  date: Date | undefined; onDateChange: (d: Date | undefined) => void;
+  time: string; onTimeChange: (t: string) => void;
+}) {
+  return (
+    <div>
+      <p className="text-sm font-pixel text-muted-foreground mb-1.5 flex items-center gap-1">
+        <CalendarIcon className="w-3 h-3" /> Schedule (optional)
+      </p>
+      <div className="flex gap-2 items-center">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`font-pixel text-[10px] h-8 px-2 justify-start ${!date ? "text-muted-foreground" : ""}`}
+            >
+              <CalendarIcon className="w-3 h-3 mr-1" />
+              {date ? format(date, "dd MMM yyyy") : "Pick date"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={onDateChange}
+              disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+              initialFocus
+              className="p-3 pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+        <Input
+          type="time"
+          value={time}
+          onChange={e => onTimeChange(e.target.value)}
+          className="font-pixel-body text-xs h-8 w-28"
+        />
+        {(date || time) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-muted-foreground font-pixel text-[10px]"
+            onClick={() => { onDateChange(undefined); onTimeChange(""); }}
+          >
+            Clear
+          </Button>
+        )}
+      </div>
+      {date && time && (
+        <p className="text-[10px] text-primary font-pixel mt-1 flex items-center gap-1">
+          <Clock className="w-3 h-3" /> Scheduled: {format(date, "dd MMM yyyy")} at {time}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function buildScheduledDate(date: Date | undefined, time: string): Date | undefined {
+  if (!date) return undefined;
+  const scheduled = new Date(date);
+  if (time) {
+    const [h, m] = time.split(":").map(Number);
+    scheduled.setHours(h, m, 0, 0);
+  }
+  return scheduled;
+}
+
 /* ── Component ── */
 export default function MeetingDebate() {
   const { toast } = useToast();
