@@ -563,30 +563,42 @@ export default function MeetingDebate() {
               <div className="flex-1 flex flex-col min-h-0 border-2 border-border rounded bg-card/50">
                 {currentMeeting ? (
                   <>
-                    <div className="flex items-center justify-between p-3 border-b-2 border-border">
-                      {isMobile && (
-                        <Button variant="ghost" size="sm" onClick={() => setMobileDetail(false)} className="mr-2">
-                          <ArrowLeft className="w-4 h-4" />
-                        </Button>
-                      )}
-                      <div className="flex-1">
-                        <h3 className="font-pixel text-xs text-primary">{currentMeeting.title}</h3>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          {currentMeeting.members.slice(0, 6).map(id => {
-                            const a = getAgentById(id);
-                            return <span key={id} className="text-sm">{a?.avatar}</span>;
-                          })}
+                    <div className="flex flex-col p-3 border-b-2 border-border gap-2">
+                      <div className="flex items-center justify-between">
+                        {isMobile && (
+                          <Button variant="ghost" size="sm" onClick={() => setMobileDetail(false)} className="mr-2">
+                            <ArrowLeft className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <div className="flex-1">
+                          <h3 className="font-pixel text-xs text-primary">{currentMeeting.title}</h3>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            {currentMeeting.members.slice(0, 6).map(id => {
+                              const a = getAgentById(id);
+                              return <span key={id} className="text-sm">{a?.avatar}</span>;
+                            })}
+                          </div>
                         </div>
+                        {currentMeeting.status === "waiting" && (
+                          <Button size="sm" onClick={() => startMeeting(currentMeeting.id)} className="font-pixel text-[10px] gap-1">
+                            <Play className="w-3 h-3" /> Start
+                          </Button>
+                        )}
+                        {currentMeeting.status === "active" && (
+                          <Button size="sm" variant="destructive" onClick={() => endMeeting(currentMeeting.id)} className="font-pixel text-[10px] gap-1">
+                            <Square className="w-3 h-3" /> End
+                          </Button>
+                        )}
                       </div>
-                      {currentMeeting.status === "waiting" && (
-                        <Button size="sm" onClick={() => startMeeting(currentMeeting.id)} className="font-pixel text-[10px] gap-1">
-                          <Play className="w-3 h-3" /> Start
-                        </Button>
-                      )}
                       {currentMeeting.status === "active" && (
-                        <Button size="sm" variant="destructive" onClick={() => endMeeting(currentMeeting.id)} className="font-pixel text-[10px] gap-1">
-                          <Square className="w-3 h-3" /> End
-                        </Button>
+                        <TimerDisplay
+                          remaining={currentMeeting.timerRemaining}
+                          total={currentMeeting.timerDuration}
+                          paused={currentMeeting.timerPaused}
+                          onPause={() => toggleMeetingTimer(currentMeeting.id)}
+                          onResume={() => toggleMeetingTimer(currentMeeting.id)}
+                          onReset={() => resetMeetingTimer(currentMeeting.id)}
+                        />
                       )}
                     </div>
 
