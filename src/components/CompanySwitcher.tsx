@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { companies, type Company } from "@/data/paperclipData";
+import { useCompany } from "@/contexts/CompanyContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +16,7 @@ interface CompanySwitcherProps {
 }
 
 export function CompanySwitcher({ collapsed }: CompanySwitcherProps) {
-  const [currentCompany, setCurrentCompany] = useState<Company>(companies[0]);
+  const { currentCompany, setCurrentCompany } = useCompany();
 
   return (
     <DropdownMenu>
