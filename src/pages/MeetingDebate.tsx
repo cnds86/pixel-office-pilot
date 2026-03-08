@@ -431,6 +431,67 @@ export default function MeetingDebate() {
     toast({ title: "⚖️ Debate Concluded", description: `Verdict: ${verdict}` });
   };
 
+  /* ── Export Functions ── */
+  const generateMeetingMarkdown = (m: MeetingRoom): string => {
+    const members = m.members.map(id => getAgentById(id)?.name || id).join(", ");
+    let md = `# 🏢 Meeting: ${m.title}\n\n`;
+    md += `**Date:** ${m.createdAt}\n`;
+    md += `**Participants:** ${members}\n`;
+    md += `**Status:** ${m.status}\n\n`;
+    md += `---\n\n## 💬 Discussion\n\n`;
+    m.messages.filter(msg => msg.type === "message").forEach(msg => {
+      const name = msg.sender === "user" ? "You" : (getAgentById(msg.sender)?.name || msg.sender);
+      md += `**${name}** _(${msg.timestamp})_\n> ${msg.content}\n\n`;
+    });
+    if (m.summary) {
+      md += `---\n\n## 📋 Summary\n\n${m.summary}\n\n`;
+    }
+    if (m.actionItems && m.actionItems.length > 0) {
+      md += `## ✅ Action Items\n\n`;
+      m.actionItems.forEach(item => { md += `- [ ] ${item}\n`; });
+    }
+    return md;
+  };
+
+  const generateDebateMarkdown = (d: Debate): string => {
+    const proNames = d.proMembers.map(id => getAgentById(id)?.name || id).join(", ");
+    const conNames = d.conMembers.map(id => getAgentById(id)?.name || id).join(", ");
+    let md = `# ⚔️ Debate: ${d.topic}\n\n`;
+    md += `**Date:** ${d.createdAt}\n`;
+    md += `**PRO Team:** ${proNames}\n`;
+    md += `**CON Team:** ${conNames}\n`;
+    md += `**Status:** ${d.status}\n\n`;
+    md += `---\n\n`;
+    d.rounds.forEach(round => {
+      const proA = getAgentById(round.proArg.agentId)?.name || round.proArg.agentId;
+      const conA = getAgentById(round.conArg.agentId)?.name || round.conArg.agentId;
+      md += `## Round ${round.round}\n\n`;
+      md += `**👍 PRO — ${proA}:**\n> ${round.proArg.content}\n\n`;
+      md += `**👎 CON — ${conA}:**\n> ${round.conArg.content}\n\n`;
+    });
+    if (d.verdict) {
+      md += `---\n\n## 🏆 Verdict: ${d.verdict}\n`;
+    }
+    return md;
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast({ title: "📋 Copied!", description: `${label} copied to clipboard` });
+    });
+  };
+
+  const downloadMarkdown = (text: string, filename: string) => {
+    const blob = new Blob([text], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${filename}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "📥 Downloaded!", description: `${filename}.md saved` });
+  };
+
   /* ── Poll Functions ── */
   const createPoll = () => {
     if (!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2) return;
