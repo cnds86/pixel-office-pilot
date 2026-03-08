@@ -19,7 +19,6 @@ import {
   Bot, CreditCard, Settings, ChevronRight, Search, ScrollText,
   ArrowRightLeft, UserPlus, UserX, ShieldAlert
 } from "lucide-react";
-} from "lucide-react";
 import {
   organizations as initialOrgs,
   rolePermissions, roleBadgeClass,
