@@ -54,6 +54,10 @@ const App = () => (
           <Route path="/gateways" element={<GatewayManagement />} />
           <Route path="/skills" element={<SkillsMarketplace />} />
           <Route path="/tags" element={<TagsCustomFields />} />
+          <Route path="/subtasks" element={<SubTasksXP />} />
+          <Route path="/workflows" element={<WorkflowPacks />} />
+          <Route path="/reports" element={<TaskReports />} />
+          <Route path="/settings" element={<CompanySettings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
