@@ -1144,6 +1144,7 @@ export default function MeetingDebate() {
           </DialogHeader>
           <div className="space-y-3">
             <Input value={debateTopic} onChange={e => setDebateTopic(e.target.value)} placeholder="Debate topic..." className="font-pixel-body" />
+            <SchedulePicker date={debateScheduledDate} onDateChange={setDebateScheduledDate} time={debateScheduledTime} onTimeChange={setDebateScheduledTime} />
             <TimerSelector value={debateRoundDuration} onChange={setDebateRoundDuration} label="Time per Round" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <AgentSelector selected={proMembers} onToggle={id => toggleMember(id, proMembers, setProMembers)} label="👍 PRO Team" />
