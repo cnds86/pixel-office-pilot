@@ -333,8 +333,42 @@ export default function MeetingDebate() {
   // Mobile detail view
   const [mobileDetail, setMobileDetail] = useState(false);
 
+  // Search & filter state
+  const [meetingSearch, setMeetingSearch] = useState("");
+  const [debateSearch, setDebateSearch] = useState("");
+  const [summarySearch, setSummarySearch] = useState("");
+  const [meetingStatusFilter, setMeetingStatusFilter] = useState<"all" | "waiting" | "active" | "ended">("all");
+  const [debateStatusFilter, setDebateStatusFilter] = useState<"all" | "setup" | "active" | "voting" | "ended">("all");
+
   const currentMeeting = meetings.find(m => m.id === activeMeeting);
   const currentDebate = debates.find(d => d.id === activeDebate);
+
+  // Filtered lists
+  const filteredMeetings = meetings.filter(m => {
+    const matchesSearch = !meetingSearch || m.title.toLowerCase().includes(meetingSearch.toLowerCase()) ||
+      (m.scheduledAt && format(m.scheduledAt, "dd MMM yyyy").toLowerCase().includes(meetingSearch.toLowerCase())) ||
+      m.createdAt.toLowerCase().includes(meetingSearch.toLowerCase());
+    const matchesStatus = meetingStatusFilter === "all" || m.status === meetingStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const filteredDebates = debates.filter(d => {
+    const matchesSearch = !debateSearch || d.topic.toLowerCase().includes(debateSearch.toLowerCase()) ||
+      (d.scheduledAt && format(d.scheduledAt, "dd MMM yyyy").toLowerCase().includes(debateSearch.toLowerCase())) ||
+      d.createdAt.toLowerCase().includes(debateSearch.toLowerCase());
+    const matchesStatus = debateStatusFilter === "all" || d.status === debateStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const filteredEndedMeetings = meetings.filter(m => m.status === "ended" && (
+    !summarySearch || m.title.toLowerCase().includes(summarySearch.toLowerCase()) ||
+    (m.scheduledAt && format(m.scheduledAt, "dd MMM yyyy").toLowerCase().includes(summarySearch.toLowerCase()))
+  ));
+
+  const filteredEndedDebates = debates.filter(d => d.status === "ended" && (
+    !summarySearch || d.topic.toLowerCase().includes(summarySearch.toLowerCase()) ||
+    (d.scheduledAt && format(d.scheduledAt, "dd MMM yyyy").toLowerCase().includes(summarySearch.toLowerCase()))
+  ));
 
   // auto-scroll meeting
   useEffect(() => {
