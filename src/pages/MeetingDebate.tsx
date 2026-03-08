@@ -15,8 +15,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Users, Swords, Vote, FileText, Plus, Play, Square, Send,
   ThumbsUp, ThumbsDown, CheckCircle2, Clock, MessageSquare,
-  ChevronRight, Sparkles, ArrowLeft
+  ChevronRight, Sparkles, ArrowLeft, Timer, Pause, RotateCcw
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 /* ── Types ── */
 interface MeetingRoom {
