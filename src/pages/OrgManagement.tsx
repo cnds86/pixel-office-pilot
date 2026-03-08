@@ -152,6 +152,7 @@ export default function OrgManagement() {
     setOrgs(prev => prev.map(o => o.id === updated.id ? updated : o));
     setInviteOpen(false);
     setInviteEmail(""); setInviteRole("member");
+    addAuditLog("member_invited", invite.email, `Invited as ${invite.role}`);
     toast({ title: "Invite sent", description: `Invitation sent to ${invite.email}` });
   };
 
