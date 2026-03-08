@@ -178,6 +178,7 @@ export default function OrgManagement() {
     };
     setSelectedOrg(updated);
     setOrgs(prev => prev.map(o => o.id === updated.id ? updated : o));
+    addAuditLog("member_removed", member.name, `Removed from ${selectedOrg.name}`);
     toast({ title: "Member removed", description: `${member.name} has been removed` });
   };
 
