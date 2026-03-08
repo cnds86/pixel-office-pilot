@@ -16,7 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Users, Shield, Plus, Mail, MoreVertical, Crown, UserCog,
   User, Eye, Trash2, UserMinus, RefreshCw, Copy, Check, X, Clock,
-  Bot, CreditCard, Settings, ChevronRight, Search
+  Bot, CreditCard, Settings, ChevronRight, Search, ScrollText,
+  ArrowRightLeft, UserPlus, UserX, ShieldAlert
 } from "lucide-react";
 import {
   organizations as initialOrgs,
@@ -37,12 +38,60 @@ const planBadge: Record<string, string> = {
   enterprise: "bg-accent/20 text-accent border-accent/40",
 };
 
+type AuditAction = "role_changed" | "member_invited" | "member_removed" | "invite_cancelled" | "org_created" | "org_deleted" | "org_edited";
+
+interface AuditLogEntry {
+  id: string;
+  action: AuditAction;
+  actor: string;
+  target: string;
+  details: string;
+  timestamp: string;
+  orgId: string;
+}
+
+const auditActionMeta: Record<AuditAction, { icon: typeof Crown; color: string; label: string }> = {
+  role_changed: { icon: ArrowRightLeft, color: "text-secondary", label: "Role Changed" },
+  member_invited: { icon: UserPlus, color: "text-primary", label: "Member Invited" },
+  member_removed: { icon: UserX, color: "text-destructive", label: "Member Removed" },
+  invite_cancelled: { icon: X, color: "text-muted-foreground", label: "Invite Cancelled" },
+  org_created: { icon: Building2, color: "text-accent", label: "Org Created" },
+  org_deleted: { icon: Trash2, color: "text-destructive", label: "Org Deleted" },
+  org_edited: { icon: Settings, color: "text-accent", label: "Org Edited" },
+};
+
+const seedAuditLogs: AuditLogEntry[] = [
+  { id: "al1", action: "org_created", actor: "Alex Chen", target: "OpenClaw Corp", details: "Organization created", timestamp: "2025-09-15T10:00:00", orgId: "org1" },
+  { id: "al2", action: "member_invited", actor: "Alex Chen", target: "sarah@openclaw.ai", details: "Invited as admin", timestamp: "2025-09-20T14:00:00", orgId: "org1" },
+  { id: "al3", action: "role_changed", actor: "Alex Chen", target: "Mike Torres", details: "member → admin", timestamp: "2025-11-05T09:30:00", orgId: "org1" },
+  { id: "al4", action: "member_invited", actor: "Sarah Kim", target: "yuki@openclaw.ai", details: "Invited as member", timestamp: "2025-11-01T11:00:00", orgId: "org1" },
+  { id: "al5", action: "member_removed", actor: "Alex Chen", target: "Former Employee", details: "Removed from organization", timestamp: "2026-01-15T16:00:00", orgId: "org1" },
+  { id: "al6", action: "member_invited", actor: "Alex Chen", target: "lisa@openclaw.ai", details: "Invited as viewer", timestamp: "2026-02-20T08:00:00", orgId: "org1" },
+  { id: "al7", action: "invite_cancelled", actor: "Sarah Kim", target: "temp@external.com", details: "Pending invite cancelled", timestamp: "2026-03-01T13:00:00", orgId: "org1" },
+  { id: "al8", action: "role_changed", actor: "Alex Chen", target: "Lisa Wang", details: "member → viewer", timestamp: "2026-03-05T10:00:00", orgId: "org1" },
+];
+
 export default function OrgManagement() {
   const { toast } = useToast();
   const [orgs, setOrgs] = useState<Organization[]>(initialOrgs);
   const [selectedOrg, setSelectedOrg] = useState<Organization>(orgs[0]);
   const [activeTab, setActiveTab] = useState("members");
   const [searchQuery, setSearchQuery] = useState("");
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(seedAuditLogs);
+  const [auditFilter, setAuditFilter] = useState<AuditAction | "all">("all");
+
+  const addAuditLog = (action: AuditAction, target: string, details: string) => {
+    const entry: AuditLogEntry = {
+      id: `al${Date.now()}`,
+      action,
+      actor: "You",
+      target,
+      details,
+      timestamp: new Date().toISOString(),
+      orgId: selectedOrg.id,
+    };
+    setAuditLogs(prev => [entry, ...prev]);
+  };
 
   // Dialogs
   const [createOrgOpen, setCreateOrgOpen] = useState(false);
@@ -82,6 +131,7 @@ export default function OrgManagement() {
     setSelectedOrg(newOrg);
     setCreateOrgOpen(false);
     setNewOrgName(""); setNewOrgDesc(""); setNewOrgLogo("🏢");
+    addAuditLog("org_created", newOrg.name, "Organization created");
     toast({ title: "Organization created", description: `${newOrg.name} is ready to go!` });
   };
 
@@ -101,6 +151,7 @@ export default function OrgManagement() {
     setOrgs(prev => prev.map(o => o.id === updated.id ? updated : o));
     setInviteOpen(false);
     setInviteEmail(""); setInviteRole("member");
+    addAuditLog("member_invited", invite.email, `Invited as ${invite.role}`);
     toast({ title: "Invite sent", description: `Invitation sent to ${invite.email}` });
   };
 
@@ -113,6 +164,7 @@ export default function OrgManagement() {
     setSelectedOrg(updated);
     setOrgs(prev => prev.map(o => o.id === updated.id ? updated : o));
     setRoleDialogOpen(false);
+    addAuditLog("role_changed", selectedMember.name, `${selectedMember.role} → ${newRole}`);
     toast({ title: "Role updated", description: `${selectedMember.name} is now ${newRole}` });
   };
 
@@ -125,6 +177,7 @@ export default function OrgManagement() {
     };
     setSelectedOrg(updated);
     setOrgs(prev => prev.map(o => o.id === updated.id ? updated : o));
+    addAuditLog("member_removed", member.name, `Removed from ${selectedOrg.name}`);
     toast({ title: "Member removed", description: `${member.name} has been removed` });
   };
 
@@ -135,6 +188,7 @@ export default function OrgManagement() {
     };
     setSelectedOrg(updated);
     setOrgs(prev => prev.map(o => o.id === updated.id ? updated : o));
+    addAuditLog("invite_cancelled", selectedOrg.invites.find(i => i.id === inviteId)?.email || inviteId, "Pending invite cancelled");
     toast({ title: "Invite cancelled" });
   };
 
@@ -142,6 +196,7 @@ export default function OrgManagement() {
     const remaining = orgs.filter(o => o.id !== orgId);
     setOrgs(remaining);
     if (selectedOrg.id === orgId && remaining.length > 0) setSelectedOrg(remaining[0]);
+    addAuditLog("org_deleted", orgs.find(o => o.id === orgId)?.name || orgId, "Organization deleted");
     toast({ title: "Organization deleted", variant: "destructive" });
   };
 
@@ -227,6 +282,9 @@ export default function OrgManagement() {
                   </TabsTrigger>
                   <TabsTrigger value="roles" className="gap-1.5 font-pixel text-xs">
                     <Shield className="h-3.5 w-3.5" /> Roles & Permissions
+                  </TabsTrigger>
+                  <TabsTrigger value="audit" className="gap-1.5 font-pixel text-xs">
+                    <ScrollText className="h-3.5 w-3.5" /> Audit Log
                   </TabsTrigger>
                 </TabsList>
 
@@ -390,6 +448,73 @@ export default function OrgManagement() {
                     })}
                   </div>
                 </TabsContent>
+
+                {/* Audit Log Tab */}
+                <TabsContent value="audit" className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      Complete history of changes in {selectedOrg.name}
+                    </p>
+                    <Select value={auditFilter} onValueChange={v => setAuditFilter(v as AuditAction | "all")}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Filter actions" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Actions</SelectItem>
+                        <SelectItem value="role_changed">Role Changes</SelectItem>
+                        <SelectItem value="member_invited">Invites</SelectItem>
+                        <SelectItem value="member_removed">Removals</SelectItem>
+                        <SelectItem value="invite_cancelled">Cancelled Invites</SelectItem>
+                        <SelectItem value="org_created">Org Created</SelectItem>
+                        <SelectItem value="org_deleted">Org Deleted</SelectItem>
+                        <SelectItem value="org_edited">Org Edited</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {(() => {
+                    const filtered = auditLogs
+                      .filter(l => l.orgId === selectedOrg.id)
+                      .filter(l => auditFilter === "all" || l.action === auditFilter);
+
+                    if (filtered.length === 0) return (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <ScrollText className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                        <p className="font-pixel text-xs">No audit logs yet</p>
+                      </div>
+                    );
+
+                    return (
+                      <div className="space-y-1">
+                        {filtered.map(log => {
+                          const meta = auditActionMeta[log.action];
+                          const ActionIcon = meta.icon;
+                          return (
+                            <div key={log.id} className="flex items-start gap-3 p-3 rounded-md hover:bg-muted/50 transition-colors border border-transparent hover:border-border">
+                              <div className={`mt-0.5 p-1.5 rounded-md bg-muted ${meta.color}`}>
+                                <ActionIcon className="h-3.5 w-3.5" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className={`text-[9px] px-1.5 py-0 ${meta.color}`}>{meta.label}</Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(log.timestamp).toLocaleString()}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-foreground mt-1">
+                                  <span className="font-medium">{log.actor}</span>
+                                  {" → "}
+                                  <span className="font-medium">{log.target}</span>
+                                </p>
+                                <p className="text-xs text-muted-foreground">{log.details}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </TabsContent>
               </Tabs>
             </CardContent>
           </Card>
@@ -518,7 +643,7 @@ export default function OrgManagement() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => setEditOrgOpen(false)}>Done</Button>
+            <Button onClick={() => { addAuditLog("org_edited", selectedOrg.name, "Organization settings updated"); setEditOrgOpen(false); }}>Done</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
