@@ -733,6 +733,11 @@ export default function MeetingDebate() {
                               return <span key={id} className="text-sm">{a?.avatar}</span>;
                             })}
                           </div>
+                          {currentMeeting.scheduledAt && (
+                            <p className="text-[10px] text-muted-foreground font-pixel flex items-center gap-1 mt-0.5">
+                              <CalendarIcon className="w-3 h-3" /> {format(currentMeeting.scheduledAt, "dd MMM yyyy HH:mm")}
+                            </p>
+                          )}
                         </div>
                         {currentMeeting.status === "waiting" && (
                           <Button size="sm" onClick={() => startMeeting(currentMeeting.id)} className="font-pixel text-[10px] gap-1">
