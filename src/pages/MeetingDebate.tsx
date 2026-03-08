@@ -16,7 +16,7 @@ import {
   Users, Swords, Vote, FileText, Plus, Play, Square, Send,
   ThumbsUp, ThumbsDown, CheckCircle2, Clock, MessageSquare,
   ChevronRight, Sparkles, ArrowLeft, Timer, Pause, RotateCcw,
-  Copy, Download, ClipboardCheck, CalendarIcon
+  Copy, Download, ClipboardCheck, CalendarIcon, Search, X
 } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
