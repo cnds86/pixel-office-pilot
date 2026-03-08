@@ -132,6 +132,7 @@ export default function OrgManagement() {
     setSelectedOrg(newOrg);
     setCreateOrgOpen(false);
     setNewOrgName(""); setNewOrgDesc(""); setNewOrgLogo("🏢");
+    addAuditLog("org_created", newOrg.name, "Organization created");
     toast({ title: "Organization created", description: `${newOrg.name} is ready to go!` });
   };
 
