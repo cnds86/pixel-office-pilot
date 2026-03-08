@@ -703,21 +703,39 @@ export default function MeetingDebate() {
               <div className="flex-1 flex flex-col min-h-0 border-2 border-border rounded bg-card/50">
                 {currentDebate ? (
                   <>
-                    <div className="flex items-center justify-between p-3 border-b-2 border-border">
-                      {isMobile && (
-                        <Button variant="ghost" size="sm" onClick={() => setMobileDetail(false)} className="mr-2">
-                          <ArrowLeft className="w-4 h-4" />
-                        </Button>
-                      )}
-                      <div className="flex-1">
-                        <h3 className="font-pixel text-xs text-destructive flex items-center gap-1">
-                          <Swords className="w-3 h-3" /> {currentDebate.topic}
-                        </h3>
+                    <div className="flex flex-col p-3 border-b-2 border-border gap-2">
+                      <div className="flex items-center justify-between">
+                        {isMobile && (
+                          <Button variant="ghost" size="sm" onClick={() => setMobileDetail(false)} className="mr-2">
+                            <ArrowLeft className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <div className="flex-1">
+                          <h3 className="font-pixel text-xs text-destructive flex items-center gap-1">
+                            <Swords className="w-3 h-3" /> {currentDebate.topic}
+                          </h3>
+                        </div>
+                        {currentDebate.status === "setup" && (
+                          <Button size="sm" variant="destructive" onClick={() => startDebate(currentDebate.id)} className="font-pixel text-[10px] gap-1">
+                            <Play className="w-3 h-3" /> Start
+                          </Button>
+                        )}
                       </div>
-                      {currentDebate.status === "setup" && (
-                        <Button size="sm" variant="destructive" onClick={() => startDebate(currentDebate.id)} className="font-pixel text-[10px] gap-1">
-                          <Play className="w-3 h-3" /> Start
-                        </Button>
+                      {currentDebate.status === "active" && (
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <Badge variant="outline" className="font-pixel text-[10px]">
+                            Round {currentDebate.currentRound + 1}/3
+                          </Badge>
+                          <TimerDisplay
+                            remaining={currentDebate.timerRemaining}
+                            total={currentDebate.roundDuration}
+                            paused={currentDebate.timerPaused}
+                            onPause={() => toggleDebateTimer(currentDebate.id)}
+                            onResume={() => toggleDebateTimer(currentDebate.id)}
+                            onReset={() => resetDebateTimer(currentDebate.id)}
+                            variant="destructive"
+                          />
+                        </div>
                       )}
                     </div>
 
