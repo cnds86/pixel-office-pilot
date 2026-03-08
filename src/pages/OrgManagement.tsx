@@ -17,7 +17,7 @@ import {
   Building2, Users, Shield, Plus, Mail, MoreVertical, Crown, UserCog,
   User, Eye, Trash2, UserMinus, RefreshCw, Copy, Check, X, Clock,
   Bot, CreditCard, Settings, ChevronRight, Search, ScrollText,
-  ArrowRightLeft, UserPlus, UserX, ShieldAlert
+  ArrowRightLeft, UserPlus, UserX, ShieldAlert, Download
 } from "lucide-react";
 import {
   organizations as initialOrgs,
