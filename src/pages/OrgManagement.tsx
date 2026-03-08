@@ -197,6 +197,7 @@ export default function OrgManagement() {
     const remaining = orgs.filter(o => o.id !== orgId);
     setOrgs(remaining);
     if (selectedOrg.id === orgId && remaining.length > 0) setSelectedOrg(remaining[0]);
+    addAuditLog("org_deleted", orgs.find(o => o.id === orgId)?.name || orgId, "Organization deleted");
     toast({ title: "Organization deleted", variant: "destructive" });
   };
 
