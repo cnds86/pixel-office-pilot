@@ -292,6 +292,32 @@ function buildScheduledDate(date: Date | undefined, time: string): Date | undefi
   return scheduled;
 }
 
+/* ── Timer Alert Sound ── */
+function playTimerAlert() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const playBeep = (freq: number, startTime: number, duration: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = "square";
+      gain.gain.setValueAtTime(0.15, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    };
+    // 3 ascending beeps
+    playBeep(660, ctx.currentTime, 0.15);
+    playBeep(880, ctx.currentTime + 0.2, 0.15);
+    playBeep(1100, ctx.currentTime + 0.4, 0.25);
+    setTimeout(() => ctx.close(), 1500);
+  } catch (e) {
+    // Audio not supported — silent fallback
+  }
+}
+
 /* ── Component ── */
 export default function MeetingDebate() {
   const { toast } = useToast();
