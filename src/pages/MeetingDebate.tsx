@@ -887,13 +887,40 @@ export default function MeetingDebate() {
                 <Button onClick={() => setShowDebateForm(true)} variant="destructive" className="w-full font-pixel text-xs gap-2">
                   <Plus className="w-3 h-3" /> New Debate
                 </Button>
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                  <Input
+                    value={debateSearch}
+                    onChange={e => setDebateSearch(e.target.value)}
+                    placeholder="Search debates..."
+                    className="font-pixel-body text-xs pl-7 pr-7 h-8"
+                  />
+                  {debateSearch && (
+                    <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-8 w-7" onClick={() => setDebateSearch("")}>
+                      <X className="w-3 h-3" />
+                    </Button>
+                  )}
+                </div>
+                <div className="flex gap-1 flex-wrap">
+                  {(["all", "setup", "active", "voting", "ended"] as const).map(s => (
+                    <Button
+                      key={s}
+                      variant={debateStatusFilter === s ? "destructive" : "outline"}
+                      size="sm"
+                      className="font-pixel text-[9px] h-6 px-2"
+                      onClick={() => setDebateStatusFilter(s)}
+                    >
+                      {s === "all" ? "All" : s}
+                    </Button>
+                  ))}
+                </div>
                 <div className="flex-1 overflow-y-auto scrollbar-thin space-y-2">
-                  {debates.length === 0 && (
+                  {filteredDebates.length === 0 && (
                     <div className="text-center text-muted-foreground font-pixel-body text-sm py-8">
-                      No debates yet.<br />Start one!
+                      {debates.length === 0 ? <>No debates yet.<br />Start one!</> : "No debates match your search"}
                     </div>
                   )}
-                  {debates.map(d => (
+                  {filteredDebates.map(d => (
                     <Card
                       key={d.id}
                       className={`cursor-pointer transition-all hover:border-destructive/50 ${activeDebate === d.id ? "border-destructive bg-destructive/5" : ""}`}
