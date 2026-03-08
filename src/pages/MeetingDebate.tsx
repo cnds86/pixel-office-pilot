@@ -1139,13 +1139,29 @@ export default function MeetingDebate() {
 
           {/* ═══ SUMMARIES TAB ═══ */}
           <TabsContent value="summaries" className="flex-1 m-0 p-3 overflow-y-auto scrollbar-thin">
-            <h2 className="font-pixel text-xs text-accent mb-3 flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> MEETING SUMMARIES & ACTION ITEMS
-            </h2>
+            <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+              <h2 className="font-pixel text-xs text-accent flex items-center gap-1">
+                <Sparkles className="w-3 h-3" /> MEETING SUMMARIES & ACTION ITEMS
+              </h2>
+              <div className="relative w-full sm:w-56">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                <Input
+                  value={summarySearch}
+                  onChange={e => setSummarySearch(e.target.value)}
+                  placeholder="Search summaries..."
+                  className="font-pixel-body text-xs pl-7 pr-7 h-8"
+                />
+                {summarySearch && (
+                  <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-8 w-7" onClick={() => setSummarySearch("")}>
+                    <X className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            </div>
             <div className="space-y-3">
-              {meetings.filter(m => m.status === "ended").length === 0 && debates.filter(d => d.status === "ended").length === 0 && (
+              {filteredEndedMeetings.length === 0 && filteredEndedDebates.length === 0 && (
                 <div className="text-center text-muted-foreground font-pixel-body text-sm py-8">
-                  No completed meetings or debates yet
+                  {summarySearch ? "No summaries match your search" : "No completed meetings or debates yet"}
                 </div>
               )}
               {meetings.filter(m => m.status === "ended").map(m => (
