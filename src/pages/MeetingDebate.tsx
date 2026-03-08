@@ -340,6 +340,10 @@ export default function MeetingDebate() {
       rounds: [],
       status: "setup",
       createdAt: now(),
+      roundDuration: debateRoundDuration,
+      timerRemaining: debateRoundDuration,
+      timerPaused: false,
+      currentRound: 0,
     };
     setDebates(prev => [...prev, d]);
     setActiveDebate(d.id);
