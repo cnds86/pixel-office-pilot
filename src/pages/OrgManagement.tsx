@@ -455,21 +455,57 @@ export default function OrgManagement() {
                     <p className="text-sm text-muted-foreground">
                       Complete history of changes in {selectedOrg.name}
                     </p>
-                    <Select value={auditFilter} onValueChange={v => setAuditFilter(v as AuditAction | "all")}>
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Filter actions" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Actions</SelectItem>
-                        <SelectItem value="role_changed">Role Changes</SelectItem>
-                        <SelectItem value="member_invited">Invites</SelectItem>
-                        <SelectItem value="member_removed">Removals</SelectItem>
-                        <SelectItem value="invite_cancelled">Cancelled Invites</SelectItem>
-                        <SelectItem value="org_created">Org Created</SelectItem>
-                        <SelectItem value="org_deleted">Org Deleted</SelectItem>
-                        <SelectItem value="org_edited">Org Edited</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-2">
+                      <Select value={auditFilter} onValueChange={v => setAuditFilter(v as AuditAction | "all")}>
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Filter actions" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Actions</SelectItem>
+                          <SelectItem value="role_changed">Role Changes</SelectItem>
+                          <SelectItem value="member_invited">Invites</SelectItem>
+                          <SelectItem value="member_removed">Removals</SelectItem>
+                          <SelectItem value="invite_cancelled">Cancelled Invites</SelectItem>
+                          <SelectItem value="org_created">Org Created</SelectItem>
+                          <SelectItem value="org_deleted">Org Deleted</SelectItem>
+                          <SelectItem value="org_edited">Org Edited</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 font-pixel text-xs"
+                        onClick={() => {
+                          const filtered = auditLogs
+                            .filter(l => l.orgId === selectedOrg.id)
+                            .filter(l => auditFilter === "all" || l.action === auditFilter);
+                          if (filtered.length === 0) {
+                            toast({ title: "No logs to export" });
+                            return;
+                          }
+                          const headers = ["Timestamp", "Action", "Actor", "Target", "Details", "Organization"];
+                          const rows = filtered.map(l => [
+                            new Date(l.timestamp).toISOString(),
+                            l.action,
+                            `"${l.actor}"`,
+                            `"${l.target}"`,
+                            `"${l.details}"`,
+                            `"${selectedOrg.name}"`,
+                          ]);
+                          const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+                          const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = `audit-log-${selectedOrg.name.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                          toast({ title: "CSV exported", description: `${filtered.length} log entries downloaded` });
+                        }}
+                      >
+                        <Download className="h-3.5 w-3.5" /> Export CSV
+                      </Button>
+                    </div>
                   </div>
 
                   {(() => {
