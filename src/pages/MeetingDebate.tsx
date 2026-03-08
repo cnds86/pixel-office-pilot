@@ -232,6 +232,7 @@ export default function MeetingDebate() {
   const [newMeetingTitle, setNewMeetingTitle] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const meetingScrollRef = useRef<HTMLDivElement>(null);
+  const [meetingTimerDuration, setMeetingTimerDuration] = useState(600); // default 10min
 
   // Debate state
   const [debates, setDebates] = useState<Debate[]>([]);
