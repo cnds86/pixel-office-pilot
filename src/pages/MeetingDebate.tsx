@@ -50,6 +50,10 @@ interface Debate {
   status: "setup" | "active" | "voting" | "ended";
   verdict?: string;
   createdAt: string;
+  roundDuration: number; // seconds per round
+  timerRemaining: number;
+  timerPaused: boolean;
+  currentRound: number;
 }
 
 interface DebateRound {
