@@ -55,6 +55,7 @@ interface Debate {
   status: "setup" | "active" | "voting" | "ended";
   verdict?: string;
   createdAt: string;
+  scheduledAt?: Date;
   roundDuration: number; // seconds per round
   timerRemaining: number;
   timerPaused: boolean;
