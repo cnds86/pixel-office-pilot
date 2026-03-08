@@ -15,7 +15,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Users, Swords, Vote, FileText, Plus, Play, Square, Send,
   ThumbsUp, ThumbsDown, CheckCircle2, Clock, MessageSquare,
-  ChevronRight, Sparkles, ArrowLeft, Timer, Pause, RotateCcw
+  ChevronRight, Sparkles, ArrowLeft, Timer, Pause, RotateCcw,
+  Copy, Download, ClipboardCheck
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
@@ -428,6 +429,67 @@ export default function MeetingDebate() {
   const concludeDebate = (id: string, verdict: string) => {
     setDebates(prev => prev.map(d => d.id === id ? { ...d, status: "ended" as const, verdict } : d));
     toast({ title: "⚖️ Debate Concluded", description: `Verdict: ${verdict}` });
+  };
+
+  /* ── Export Functions ── */
+  const generateMeetingMarkdown = (m: MeetingRoom): string => {
+    const members = m.members.map(id => getAgentById(id)?.name || id).join(", ");
+    let md = `# 🏢 Meeting: ${m.title}\n\n`;
+    md += `**Date:** ${m.createdAt}\n`;
+    md += `**Participants:** ${members}\n`;
+    md += `**Status:** ${m.status}\n\n`;
+    md += `---\n\n## 💬 Discussion\n\n`;
+    m.messages.filter(msg => msg.type === "message").forEach(msg => {
+      const name = msg.sender === "user" ? "You" : (getAgentById(msg.sender)?.name || msg.sender);
+      md += `**${name}** _(${msg.timestamp})_\n> ${msg.content}\n\n`;
+    });
+    if (m.summary) {
+      md += `---\n\n## 📋 Summary\n\n${m.summary}\n\n`;
+    }
+    if (m.actionItems && m.actionItems.length > 0) {
+      md += `## ✅ Action Items\n\n`;
+      m.actionItems.forEach(item => { md += `- [ ] ${item}\n`; });
+    }
+    return md;
+  };
+
+  const generateDebateMarkdown = (d: Debate): string => {
+    const proNames = d.proMembers.map(id => getAgentById(id)?.name || id).join(", ");
+    const conNames = d.conMembers.map(id => getAgentById(id)?.name || id).join(", ");
+    let md = `# ⚔️ Debate: ${d.topic}\n\n`;
+    md += `**Date:** ${d.createdAt}\n`;
+    md += `**PRO Team:** ${proNames}\n`;
+    md += `**CON Team:** ${conNames}\n`;
+    md += `**Status:** ${d.status}\n\n`;
+    md += `---\n\n`;
+    d.rounds.forEach(round => {
+      const proA = getAgentById(round.proArg.agentId)?.name || round.proArg.agentId;
+      const conA = getAgentById(round.conArg.agentId)?.name || round.conArg.agentId;
+      md += `## Round ${round.round}\n\n`;
+      md += `**👍 PRO — ${proA}:**\n> ${round.proArg.content}\n\n`;
+      md += `**👎 CON — ${conA}:**\n> ${round.conArg.content}\n\n`;
+    });
+    if (d.verdict) {
+      md += `---\n\n## 🏆 Verdict: ${d.verdict}\n`;
+    }
+    return md;
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast({ title: "📋 Copied!", description: `${label} copied to clipboard` });
+    });
+  };
+
+  const downloadMarkdown = (text: string, filename: string) => {
+    const blob = new Blob([text], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${filename}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "📥 Downloaded!", description: `${filename}.md saved` });
   };
 
   /* ── Poll Functions ── */
@@ -901,7 +963,14 @@ export default function MeetingDebate() {
                     <div className="flex items-center gap-2 mb-2">
                       <Users className="w-4 h-4 text-primary" />
                       <h3 className="font-pixel text-xs text-foreground">{m.title}</h3>
-                      <Badge variant="outline" className="text-[9px] ml-auto">Meeting</Badge>
+                      <div className="ml-auto flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(generateMeetingMarkdown(m), m.title)} title="Copy to clipboard">
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => downloadMarkdown(generateMeetingMarkdown(m), `meeting-${m.title.replace(/\s+/g, "-").toLowerCase()}`)} title="Download .md">
+                          <Download className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                     {m.summary && <p className="text-sm font-pixel-body text-muted-foreground mb-3">{m.summary}</p>}
                     {m.actionItems && (
@@ -924,7 +993,14 @@ export default function MeetingDebate() {
                     <div className="flex items-center gap-2 mb-2">
                       <Swords className="w-4 h-4 text-destructive" />
                       <h3 className="font-pixel text-xs text-foreground">{d.topic}</h3>
-                      <Badge variant="outline" className="text-[9px] ml-auto">Debate</Badge>
+                      <div className="ml-auto flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(generateDebateMarkdown(d), d.topic)} title="Copy to clipboard">
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => downloadMarkdown(generateDebateMarkdown(d), `debate-${d.topic.replace(/\s+/g, "-").toLowerCase()}`)} title="Download .md">
+                          <Download className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                     <p className="text-sm font-pixel-body text-muted-foreground mb-2">
                       {d.rounds.length} rounds • {d.proMembers.length} PRO vs {d.conMembers.length} CON
