@@ -262,7 +262,58 @@ export default function MeetingDebate() {
     meetingScrollRef.current?.scrollTo({ top: meetingScrollRef.current.scrollHeight, behavior: "smooth" });
   }, [currentMeeting?.messages]);
 
-  /* ── Meeting Functions ── */
+  // Meeting timer countdown
+  useEffect(() => {
+    const activeMeetings = meetings.filter(m => m.status === "active" && !m.timerPaused && m.timerRemaining > 0);
+    if (activeMeetings.length === 0) return;
+    const interval = setInterval(() => {
+      setMeetings(prev => prev.map(m => {
+        if (m.status !== "active" || m.timerPaused || m.timerRemaining <= 0) return m;
+        const newRemaining = m.timerRemaining - 1;
+        if (newRemaining <= 0) {
+          return {
+            ...m, timerRemaining: 0, status: "ended" as const,
+            summary: `Meeting "${m.title}" auto-ended (time's up) with ${m.messages.filter(msg => msg.type === "message").length} messages.`,
+            actionItems: ["Review discussion points", "Schedule follow-up if needed", "Share notes with team"],
+            messages: [...m.messages, { sender: "system", content: "⏰ Time's up! Meeting auto-ended.", timestamp: now(), type: "system" as const }],
+          };
+        }
+        return { ...m, timerRemaining: newRemaining };
+      }));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [meetings]);
+
+  // Debate timer countdown
+  useEffect(() => {
+    const activeDebates = debates.filter(d => d.status === "active" && !d.timerPaused && d.timerRemaining > 0);
+    if (activeDebates.length === 0) return;
+    const interval = setInterval(() => {
+      setDebates(prev => prev.map(d => {
+        if (d.status !== "active" || d.timerPaused || d.timerRemaining <= 0) return d;
+        const newRemaining = d.timerRemaining - 1;
+        if (newRemaining <= 0) {
+          // Round time's up - advance to next round or end
+          const nextRound = d.currentRound + 1;
+          const proAgent = pickRandom(d.proMembers);
+          const conAgent = pickRandom(d.conMembers);
+          const round: DebateRound = {
+            round: nextRound,
+            proArg: { agentId: proAgent, content: pickRandom(debateProArgs) },
+            conArg: { agentId: conAgent, content: pickRandom(debateConArgs) },
+          };
+          if (nextRound >= 3) {
+            return { ...d, timerRemaining: 0, rounds: [...d.rounds, round], currentRound: nextRound, status: "voting" as const };
+          }
+          return { ...d, timerRemaining: d.roundDuration, rounds: [...d.rounds, round], currentRound: nextRound };
+        }
+        return { ...d, timerRemaining: newRemaining };
+      }));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [debates]);
+
+
   const createMeeting = () => {
     if (!newMeetingTitle.trim() || selectedMembers.length === 0) return;
     const m: MeetingRoom = {
