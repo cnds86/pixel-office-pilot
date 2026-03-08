@@ -950,6 +950,7 @@ export default function MeetingDebate() {
           </DialogHeader>
           <div className="space-y-3">
             <Input value={newMeetingTitle} onChange={e => setNewMeetingTitle(e.target.value)} placeholder="Meeting title..." className="font-pixel-body" />
+            <TimerSelector value={meetingTimerDuration} onChange={setMeetingTimerDuration} label="Meeting Duration" />
             <AgentSelector selected={selectedMembers} onToggle={id => toggleMember(id, selectedMembers, setSelectedMembers)} label="Select Participants" />
           </div>
           <DialogFooter>
