@@ -407,33 +407,22 @@ export default function MeetingDebate() {
   };
 
   const startDebate = (id: string) => {
-    setIsDebating(true);
-    const debate = debates.find(d => d.id === id);
-    if (!debate) return;
+    setDebates(prev => prev.map(d => d.id === id ? {
+      ...d, status: "active" as const, currentRound: 0, timerRemaining: d.roundDuration, timerPaused: false
+    } : d));
+  };
 
-    setDebates(prev => prev.map(d => d.id === id ? { ...d, status: "active" as const } : d));
-
-    // Simulate 3 rounds
-    let roundCount = 0;
-    const interval = setInterval(() => {
-      roundCount++;
-      const proAgent = pickRandom(debate.proMembers);
-      const conAgent = pickRandom(debate.conMembers);
-      const round: DebateRound = {
-        round: roundCount,
-        proArg: { agentId: proAgent, content: pickRandom(debateProArgs) },
-        conArg: { agentId: conAgent, content: pickRandom(debateConArgs) },
-      };
-      setDebates(prev => prev.map(d => d.id === id ? { ...d, rounds: [...d.rounds, round] } : d));
-
-      if (roundCount >= 3) {
-        clearInterval(interval);
-        setTimeout(() => {
-          setDebates(prev => prev.map(d => d.id === id ? { ...d, status: "voting" as const } : d));
-          setIsDebating(false);
-        }, 1000);
-      }
-    }, 2000);
+  const toggleMeetingTimer = (id: string) => {
+    setMeetings(prev => prev.map(m => m.id === id ? { ...m, timerPaused: !m.timerPaused } : m));
+  };
+  const resetMeetingTimer = (id: string) => {
+    setMeetings(prev => prev.map(m => m.id === id ? { ...m, timerRemaining: m.timerDuration } : m));
+  };
+  const toggleDebateTimer = (id: string) => {
+    setDebates(prev => prev.map(d => d.id === id ? { ...d, timerPaused: !d.timerPaused } : d));
+  };
+  const resetDebateTimer = (id: string) => {
+    setDebates(prev => prev.map(d => d.id === id ? { ...d, timerRemaining: d.roundDuration } : d));
   };
 
   const concludeDebate = (id: string, verdict: string) => {
