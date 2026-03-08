@@ -16,7 +16,9 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Users, Shield, Plus, Mail, MoreVertical, Crown, UserCog,
   User, Eye, Trash2, UserMinus, RefreshCw, Copy, Check, X, Clock,
-  Bot, CreditCard, Settings, ChevronRight, Search
+  Bot, CreditCard, Settings, ChevronRight, Search, ScrollText,
+  ArrowRightLeft, UserPlus, UserX, ShieldAlert
+} from "lucide-react";
 } from "lucide-react";
 import {
   organizations as initialOrgs,
