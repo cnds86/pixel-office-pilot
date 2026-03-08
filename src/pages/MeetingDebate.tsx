@@ -410,6 +410,7 @@ export default function MeetingDebate() {
         if (m.status !== "active" || m.timerPaused || m.timerRemaining <= 0) return m;
         const newRemaining = m.timerRemaining - 1;
         if (newRemaining <= 0) {
+          playTimerAlert();
           return {
             ...m, timerRemaining: 0, status: "ended" as const,
             summary: `Meeting "${m.title}" auto-ended (time's up) with ${m.messages.filter(msg => msg.type === "message").length} messages.`,
