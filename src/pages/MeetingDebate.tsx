@@ -272,6 +272,9 @@ export default function MeetingDebate() {
       messages: [{ sender: "system", content: `Meeting "${newMeetingTitle}" created`, timestamp: now(), type: "system" }],
       status: "waiting",
       createdAt: now(),
+      timerDuration: meetingTimerDuration,
+      timerRemaining: meetingTimerDuration,
+      timerPaused: false,
     };
     setMeetings(prev => [...prev, m]);
     setActiveMeeting(m.id);
