@@ -779,10 +779,12 @@ export default function MeetingDebate() {
                         );
                       })}
 
-                      {isDebating && (
+                      {currentDebate.status === "active" && (
                         <div className="flex items-center gap-2 text-muted-foreground justify-center py-4">
                           <Swords className="w-4 h-4 animate-pulse" />
-                          <span className="font-pixel text-xs animate-pulse">Debate in progress...</span>
+                          <span className="font-pixel text-xs animate-pulse">
+                            Round {currentDebate.currentRound + 1}/3 — waiting for timer...
+                          </span>
                         </div>
                       )}
 
