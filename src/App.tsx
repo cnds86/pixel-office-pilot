@@ -17,6 +17,10 @@ import GoalAlignment from "./pages/GoalAlignment";
 import HeartbeatMonitor from "./pages/HeartbeatMonitor";
 import TicketSystem from "./pages/TicketSystem";
 import AgentCoordination from "./pages/AgentCoordination";
+import ActivityFeed from "./pages/ActivityFeed";
+import GatewayManagement from "./pages/GatewayManagement";
+import SkillsMarketplace from "./pages/SkillsMarketplace";
+import TagsCustomFields from "./pages/TagsCustomFields";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
