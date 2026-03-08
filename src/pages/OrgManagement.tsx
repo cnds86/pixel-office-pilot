@@ -165,6 +165,7 @@ export default function OrgManagement() {
     setSelectedOrg(updated);
     setOrgs(prev => prev.map(o => o.id === updated.id ? updated : o));
     setRoleDialogOpen(false);
+    addAuditLog("role_changed", selectedMember.name, `${selectedMember.role} → ${newRole}`);
     toast({ title: "Role updated", description: `${selectedMember.name} is now ${newRole}` });
   };
 
