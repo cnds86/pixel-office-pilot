@@ -1,4 +1,4 @@
-import { Gauge, ClipboardList, BarChart3, Activity, MessageSquare, FolderKanban, Users, Network, DollarSign, Shield, Target, Heart, Ticket, GitBranch } from "lucide-react";
+import { Gauge, ClipboardList, BarChart3, Activity, MessageSquare, FolderKanban, Users, Network, DollarSign, Shield, Target, Heart, Ticket, GitBranch, Radio, Server, Sparkles, Settings2 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { CompanySwitcher } from "@/components/CompanySwitcher";
