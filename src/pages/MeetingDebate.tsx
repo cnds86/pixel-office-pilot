@@ -468,6 +468,7 @@ export default function MeetingDebate() {
   /* ── Debate Functions ── */
   const createDebate = () => {
     if (!debateTopic.trim() || proMembers.length === 0 || conMembers.length === 0) return;
+    const scheduled = buildScheduledDate(debateScheduledDate, debateScheduledTime);
     const d: Debate = {
       id: `debate-${Date.now()}`,
       topic: debateTopic,
@@ -475,6 +476,7 @@ export default function MeetingDebate() {
       rounds: [],
       status: "setup",
       createdAt: now(),
+      scheduledAt: scheduled,
       roundDuration: debateRoundDuration,
       timerRemaining: debateRoundDuration,
       timerPaused: false,
@@ -486,8 +488,11 @@ export default function MeetingDebate() {
     setDebateTopic("");
     setProMembers([]);
     setConMembers([]);
+    setDebateScheduledDate(undefined);
+    setDebateScheduledTime("");
     setMobileDetail(true);
-    toast({ title: "⚔️ Debate Created", description: debateTopic });
+    const scheduledLabel = scheduled ? ` — ${format(scheduled, "dd MMM HH:mm")}` : "";
+    toast({ title: "⚔️ Debate Created", description: `${debateTopic}${scheduledLabel}` });
   };
 
   const startDebate = (id: string) => {
