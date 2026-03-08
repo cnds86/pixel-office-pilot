@@ -16,8 +16,11 @@ import {
   Users, Swords, Vote, FileText, Plus, Play, Square, Send,
   ThumbsUp, ThumbsDown, CheckCircle2, Clock, MessageSquare,
   ChevronRight, Sparkles, ArrowLeft, Timer, Pause, RotateCcw,
-  Copy, Download, ClipboardCheck
+  Copy, Download, ClipboardCheck, CalendarIcon
 } from "lucide-react";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
 
 /* ── Types ── */
