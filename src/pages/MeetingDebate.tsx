@@ -242,6 +242,7 @@ export default function MeetingDebate() {
   const [proMembers, setProMembers] = useState<string[]>([]);
   const [conMembers, setConMembers] = useState<string[]>([]);
   const [isDebating, setIsDebating] = useState(false);
+  const [debateRoundDuration, setDebateRoundDuration] = useState(120); // default 2min per round
 
   // Poll state
   const [polls, setPolls] = useState<Poll[]>([]);
