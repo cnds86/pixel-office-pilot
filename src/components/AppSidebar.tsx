@@ -117,11 +117,17 @@ export function AppSidebar() {
         {!collapsed && (
           <div className="mt-auto p-4 border-t-2 border-border">
             <div className="font-pixel text-[8px] text-muted-foreground leading-relaxed">
-              <p>v0.4.0-paperclip</p>
+              <p>v0.5.0-paperclip</p>
               <p className="mt-1 flex items-center gap-1">
                 <span className="inline-block w-2 h-2 bg-primary animate-pixel-pulse" />
-                3 agents online
+                {currentCompany.agentCount} agents • {currentCompany.name}
               </p>
+              {unreadCount > 0 && (
+                <p className="mt-1 flex items-center gap-1 text-destructive">
+                  <span className="inline-block w-2 h-2 bg-destructive animate-pixel-pulse" />
+                  {unreadCount} notifications
+                </p>
+              )}
             </div>
           </div>
         )}
