@@ -963,7 +963,14 @@ export default function MeetingDebate() {
                     <div className="flex items-center gap-2 mb-2">
                       <Users className="w-4 h-4 text-primary" />
                       <h3 className="font-pixel text-xs text-foreground">{m.title}</h3>
-                      <Badge variant="outline" className="text-[9px] ml-auto">Meeting</Badge>
+                      <div className="ml-auto flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(generateMeetingMarkdown(m), m.title)} title="Copy to clipboard">
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => downloadMarkdown(generateMeetingMarkdown(m), `meeting-${m.title.replace(/\s+/g, "-").toLowerCase()}`)} title="Download .md">
+                          <Download className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                     {m.summary && <p className="text-sm font-pixel-body text-muted-foreground mb-3">{m.summary}</p>}
                     {m.actionItems && (
@@ -986,7 +993,14 @@ export default function MeetingDebate() {
                     <div className="flex items-center gap-2 mb-2">
                       <Swords className="w-4 h-4 text-destructive" />
                       <h3 className="font-pixel text-xs text-foreground">{d.topic}</h3>
-                      <Badge variant="outline" className="text-[9px] ml-auto">Debate</Badge>
+                      <div className="ml-auto flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(generateDebateMarkdown(d), d.topic)} title="Copy to clipboard">
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => downloadMarkdown(generateDebateMarkdown(d), `debate-${d.topic.replace(/\s+/g, "-").toLowerCase()}`)} title="Download .md">
+                          <Download className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                     <p className="text-sm font-pixel-body text-muted-foreground mb-2">
                       {d.rounds.length} rounds • {d.proMembers.length} PRO vs {d.conMembers.length} CON
