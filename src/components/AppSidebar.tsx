@@ -41,6 +41,7 @@ const paperclipItems = [
   { title: "SubTasks & XP", url: "/subtasks", icon: Swords },
   { title: "Workflows", url: "/workflows", icon: Workflow },
   { title: "Reports", url: "/reports", icon: FileText },
+  { title: "Org Mgmt", url: "/org-management", icon: UserCog },
   { title: "Settings", url: "/settings", icon: Building2 },
 ];
 
