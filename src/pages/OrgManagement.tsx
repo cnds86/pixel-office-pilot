@@ -39,12 +39,60 @@ const planBadge: Record<string, string> = {
   enterprise: "bg-accent/20 text-accent border-accent/40",
 };
 
+type AuditAction = "role_changed" | "member_invited" | "member_removed" | "invite_cancelled" | "org_created" | "org_deleted" | "org_edited";
+
+interface AuditLogEntry {
+  id: string;
+  action: AuditAction;
+  actor: string;
+  target: string;
+  details: string;
+  timestamp: string;
+  orgId: string;
+}
+
+const auditActionMeta: Record<AuditAction, { icon: typeof Crown; color: string; label: string }> = {
+  role_changed: { icon: ArrowRightLeft, color: "text-secondary", label: "Role Changed" },
+  member_invited: { icon: UserPlus, color: "text-primary", label: "Member Invited" },
+  member_removed: { icon: UserX, color: "text-destructive", label: "Member Removed" },
+  invite_cancelled: { icon: X, color: "text-muted-foreground", label: "Invite Cancelled" },
+  org_created: { icon: Building2, color: "text-accent", label: "Org Created" },
+  org_deleted: { icon: Trash2, color: "text-destructive", label: "Org Deleted" },
+  org_edited: { icon: Settings, color: "text-accent", label: "Org Edited" },
+};
+
+const seedAuditLogs: AuditLogEntry[] = [
+  { id: "al1", action: "org_created", actor: "Alex Chen", target: "OpenClaw Corp", details: "Organization created", timestamp: "2025-09-15T10:00:00", orgId: "org1" },
+  { id: "al2", action: "member_invited", actor: "Alex Chen", target: "sarah@openclaw.ai", details: "Invited as admin", timestamp: "2025-09-20T14:00:00", orgId: "org1" },
+  { id: "al3", action: "role_changed", actor: "Alex Chen", target: "Mike Torres", details: "member → admin", timestamp: "2025-11-05T09:30:00", orgId: "org1" },
+  { id: "al4", action: "member_invited", actor: "Sarah Kim", target: "yuki@openclaw.ai", details: "Invited as member", timestamp: "2025-11-01T11:00:00", orgId: "org1" },
+  { id: "al5", action: "member_removed", actor: "Alex Chen", target: "Former Employee", details: "Removed from organization", timestamp: "2026-01-15T16:00:00", orgId: "org1" },
+  { id: "al6", action: "member_invited", actor: "Alex Chen", target: "lisa@openclaw.ai", details: "Invited as viewer", timestamp: "2026-02-20T08:00:00", orgId: "org1" },
+  { id: "al7", action: "invite_cancelled", actor: "Sarah Kim", target: "temp@external.com", details: "Pending invite cancelled", timestamp: "2026-03-01T13:00:00", orgId: "org1" },
+  { id: "al8", action: "role_changed", actor: "Alex Chen", target: "Lisa Wang", details: "member → viewer", timestamp: "2026-03-05T10:00:00", orgId: "org1" },
+];
+
 export default function OrgManagement() {
   const { toast } = useToast();
   const [orgs, setOrgs] = useState<Organization[]>(initialOrgs);
   const [selectedOrg, setSelectedOrg] = useState<Organization>(orgs[0]);
   const [activeTab, setActiveTab] = useState("members");
   const [searchQuery, setSearchQuery] = useState("");
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(seedAuditLogs);
+  const [auditFilter, setAuditFilter] = useState<AuditAction | "all">("all");
+
+  const addAuditLog = (action: AuditAction, target: string, details: string) => {
+    const entry: AuditLogEntry = {
+      id: `al${Date.now()}`,
+      action,
+      actor: "You",
+      target,
+      details,
+      timestamp: new Date().toISOString(),
+      orgId: selectedOrg.id,
+    };
+    setAuditLogs(prev => [entry, ...prev]);
+  };
 
   // Dialogs
   const [createOrgOpen, setCreateOrgOpen] = useState(false);
