@@ -27,6 +27,7 @@ import SubTasksXP from "./pages/SubTasksXP";
 import WorkflowPacks from "./pages/WorkflowPacks";
 import TaskReports from "./pages/TaskReports";
 import CompanySettings from "./pages/CompanySettings";
+import OrgManagement from "./pages/OrgManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
