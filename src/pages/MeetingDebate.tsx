@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { agents, Agent, getAgentById } from "@/data/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -292,6 +292,32 @@ function buildScheduledDate(date: Date | undefined, time: string): Date | undefi
   return scheduled;
 }
 
+/* ── Timer Alert Sound ── */
+function playTimerAlert() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const playBeep = (freq: number, startTime: number, duration: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = "square";
+      gain.gain.setValueAtTime(0.15, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    };
+    // 3 ascending beeps
+    playBeep(660, ctx.currentTime, 0.15);
+    playBeep(880, ctx.currentTime + 0.2, 0.15);
+    playBeep(1100, ctx.currentTime + 0.4, 0.25);
+    setTimeout(() => ctx.close(), 1500);
+  } catch (e) {
+    // Audio not supported — silent fallback
+  }
+}
+
 /* ── Component ── */
 export default function MeetingDebate() {
   const { toast } = useToast();
@@ -384,6 +410,7 @@ export default function MeetingDebate() {
         if (m.status !== "active" || m.timerPaused || m.timerRemaining <= 0) return m;
         const newRemaining = m.timerRemaining - 1;
         if (newRemaining <= 0) {
+          playTimerAlert();
           return {
             ...m, timerRemaining: 0, status: "ended" as const,
             summary: `Meeting "${m.title}" auto-ended (time's up) with ${m.messages.filter(msg => msg.type === "message").length} messages.`,
@@ -406,6 +433,7 @@ export default function MeetingDebate() {
         if (d.status !== "active" || d.timerPaused || d.timerRemaining <= 0) return d;
         const newRemaining = d.timerRemaining - 1;
         if (newRemaining <= 0) {
+          playTimerAlert();
           // Round time's up - advance to next round or end
           const nextRound = d.currentRound + 1;
           const proAgent = pickRandom(d.proMembers);
