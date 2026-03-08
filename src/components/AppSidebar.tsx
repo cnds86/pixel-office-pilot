@@ -1,18 +1,20 @@
-import { Gauge, ClipboardList, BarChart3, Activity, MessageSquare, FolderKanban, Users, Network, DollarSign, Shield, Target } from "lucide-react";
+import { Gauge, ClipboardList, BarChart3, Activity, MessageSquare, FolderKanban, Users, Network, DollarSign, Shield, Target, Heart, Ticket, GitBranch } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { CompanySwitcher } from "@/components/CompanySwitcher";
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const items = [
+const mainItems = [
   { title: "Mission Control", url: "/", icon: Gauge },
   { title: "Task Board", url: "/tasks", icon: ClipboardList },
   { title: "Dept Stats", url: "/stats", icon: BarChart3 },
@@ -20,10 +22,16 @@ const items = [
   { title: "Chat Hub", url: "/chat", icon: MessageSquare },
   { title: "Projects", url: "/projects", icon: FolderKanban },
   { title: "Meetings", url: "/meetings", icon: Users },
+];
+
+const paperclipItems = [
   { title: "Org Chart", url: "/org-chart", icon: Network },
   { title: "Budget", url: "/budget", icon: DollarSign },
   { title: "Governance", url: "/governance", icon: Shield },
   { title: "Goals", url: "/goals", icon: Target },
+  { title: "Heartbeat", url: "/heartbeat", icon: Heart },
+  { title: "Tickets", url: "/tickets", icon: Ticket },
+  { title: "Coordination", url: "/coordination", icon: GitBranch },
 ];
 
 export function AppSidebar() {
@@ -33,30 +41,58 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r-2 border-border">
-      <div className="p-4 border-b-2 border-border">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🦀</span>
-          {!collapsed && (
-            <h1 className="font-pixel text-xs text-primary leading-tight">
-              Open<br />Claw
-            </h1>
-          )}
-        </div>
+      {/* Company Switcher */}
+      <div className="p-2 border-b-2 border-border">
+        <CompanySwitcher collapsed={collapsed} />
       </div>
-      <SidebarContent className="pt-4">
+
+      <SidebarContent className="pt-2">
+        {/* Main Navigation */}
         <SidebarGroup>
+          {!collapsed && (
+            <SidebarGroupLabel className="font-pixel text-[7px] text-muted-foreground px-3">
+              WORKSPACE
+            </SidebarGroupLabel>
+          )}
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
                       end={item.url === "/"}
-                      className="flex items-center gap-3 px-3 py-3 font-pixel-body text-lg text-sidebar-foreground hover:bg-sidebar-accent hover:text-primary transition-colors"
+                      className="flex items-center gap-3 px-3 py-2.5 font-pixel-body text-base text-sidebar-foreground hover:bg-sidebar-accent hover:text-primary transition-colors"
                       activeClassName="bg-sidebar-accent text-primary pixel-border-glow"
                     >
-                      <item.icon className="h-5 w-5 shrink-0" />
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Paperclip Features */}
+        <SidebarGroup>
+          {!collapsed && (
+            <SidebarGroupLabel className="font-pixel text-[7px] text-muted-foreground px-3 mt-2">
+              📎 PAPERCLIP
+            </SidebarGroupLabel>
+          )}
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {paperclipItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to={item.url}
+                      className="flex items-center gap-3 px-3 py-2.5 font-pixel-body text-base text-sidebar-foreground hover:bg-sidebar-accent hover:text-primary transition-colors"
+                      activeClassName="bg-sidebar-accent text-primary pixel-border-glow"
+                    >
+                      <item.icon className="h-4 w-4 shrink-0" />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
@@ -69,7 +105,7 @@ export function AppSidebar() {
         {!collapsed && (
           <div className="mt-auto p-4 border-t-2 border-border">
             <div className="font-pixel text-[8px] text-muted-foreground leading-relaxed">
-              <p>v0.3.2-alpha</p>
+              <p>v0.4.0-paperclip</p>
               <p className="mt-1 flex items-center gap-1">
                 <span className="inline-block w-2 h-2 bg-primary animate-pixel-pulse" />
                 3 agents online
