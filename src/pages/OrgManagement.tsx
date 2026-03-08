@@ -283,6 +283,9 @@ export default function OrgManagement() {
                   <TabsTrigger value="roles" className="gap-1.5 font-pixel text-xs">
                     <Shield className="h-3.5 w-3.5" /> Roles & Permissions
                   </TabsTrigger>
+                  <TabsTrigger value="audit" className="gap-1.5 font-pixel text-xs">
+                    <ScrollText className="h-3.5 w-3.5" /> Audit Log
+                  </TabsTrigger>
                 </TabsList>
 
                 {/* Members Tab */}
