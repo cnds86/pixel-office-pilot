@@ -32,6 +32,10 @@ const paperclipItems = [
   { title: "Heartbeat", url: "/heartbeat", icon: Heart },
   { title: "Tickets", url: "/tickets", icon: Ticket },
   { title: "Coordination", url: "/coordination", icon: GitBranch },
+  { title: "Activity", url: "/activity", icon: Radio },
+  { title: "Gateways", url: "/gateways", icon: Server },
+  { title: "Skills", url: "/skills", icon: Sparkles },
+  { title: "Tags", url: "/tags", icon: Settings2 },
 ];
 
 export function AppSidebar() {

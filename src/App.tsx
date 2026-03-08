@@ -46,6 +46,10 @@ const App = () => (
           <Route path="/heartbeat" element={<HeartbeatMonitor />} />
           <Route path="/tickets" element={<TicketSystem />} />
           <Route path="/coordination" element={<AgentCoordination />} />
+          <Route path="/activity" element={<ActivityFeed />} />
+          <Route path="/gateways" element={<GatewayManagement />} />
+          <Route path="/skills" element={<SkillsMarketplace />} />
+          <Route path="/tags" element={<TagsCustomFields />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
