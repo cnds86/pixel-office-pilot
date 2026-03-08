@@ -189,6 +189,7 @@ export default function OrgManagement() {
     };
     setSelectedOrg(updated);
     setOrgs(prev => prev.map(o => o.id === updated.id ? updated : o));
+    addAuditLog("invite_cancelled", selectedOrg.invites.find(i => i.id === inviteId)?.email || inviteId, "Pending invite cancelled");
     toast({ title: "Invite cancelled" });
   };
 
