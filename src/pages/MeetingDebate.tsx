@@ -847,6 +847,11 @@ export default function MeetingDebate() {
                             {d.status}
                           </Badge>
                         </div>
+                        {d.scheduledAt && (
+                          <div className="flex items-center gap-1 mt-1 text-[10px] text-destructive font-pixel">
+                            <CalendarIcon className="w-3 h-3" /> {format(d.scheduledAt, "dd MMM yyyy HH:mm")}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
