@@ -147,6 +147,76 @@ function now() {
   return new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 }
 
+function formatTimer(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
+/* ── Timer Display Component ── */
+function TimerDisplay({ remaining, total, paused, onPause, onResume, onReset, variant = "primary" }: {
+  remaining: number; total: number; paused: boolean;
+  onPause: () => void; onResume: () => void; onReset: () => void;
+  variant?: "primary" | "destructive";
+}) {
+  const pct = total > 0 ? (remaining / total) * 100 : 0;
+  const isLow = remaining <= 30;
+  const colorClass = variant === "destructive" ? "text-destructive" : "text-primary";
+  const progressColor = isLow ? "bg-destructive" : variant === "destructive" ? "bg-destructive" : "bg-primary";
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className={`flex items-center gap-1 font-pixel text-sm ${isLow ? "text-destructive animate-pulse" : colorClass}`}>
+        <Timer className="w-3 h-3" />
+        <span>{formatTimer(remaining)}</span>
+      </div>
+      <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+        <div className={`h-full ${progressColor} transition-all duration-1000`} style={{ width: `${pct}%` }} />
+      </div>
+      <div className="flex gap-0.5">
+        {paused ? (
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onResume}><Play className="w-3 h-3" /></Button>
+        ) : (
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onPause}><Pause className="w-3 h-3" /></Button>
+        )}
+        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onReset}><RotateCcw className="w-3 h-3" /></Button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Timer Duration Selector ── */
+function TimerSelector({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
+  const presets = [
+    { label: "2m", value: 120 },
+    { label: "5m", value: 300 },
+    { label: "10m", value: 600 },
+    { label: "15m", value: 900 },
+    { label: "30m", value: 1800 },
+  ];
+  return (
+    <div>
+      <p className="text-sm font-pixel text-muted-foreground mb-1.5 flex items-center gap-1">
+        <Timer className="w-3 h-3" /> {label}
+      </p>
+      <div className="flex gap-1.5 flex-wrap">
+        {presets.map(p => (
+          <Button
+            key={p.value}
+            type="button"
+            variant={value === p.value ? "default" : "outline"}
+            size="sm"
+            className="font-pixel text-[10px] h-7 px-2"
+            onClick={() => onChange(p.value)}
+          >
+            {p.label}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ── Component ── */
 export default function MeetingDebate() {
   const { toast } = useToast();
