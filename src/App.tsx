@@ -27,6 +27,7 @@ import SubTasksXP from "./pages/SubTasksXP";
 import WorkflowPacks from "./pages/WorkflowPacks";
 import TaskReports from "./pages/TaskReports";
 import CompanySettings from "./pages/CompanySettings";
+import OrgManagement from "./pages/OrgManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
               <Route path="/workflows" element={<WorkflowPacks />} />
               <Route path="/reports" element={<TaskReports />} />
               <Route path="/settings" element={<CompanySettings />} />
+              <Route path="/org-management" element={<OrgManagement />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
