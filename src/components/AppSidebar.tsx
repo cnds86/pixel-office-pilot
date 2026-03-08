@@ -48,6 +48,8 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { currentCompany } = useCompany();
+  const { unreadCount } = useGlobalNotifications();
 
   return (
     <Sidebar collapsible="icon" className="border-r-2 border-border">
