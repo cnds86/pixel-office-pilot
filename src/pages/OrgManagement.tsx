@@ -643,7 +643,7 @@ export default function OrgManagement() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => setEditOrgOpen(false)}>Done</Button>
+            <Button onClick={() => { addAuditLog("org_edited", selectedOrg.name, "Organization settings updated"); setEditOrgOpen(false); }}>Done</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
