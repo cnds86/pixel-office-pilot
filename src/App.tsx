@@ -65,6 +65,7 @@ const App = () => (
               <Route path="/reports" element={<TaskReports />} />
               <Route path="/settings" element={<CompanySettings />} />
               <Route path="/org-management" element={<OrgManagement />} />
+              <Route path="/docs" element={<DocsViewer />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
