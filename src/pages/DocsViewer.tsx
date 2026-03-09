@@ -34,11 +34,41 @@ function generateToc(markdown: string): TocItem[] {
   return toc;
 }
 
+// Search: find all line-based matches
+function searchContent(markdown: string, query: string): number {
+  if (!query.trim()) return 0;
+  const lower = markdown.toLowerCase();
+  const q = query.toLowerCase();
+  let count = 0;
+  let idx = 0;
+  while ((idx = lower.indexOf(q, idx)) !== -1) {
+    count++;
+    idx += q.length;
+  }
+  return count;
+}
+
 const DocsViewer = () => {
   const toc = generateToc(SYSTEM_ARCHITECTURE_CONTENT);
   const [activeId, setActiveId] = useState<string>("");
   const [showToc, setShowToc] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const [currentMatch, setCurrentMatch] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const matchCount = useMemo(
+    () => searchContent(SYSTEM_ARCHITECTURE_CONTENT, searchQuery),
+    [searchQuery]
+  );
+
+  // Filter TOC items based on search
+  const filteredToc = useMemo(() => {
+    if (!searchQuery.trim()) return toc;
+    const q = searchQuery.toLowerCase();
+    return toc.filter((item) => item.title.toLowerCase().includes(q));
+  }, [toc, searchQuery]);
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -47,6 +77,112 @@ const DocsViewer = () => {
       setActiveId(id);
     }
   };
+
+  // Highlight matches in DOM
+  const highlightMatches = useCallback(() => {
+    if (!contentRef.current) return;
+
+    // Clear existing highlights
+    contentRef.current.querySelectorAll("mark[data-search-highlight]").forEach((mark) => {
+      const parent = mark.parentNode;
+      if (parent) {
+        parent.replaceChild(document.createTextNode(mark.textContent || ""), mark);
+        parent.normalize();
+      }
+    });
+
+    if (!searchQuery.trim()) return;
+
+    const walker = document.createTreeWalker(contentRef.current, NodeFilter.SHOW_TEXT);
+    const textNodes: Text[] = [];
+    let node;
+    while ((node = walker.nextNode())) {
+      textNodes.push(node as Text);
+    }
+
+    const q = searchQuery.toLowerCase();
+    let globalIdx = 0;
+
+    textNodes.forEach((textNode) => {
+      const text = textNode.textContent || "";
+      const lower = text.toLowerCase();
+      let startIdx = 0;
+      const ranges: { start: number; end: number; idx: number }[] = [];
+
+      while ((startIdx = lower.indexOf(q, startIdx)) !== -1) {
+        ranges.push({ start: startIdx, end: startIdx + q.length, idx: globalIdx++ });
+        startIdx += q.length;
+      }
+
+      if (ranges.length === 0) return;
+
+      const frag = document.createDocumentFragment();
+      let lastEnd = 0;
+
+      ranges.forEach((r) => {
+        if (r.start > lastEnd) {
+          frag.appendChild(document.createTextNode(text.slice(lastEnd, r.start)));
+        }
+        const mark = document.createElement("mark");
+        mark.setAttribute("data-search-highlight", "true");
+        mark.setAttribute("data-match-index", String(r.idx));
+        mark.className =
+          r.idx === currentMatch
+            ? "bg-primary/40 text-primary-foreground rounded px-0.5"
+            : "bg-yellow-500/30 text-foreground rounded px-0.5";
+        mark.textContent = text.slice(r.start, r.end);
+        frag.appendChild(mark);
+        lastEnd = r.end;
+      });
+
+      if (lastEnd < text.length) {
+        frag.appendChild(document.createTextNode(text.slice(lastEnd)));
+      }
+
+      textNode.parentNode?.replaceChild(frag, textNode);
+    });
+  }, [searchQuery, currentMatch]);
+
+  useEffect(() => {
+    highlightMatches();
+  }, [highlightMatches]);
+
+  // Scroll to current match
+  useEffect(() => {
+    if (!searchQuery.trim() || !contentRef.current) return;
+    const active = contentRef.current.querySelector(`mark[data-match-index="${currentMatch}"]`);
+    active?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [currentMatch, searchQuery]);
+
+  const goToNextMatch = () => {
+    if (matchCount > 0) setCurrentMatch((prev) => (prev + 1) % matchCount);
+  };
+
+  const goToPrevMatch = () => {
+    if (matchCount > 0) setCurrentMatch((prev) => (prev - 1 + matchCount) % matchCount);
+  };
+
+  // Keyboard shortcut: Ctrl+F
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
+        e.preventDefault();
+        setShowSearch(true);
+        setTimeout(() => searchInputRef.current?.focus(), 50);
+      }
+      if (e.key === "Escape" && showSearch) {
+        setShowSearch(false);
+        setSearchQuery("");
+        setCurrentMatch(0);
+      }
+      if (e.key === "Enter" && showSearch && searchQuery) {
+        if (e.shiftKey) goToPrevMatch();
+        else goToNextMatch();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showSearch, searchQuery, matchCount]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -67,7 +203,7 @@ const DocsViewer = () => {
   return (
     <AppLayout>
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
               <BookOpen className="h-6 w-6 text-primary" />
@@ -77,14 +213,69 @@ const DocsViewer = () => {
               <p className="text-sm text-muted-foreground">System Architecture & Technical Reference</p>
             </div>
           </div>
-          <button
-            onClick={() => setShowToc(!showToc)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <List className="h-3.5 w-3.5" />
-            {showToc ? "Hide" : "Show"} TOC
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setShowSearch(!showSearch);
+                if (!showSearch) setTimeout(() => searchInputRef.current?.focus(), 50);
+                else { setSearchQuery(""); setCurrentMatch(0); }
+              }}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                showSearch
+                  ? "bg-primary/15 text-primary"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Search className="h-3.5 w-3.5" />
+              Search
+            </button>
+            <button
+              onClick={() => setShowToc(!showToc)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <List className="h-3.5 w-3.5" />
+              {showToc ? "Hide" : "Show"} TOC
+            </button>
+          </div>
         </div>
+
+        {/* Search Bar */}
+        {showSearch && (
+          <Card className="border-primary/20">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Input
+                  ref={searchInputRef}
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentMatch(0); }}
+                  placeholder="ค้นหาในเอกสาร... (Ctrl+F)"
+                  className="h-8 text-sm border-none bg-transparent focus-visible:ring-0 px-0"
+                />
+                {searchQuery && (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                      {matchCount > 0 ? `${currentMatch + 1}/${matchCount}` : "0 results"}
+                    </Badge>
+                    <button onClick={goToPrevMatch} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground" title="Previous (Shift+Enter)">
+                      <ArrowUp className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={goToNextMatch} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground" title="Next (Enter)">
+                      <ArrowDown className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => { setSearchQuery(""); setCurrentMatch(0); }}
+                      className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex gap-4">
           {/* Table of Contents */}
@@ -92,11 +283,18 @@ const DocsViewer = () => {
             <Card className="border-primary/20 w-64 shrink-0 hidden md:block">
               <CardContent className="p-0">
                 <div className="p-3 border-b border-border">
-                  <p className="text-xs font-pixel font-semibold text-primary uppercase tracking-wider">Table of Contents</p>
+                  <p className="text-xs font-pixel font-semibold text-primary uppercase tracking-wider">
+                    Table of Contents
+                    {searchQuery && (
+                      <span className="text-muted-foreground font-normal ml-1">
+                        ({filteredToc.length})
+                      </span>
+                    )}
+                  </p>
                 </div>
                 <ScrollArea className="h-[calc(100vh-240px)]">
                   <nav className="p-2 space-y-0.5">
-                    {toc.map((item) => (
+                    {filteredToc.map((item) => (
                       <button
                         key={item.id}
                         onClick={() => scrollToSection(item.id)}
@@ -114,6 +312,9 @@ const DocsViewer = () => {
                         <span className="truncate">{item.title}</span>
                       </button>
                     ))}
+                    {filteredToc.length === 0 && searchQuery && (
+                      <p className="text-xs text-muted-foreground text-center py-4">ไม่พบหัวข้อที่ตรงกัน</p>
+                    )}
                   </nav>
                 </ScrollArea>
               </CardContent>
