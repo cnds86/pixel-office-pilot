@@ -51,6 +51,14 @@ function searchContent(markdown: string, query: string): number {
 }
 
 const DocsViewer = () => {
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
   const toc = generateToc(SYSTEM_ARCHITECTURE_CONTENT);
   const [activeId, setActiveId] = useState<string>("");
   const [showToc, setShowToc] = useState(true);
