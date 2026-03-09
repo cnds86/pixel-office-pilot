@@ -5,7 +5,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, List, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SYSTEM_ARCHITECTURE_CONTENT } from "@/data/systemArchitectureDoc";
-import { generateToc, countMatches } from "@/components/docs/types";
+import { generateToc, countMatches, TocItem } from "@/components/docs/types";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
 import { SearchBar } from "@/components/docs/SearchBar";
 import { TableOfContents } from "@/components/docs/TableOfContents";
 import { MarkdownRenderer } from "@/components/docs/MarkdownRenderer";
