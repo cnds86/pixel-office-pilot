@@ -1,5 +1,5 @@
 import { useState } from "react";
-import AppLayout from "@/components/AppLayout";
+import { AppLayout } from "@/components/AppLayout";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import ReactMarkdown from "react-markdown";
