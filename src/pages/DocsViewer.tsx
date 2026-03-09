@@ -213,6 +213,39 @@ const DocsViewer = () => {
           </div>
         </div>
 
+        {/* Breadcrumb */}
+        {breadcrumbTrail.length > 0 && (
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink
+                  className="cursor-pointer text-muted-foreground hover:text-foreground"
+                  onClick={() => contentRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
+                >
+                  Docs
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              {breadcrumbTrail.map((item, i) => (
+                <span key={item.id} className="contents">
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    {i === breadcrumbTrail.length - 1 ? (
+                      <BreadcrumbPage>{item.title}</BreadcrumbPage>
+                    ) : (
+                      <BreadcrumbLink
+                        className="cursor-pointer"
+                        onClick={() => scrollToSection(item.id)}
+                      >
+                        {item.title}
+                      </BreadcrumbLink>
+                    )}
+                  </BreadcrumbItem>
+                </span>
+              ))}
+            </BreadcrumbList>
+          </Breadcrumb>
+        )}
+
         {showSearch && (
           <SearchBar
             searchQuery={searchQuery}
