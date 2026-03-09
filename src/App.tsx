@@ -28,6 +28,7 @@ import WorkflowPacks from "./pages/WorkflowPacks";
 import TaskReports from "./pages/TaskReports";
 import CompanySettings from "./pages/CompanySettings";
 import OrgManagement from "./pages/OrgManagement";
+import DocsViewer from "./pages/DocsViewer";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
