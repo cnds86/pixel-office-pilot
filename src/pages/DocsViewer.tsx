@@ -5,7 +5,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, List, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SYSTEM_ARCHITECTURE_CONTENT } from "@/data/systemArchitectureDoc";
-import { generateToc, countMatches } from "@/components/docs/types";
+import { generateToc, countMatches, TocItem } from "@/components/docs/types";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
 import { SearchBar } from "@/components/docs/SearchBar";
 import { TableOfContents } from "@/components/docs/TableOfContents";
 import { MarkdownRenderer } from "@/components/docs/MarkdownRenderer";
@@ -20,6 +28,23 @@ const DocsViewer = () => {
   const contentRef = useRef<HTMLDivElement>(null);
 
   const matchCount = useMemo(() => countMatches(SYSTEM_ARCHITECTURE_CONTENT, searchQuery), [searchQuery]);
+
+  // Build breadcrumb trail from active heading
+  const breadcrumbTrail = useMemo(() => {
+    if (!activeId) return [];
+    const idx = toc.findIndex((item) => item.id === activeId);
+    if (idx === -1) return [];
+    const trail: TocItem[] = [toc[idx]];
+    const currentLevel = toc[idx].level;
+    // Walk backwards to find parent headings
+    for (let i = idx - 1; i >= 0; i--) {
+      if (toc[i].level < (trail[0]?.level ?? currentLevel)) {
+        trail.unshift(toc[i]);
+      }
+      if (trail[0]?.level === 1) break;
+    }
+    return trail;
+  }, [activeId, toc]);
 
   const filteredToc = useMemo(() => {
     if (!searchQuery.trim()) return toc;
@@ -187,6 +212,39 @@ const DocsViewer = () => {
             </button>
           </div>
         </div>
+
+        {/* Breadcrumb */}
+        {breadcrumbTrail.length > 0 && (
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink
+                  className="cursor-pointer text-muted-foreground hover:text-foreground"
+                  onClick={() => contentRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
+                >
+                  Docs
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              {breadcrumbTrail.map((item, i) => (
+                <span key={item.id} className="contents">
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    {i === breadcrumbTrail.length - 1 ? (
+                      <BreadcrumbPage>{item.title}</BreadcrumbPage>
+                    ) : (
+                      <BreadcrumbLink
+                        className="cursor-pointer"
+                        onClick={() => scrollToSection(item.id)}
+                      >
+                        {item.title}
+                      </BreadcrumbLink>
+                    )}
+                  </BreadcrumbItem>
+                </span>
+              ))}
+            </BreadcrumbList>
+          </Breadcrumb>
+        )}
 
         {showSearch && (
           <SearchBar
