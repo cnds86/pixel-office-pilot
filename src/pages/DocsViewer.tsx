@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import ReactMarkdown from "react-markdown";
-import { BookOpen, List, ChevronRight } from "lucide-react";
+import { BookOpen, List, ChevronRight, Search, X, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SYSTEM_ARCHITECTURE_CONTENT } from "@/data/systemArchitectureDoc";
 
