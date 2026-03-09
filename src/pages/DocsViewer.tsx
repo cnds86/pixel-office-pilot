@@ -370,6 +370,42 @@ const DocsViewer = () => {
                           const id = text.toLowerCase().replace(/[^\w\s\u0E00-\u0E7F-]/g, "").replace(/\s+/g, "-").trim();
                           return <h3 id={id} {...props}>{children}</h3>;
                         },
+                        code: ({ className, children, ...props }) => {
+                          const match = /language-(\w+)/.exec(className || "");
+                          const codeString = String(children).replace(/\n$/, "");
+                          if (match) {
+                            return (
+                              <div className="relative group not-prose my-4">
+                                <div className="flex items-center justify-between px-4 py-2 bg-muted border border-border rounded-t-lg">
+                                  <span className="text-[11px] font-pixel text-muted-foreground uppercase">{match[1]}</span>
+                                  <button
+                                    onClick={() => handleCopyCode(codeString)}
+                                    className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                                  >
+                                    {copiedCode === codeString ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                                    {copiedCode === codeString ? "Copied!" : "Copy"}
+                                  </button>
+                                </div>
+                                <SyntaxHighlighter
+                                  style={oneDark}
+                                  language={match[1]}
+                                  PreTag="div"
+                                  customStyle={{
+                                    margin: 0,
+                                    borderTopLeftRadius: 0,
+                                    borderTopRightRadius: 0,
+                                    borderBottomLeftRadius: "0.5rem",
+                                    borderBottomRightRadius: "0.5rem",
+                                    fontSize: "0.8rem",
+                                  }}
+                                >
+                                  {codeString}
+                                </SyntaxHighlighter>
+                              </div>
+                            );
+                          }
+                          return <code className={className} {...props}>{children}</code>;
+                        },
                       }}
                     >
                       {SYSTEM_ARCHITECTURE_CONTENT}
