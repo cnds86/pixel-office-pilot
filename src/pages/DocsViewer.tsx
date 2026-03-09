@@ -29,6 +29,23 @@ const DocsViewer = () => {
 
   const matchCount = useMemo(() => countMatches(SYSTEM_ARCHITECTURE_CONTENT, searchQuery), [searchQuery]);
 
+  // Build breadcrumb trail from active heading
+  const breadcrumbTrail = useMemo(() => {
+    if (!activeId) return [];
+    const idx = toc.findIndex((item) => item.id === activeId);
+    if (idx === -1) return [];
+    const trail: TocItem[] = [toc[idx]];
+    const currentLevel = toc[idx].level;
+    // Walk backwards to find parent headings
+    for (let i = idx - 1; i >= 0; i--) {
+      if (toc[i].level < (trail[0]?.level ?? currentLevel)) {
+        trail.unshift(toc[i]);
+      }
+      if (trail[0]?.level === 1) break;
+    }
+    return trail;
+  }, [activeId, toc]);
+
   const filteredToc = useMemo(() => {
     if (!searchQuery.trim()) return toc;
     const q = searchQuery.toLowerCase();
