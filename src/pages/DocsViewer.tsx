@@ -5,7 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import ReactMarkdown from "react-markdown";
-import { BookOpen, List, ChevronRight, Search, X, ArrowUp, ArrowDown } from "lucide-react";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { BookOpen, List, ChevronRight, Search, X, ArrowUp, ArrowDown, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SYSTEM_ARCHITECTURE_CONTENT } from "@/data/systemArchitectureDoc";
 
