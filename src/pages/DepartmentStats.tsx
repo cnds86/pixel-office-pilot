@@ -24,7 +24,7 @@ interface DeptStats {
   productivity: number;
 }
 
-function computeStats(): DeptStats[] {
+function computeStats(agents: import("@/data/mockData").Agent[]): DeptStats[] {
   return departments.map((dept) => {
     const deptAgents = agents.filter((a) => a.department === dept);
     const online = deptAgents.filter((a) => a.status === "online").length;
