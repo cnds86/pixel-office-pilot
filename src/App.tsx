@@ -29,6 +29,7 @@ import TaskReports from "./pages/TaskReports";
 import CompanySettings from "./pages/CompanySettings";
 import OrgManagement from "./pages/OrgManagement";
 import DocsViewer from "./pages/DocsViewer";
+import AgentCreator from "./pages/AgentCreator";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,7 @@ const App = () => (
               <Route path="/settings" element={<CompanySettings />} />
               <Route path="/org-management" element={<OrgManagement />} />
               <Route path="/docs" element={<DocsViewer />} />
+              <Route path="/agents/new" element={<AgentCreator />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
