@@ -55,7 +55,8 @@ function computeStats(agents: import("@/data/mockData").Agent[]): DeptStats[] {
 }
 
 const DepartmentStats = () => {
-  const stats = computeStats();
+  const { agents } = useAgents();
+  const stats = computeStats(agents);
   const totalOnline = agents.filter((a) => a.status !== "offline").length;
   const totalDone = tasks.filter((t) => t.status === "done").length;
   const overallProd = tasks.length > 0 ? Math.round((totalDone / tasks.length) * 100) : 0;

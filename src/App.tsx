@@ -74,6 +74,7 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </NotificationProvider>
+        </AgentProvider>
       </CompanyProvider>
     </TooltipProvider>
   </QueryClientProvider>

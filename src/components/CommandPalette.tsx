@@ -37,6 +37,7 @@ export function CommandPalette() {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const navigate = useNavigate();
+  const { agents } = useAgents();
 
   // Keyboard shortcut: Ctrl+K or /
   useEffect(() => {

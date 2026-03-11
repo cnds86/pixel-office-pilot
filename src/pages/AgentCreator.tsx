@@ -11,11 +11,18 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { agents, departmentInfo } from "@/data/mockData";
-import type { Agent, Department, MemberRole, AgentStatus } from "@/data/mockData";
+import { departmentInfo } from "@/data/mockData";
+import type { Department, MemberRole, AgentStatus } from "@/data/mockData";
+import { useAgents } from "@/contexts/AgentContext";
 import { Bot, Plus, Trash2, Pencil, Zap, Shield, User, Cpu } from "lucide-react";
 
 const avatarOptions = ["🤖", "🧠", "💾", "🔀", "⚙️", "🧪", "🚀", "📝", "🎨", "📐", "🐛", "💪", "☁️", "📡", "🗺️", "🤝", "🎫", "⚡", "🔮", "🦾", "🛸", "🌐", "🔥", "💎"];
+
+// IDs of the original mock agents (not created by user)
+const INITIAL_AGENT_IDS = new Set([
+  "a1","a2","a3","a4","a5","a6","a7","a8","a10","a11","a12","a13","a14","a15","a16","a17","a18",
+  "h1","h2","h3","h9","h10","h11","h12","h13","h14","h15","h16","h17","h18",
+]);
 
 const roleConfig: Record<MemberRole, { label: string; icon: React.ReactNode; color: string }> = {
   agent: { label: "AI Agent", icon: <Cpu className="h-3.5 w-3.5" />, color: "bg-primary/20 text-primary border-primary/30" },
@@ -55,7 +62,7 @@ const emptyForm: NewAgentForm = {
 
 export default function AgentCreator() {
   const { toast } = useToast();
-  const [createdAgents, setCreatedAgents] = useState<(Agent & { description: string; provider: string; model: string })[]>([]);
+  const { agents, addAgent, updateAgent, removeAgent } = useAgents();
   const [form, setForm] = useState<NewAgentForm>({ ...emptyForm });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<string | null>(null);
@@ -70,17 +77,18 @@ export default function AgentCreator() {
     if (!isValid) return;
 
     if (editingId) {
-      setCreatedAgents(prev =>
-        prev.map(a =>
-          a.id === editingId
-            ? { ...a, name: form.name, role: form.role, avatar: form.avatar, status: form.status, specialty: form.specialty, department: form.department, description: form.description, provider: form.provider, model: form.model }
-            : a
-        )
-      );
+      updateAgent(editingId, {
+        name: form.name,
+        role: form.role,
+        avatar: form.avatar,
+        status: form.status,
+        specialty: form.specialty,
+        department: form.department,
+      });
       toast({ title: "Agent Updated", description: `${form.name} has been reconfigured.` });
       setEditingId(null);
     } else {
-      const newAgent = {
+      addAgent({
         id: `new-${Date.now()}`,
         name: form.name,
         role: form.role,
@@ -88,18 +96,14 @@ export default function AgentCreator() {
         status: form.status,
         specialty: form.specialty,
         department: form.department,
-        description: form.description,
-        provider: form.provider,
-        model: form.model,
-      };
-      setCreatedAgents(prev => [newAgent, ...prev]);
+      });
       toast({ title: "Agent Created", description: `${form.name} is ready to deploy.` });
     }
 
     setForm({ ...emptyForm });
   };
 
-  const startEdit = (agent: typeof createdAgents[0]) => {
+  const startEdit = (agent: typeof agents[0]) => {
     setForm({
       name: agent.name,
       role: agent.role,
@@ -107,22 +111,22 @@ export default function AgentCreator() {
       status: agent.status,
       specialty: agent.specialty,
       department: agent.department,
-      description: agent.description,
-      provider: agent.provider,
-      model: agent.model,
+      description: "",
+      provider: "",
+      model: "",
     });
     setEditingId(agent.id);
   };
 
   const confirmDelete = () => {
     if (!deleteDialog) return;
-    const agent = createdAgents.find(a => a.id === deleteDialog);
-    setCreatedAgents(prev => prev.filter(a => a.id !== deleteDialog));
+    const agent = agents.find(a => a.id === deleteDialog);
+    removeAgent(deleteDialog);
     setDeleteDialog(null);
     toast({ title: "Agent Removed", description: `${agent?.name} has been decommissioned.`, variant: "destructive" });
   };
 
-  const allAgents = [...createdAgents.map(a => ({ ...a, isNew: true })), ...agents.map(a => ({ ...a, description: "", provider: "", model: "", isNew: false }))];
+  const newAgentCount = agents.filter(a => !INITIAL_AGENT_IDS.has(a.id)).length;
 
   return (
     <AppLayout>
@@ -317,28 +321,29 @@ export default function AgentCreator() {
                 👥 AGENT ROSTER
               </CardTitle>
               <CardDescription className="font-pixel-body text-sm">
-                {createdAgents.length} new • {agents.length} existing — {allAgents.length} total
+                {newAgentCount} new • {agents.length - newAgentCount} existing — {agents.length} total
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[600px]">
                 <div className="space-y-2">
-                  {allAgents.map(agent => {
+                  {agents.map(agent => {
                     const deptInfo = departmentInfo[agent.department];
                     const role = roleConfig[agent.role];
                     const status = statusConfig[agent.status];
+                    const isNew = !INITIAL_AGENT_IDS.has(agent.id);
                     return (
                       <div
                         key={agent.id}
                         className={`flex items-center gap-3 p-3 pixel-border transition-colors ${
-                          agent.isNew ? "bg-primary/5 border-primary/20" : "bg-muted/30"
+                          isNew ? "bg-primary/5 border-primary/20" : "bg-muted/30"
                         } hover:bg-muted/50`}
                       >
                         <span className="text-2xl w-10 text-center">{agent.avatar}</span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-pixel text-[9px] text-foreground">{agent.name}</span>
-                            {agent.isNew && (
+                            {isNew && (
                               <Badge variant="outline" className="font-pixel text-[6px] border-primary/40 text-primary px-1 py-0">
                                 NEW
                               </Badge>
@@ -359,13 +364,13 @@ export default function AgentCreator() {
                             <span className={`w-2 h-2 ${status.color} ${agent.status === "online" ? "animate-pixel-pulse" : ""}`} />
                             <span className="font-pixel text-[7px] text-muted-foreground uppercase">{agent.status}</span>
                           </div>
-                          {agent.isNew && (
+                          {isNew && (
                             <div className="flex gap-1 ml-2">
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 className="h-7 w-7"
-                                onClick={() => startEdit(agent as typeof createdAgents[0])}
+                                onClick={() => startEdit(agent)}
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>

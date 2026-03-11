@@ -21,6 +21,7 @@ const typeIcon: Record<string, string> = {
 };
 
 const Index = () => {
+  const { agents, getAgentById } = useAgents();
   const totalTasks = tasks.length;
   const doneTasks = tasks.filter(t => t.status === "done").length;
   const inProgress = tasks.filter(t => t.status === "in-progress").length;
