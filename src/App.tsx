@@ -67,6 +67,7 @@ const App = () => (
               <Route path="/settings" element={<CompanySettings />} />
               <Route path="/org-management" element={<OrgManagement />} />
               <Route path="/docs" element={<DocsViewer />} />
+              <Route path="/agents/new" element={<AgentCreator />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

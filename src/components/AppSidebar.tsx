@@ -44,6 +44,7 @@ const paperclipItems = [
   { title: "Org Mgmt", url: "/org-management", icon: UserCog },
   { title: "Settings", url: "/settings", icon: Building2 },
   { title: "Docs", url: "/docs", icon: BookOpen },
+  { title: "Agent Factory", url: "/agents/new", icon: Bot },
 ];
 
 export function AppSidebar() {
