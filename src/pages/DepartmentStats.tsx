@@ -1,6 +1,7 @@
 import { AppLayout } from "@/components/AppLayout";
-import { agents, tasks, departmentInfo } from "@/data/mockData";
+import { tasks, departmentInfo } from "@/data/mockData";
 import type { Department } from "@/data/mockData";
+import { useAgents } from "@/contexts/AgentContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -23,7 +24,7 @@ interface DeptStats {
   productivity: number;
 }
 
-function computeStats(): DeptStats[] {
+function computeStats(agents: import("@/data/mockData").Agent[]): DeptStats[] {
   return departments.map((dept) => {
     const deptAgents = agents.filter((a) => a.department === dept);
     const online = deptAgents.filter((a) => a.status === "online").length;
@@ -54,7 +55,8 @@ function computeStats(): DeptStats[] {
 }
 
 const DepartmentStats = () => {
-  const stats = computeStats();
+  const { agents } = useAgents();
+  const stats = computeStats(agents);
   const totalOnline = agents.filter((a) => a.status !== "offline").length;
   const totalDone = tasks.filter((t) => t.status === "done").length;
   const overallProd = tasks.length > 0 ? Math.round((totalDone / tasks.length) * 100) : 0;

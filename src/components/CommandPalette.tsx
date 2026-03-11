@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { agents, tasks } from "@/data/mockData";
-import type { Agent, Task } from "@/data/mockData";
+import { tasks } from "@/data/mockData";
+import type { Task } from "@/data/mockData";
 import { departmentInfo } from "@/data/mockData";
+import { useAgents } from "@/contexts/AgentContext";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,7 @@ export function CommandPalette() {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const navigate = useNavigate();
+  const { agents } = useAgents();
 
   // Keyboard shortcut: Ctrl+K or /
   useEffect(() => {
