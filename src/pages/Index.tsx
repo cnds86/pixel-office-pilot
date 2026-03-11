@@ -1,6 +1,7 @@
 import { AppLayout } from "@/components/AppLayout";
-import { agents, tasks, milestones, activityLogs, getAgentById } from "@/data/mockData";
+import { tasks, milestones, activityLogs } from "@/data/mockData";
 import type { AgentStatus } from "@/data/mockData";
+import { useAgents } from "@/contexts/AgentContext";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PixelOffice } from "@/components/PixelOffice";
