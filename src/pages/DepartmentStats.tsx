@@ -1,6 +1,7 @@
 import { AppLayout } from "@/components/AppLayout";
-import { agents, tasks, departmentInfo } from "@/data/mockData";
+import { tasks, departmentInfo } from "@/data/mockData";
 import type { Department } from "@/data/mockData";
+import { useAgents } from "@/contexts/AgentContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
