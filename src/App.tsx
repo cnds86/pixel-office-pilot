@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CompanyProvider } from "@/contexts/CompanyContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { AgentProvider } from "@/contexts/AgentContext";
+import { WorkflowProvider } from "@/contexts/WorkflowContext";
 import Index from "./pages/Index";
 import TaskBoard from "./pages/TaskBoard";
 import DepartmentStats from "./pages/DepartmentStats";
