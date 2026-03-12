@@ -147,7 +147,8 @@ function KanbanColumn({ status, label, icon, tasks, openEditTask, deleteTask }: 
 
 export default function TaskBoard() {
   const { agents, getAgentById } = useAgents();
-  const [taskList, setTaskList] = useState<Task[]>(initialTasks);
+  const { tasks: workflowTasks } = useWorkflow();
+  const [taskList, setTaskList] = useState<Task[]>(workflowTasks);
   const [filterAgent, setFilterAgent] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
