@@ -262,9 +262,9 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
         } : r));
         setProjects(prev => prev.map(p => p.id === projectId ? { ...p, status: "completed" as ProjectStatus } : p));
         pushNotif({
-          title: `✅ Workflow Complete: ${pack.name}`,
-          message: `${newTasks.length} tasks done, ${totalXP} XP awarded`,
-          type: "success",
+          agentId: agentIds[0] || "a1",
+          message: `✅ Workflow Complete: ${pack.name} — ${newTasks.length} tasks done, ${totalXP} XP awarded`,
+          type: "task-done",
         });
       }, (newTasks.length + 1) * 3000 + 2000);
     }, 1000);
