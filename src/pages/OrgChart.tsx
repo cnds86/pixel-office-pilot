@@ -31,6 +31,7 @@ function OrgNodeCard({
   expanded: Set<string>;
   onToggle: (id: string) => void;
 }) {
+  const { getAgentById } = useAgents();
   const agent = getAgentById(node.agentId);
   if (!agent) return null;
 
