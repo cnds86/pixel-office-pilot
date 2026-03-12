@@ -44,6 +44,7 @@ function TaskCard({ task, openEditTask, deleteTask, overlay }: {
   deleteTask: (id: string) => void;
   overlay?: boolean;
 }) {
+  const { getAgentById } = useAgents();
   const agent = getAgentById(task.assigneeId);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
 
