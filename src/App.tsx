@@ -42,6 +42,7 @@ const App = () => (
       <CompanyProvider>
         <AgentProvider>
         <NotificationProvider>
+        <WorkflowProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
