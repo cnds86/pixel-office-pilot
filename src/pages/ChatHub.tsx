@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { agents, type Agent } from "@/data/mockData";
+import type { Agent } from "@/data/mockData";
+import { useAgents } from "@/contexts/AgentContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   generateDmChannels,
@@ -43,10 +44,11 @@ function parseTaskCommand(text: string): string | null {
 
 // ─── Chat Hub Page ─────────────────────────────────────────────────
 export default function ChatHub() {
+  const { agents } = useAgents();
   const [tab, setTab] = useState<ChannelType>("dm");
   const [groupList, setGroupList] = useState<ChatChannel[]>(initialGroupChannels);
   const [topicList, setTopicList] = useState<ChatChannel[]>(initialTopicChannels);
-  const dmList = useMemo(() => generateDmChannels(), []);
+  const dmList = useMemo(() => generateDmChannels(agents), [agents]);
 
   const allChannelsList = useMemo(() => [...dmList, ...groupList, ...topicList], [dmList, groupList, topicList]);
 

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
-import { tasks as initialTasks, agents, getAgentById } from "@/data/mockData";
+import { tasks as initialTasks } from "@/data/mockData";
 import type { Task, TaskStatus, TaskPriority } from "@/data/mockData";
+import { useAgents } from "@/contexts/AgentContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ function TaskCard({ task, openEditTask, deleteTask, overlay }: {
   deleteTask: (id: string) => void;
   overlay?: boolean;
 }) {
+  const { getAgentById } = useAgents();
   const agent = getAgentById(task.assigneeId);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
 
@@ -144,6 +146,7 @@ function KanbanColumn({ status, label, icon, tasks, openEditTask, deleteTask }: 
 }
 
 export default function TaskBoard() {
+  const { agents, getAgentById } = useAgents();
   const [taskList, setTaskList] = useState<Task[]>(initialTasks);
   const [filterAgent, setFilterAgent] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");

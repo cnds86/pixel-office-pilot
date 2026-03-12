@@ -25,8 +25,8 @@ export interface ChatMsg {
 }
 
 // DM channels — generated from ALL agents
-export function generateDmChannels(): ChatChannel[] {
-  return agents.map((a) => ({
+export function generateDmChannels(agentList: Agent[] = agents): ChatChannel[] {
+  return agentList.map((a) => ({
     id: `dm-${a.id}`,
     type: "dm" as ChannelType,
     name: a.name,
