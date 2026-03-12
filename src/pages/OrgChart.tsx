@@ -98,6 +98,8 @@ function OrgNodeCard({
 }
 
 export default function OrgChartPage() {
+  const { getAgentById } = useAgents();
+  const { xpData, workflowRuns } = useWorkflow();
   const [expanded, setExpanded] = useState<Set<string>>(new Set(["h1", "a8", "a1", "a17", "h15"]));
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
