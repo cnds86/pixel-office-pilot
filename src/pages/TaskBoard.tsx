@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
-import { tasks as initialTasks, agents, getAgentById } from "@/data/mockData";
+import { tasks as initialTasks } from "@/data/mockData";
 import type { Task, TaskStatus, TaskPriority } from "@/data/mockData";
+import { useAgents } from "@/contexts/AgentContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
