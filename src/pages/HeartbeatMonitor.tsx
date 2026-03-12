@@ -33,6 +33,7 @@ function formatTimeUntil(isoString: string): string {
 }
 
 export default function HeartbeatMonitor() {
+  const { getAgentById } = useAgents();
   const [beats, setBeats] = useState<Heartbeat[]>(heartbeats);
   const [now, setNow] = useState(Date.now());
   const [filter, setFilter] = useState<HeartbeatStatus | "all">("all");

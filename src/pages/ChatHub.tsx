@@ -44,10 +44,11 @@ function parseTaskCommand(text: string): string | null {
 
 // ─── Chat Hub Page ─────────────────────────────────────────────────
 export default function ChatHub() {
+  const { agents } = useAgents();
   const [tab, setTab] = useState<ChannelType>("dm");
   const [groupList, setGroupList] = useState<ChatChannel[]>(initialGroupChannels);
   const [topicList, setTopicList] = useState<ChatChannel[]>(initialTopicChannels);
-  const dmList = useMemo(() => generateDmChannels(), []);
+  const dmList = useMemo(() => generateDmChannels(agents), [agents]);
 
   const allChannelsList = useMemo(() => [...dmList, ...groupList, ...topicList], [dmList, groupList, topicList]);
 
