@@ -3,7 +3,7 @@ import { tasks as initialTasks, type Task, type Department } from "@/data/mockDa
 import { projects as initialProjects, type Project, type ProjectStatus } from "@/data/projectData";
 import { subTasks as initialSubTasks, agentXPData as initialXP, workflowPacks as initialPacks, type SubTask, type AgentXP, type WorkflowPack, type SubTaskStatus } from "@/data/clawEmpireData";
 import { useAgents } from "./AgentContext";
-import { useNotifications } from "./NotificationContext";
+import { useGlobalNotifications } from "./NotificationContext";
 
 // ── Scheduled Workflow ──
 export interface ScheduledWorkflow {
