@@ -21,9 +21,11 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { agents, tasks, departmentInfo, type Department } from "@/data/mockData";
-import { projects as initialProjects, type Project, type ProjectStatus } from "@/data/projectData";
+import { departmentInfo, type Department } from "@/data/mockData";
+import type { Project, ProjectStatus } from "@/data/projectData";
 import { Textarea } from "@/components/ui/textarea";
+import { useWorkflow } from "@/contexts/WorkflowContext";
+import { useAgents } from "@/contexts/AgentContext";
 
 const statusConfig: Record<ProjectStatus, { label: string; color: string; icon: string }> = {
   active: { label: "ACTIVE", color: "bg-primary text-primary-foreground", icon: "🟢" },
@@ -32,7 +34,8 @@ const statusConfig: Record<ProjectStatus, { label: string; color: string; icon: 
 };
 
 export default function Projects() {
-  const [projectList, setProjectList] = useState<Project[]>(initialProjects);
+  const { projects, tasks, addProject, updateProject, removeProject } = useWorkflow();
+  const { agents } = useAgents();
   const [statusFilter, setStatusFilter] = useState<"all" | ProjectStatus>("all");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -50,14 +53,13 @@ export default function Projects() {
   const [formTaskIds, setFormTaskIds] = useState<string[]>([]);
 
   const filtered = useMemo(() => {
-    if (statusFilter === "all") return projectList;
-    return projectList.filter((p) => p.status === statusFilter);
-  }, [projectList, statusFilter]);
+    if (statusFilter === "all") return projects;
+    return projects.filter((p) => p.status === statusFilter);
+  }, [projects, statusFilter]);
 
-  // Stats
-  const totalProjects = projectList.length;
-  const activeCount = projectList.filter((p) => p.status === "active").length;
-  const completedCount = projectList.filter((p) => p.status === "completed").length;
+  const totalProjects = projects.length;
+  const activeCount = projects.filter((p) => p.status === "active").length;
+  const completedCount = projects.filter((p) => p.status === "completed").length;
 
   function getProjectProgress(p: Project) {
     if (p.taskIds.length === 0) return 0;
@@ -75,61 +77,44 @@ export default function Projects() {
 
   function openNewProject() {
     setEditingProject(null);
-    setFormName("");
-    setFormDesc("");
-    setFormDept("engineering");
-    setFormStatus("active");
-    setFormIcon("📁");
-    setFormDeadline("");
-    setFormAgentIds([]);
-    setFormTaskIds([]);
+    setFormName(""); setFormDesc(""); setFormDept("engineering");
+    setFormStatus("active"); setFormIcon("📁"); setFormDeadline("");
+    setFormAgentIds([]); setFormTaskIds([]);
     setFormOpen(true);
   }
 
   function openEditProject(p: Project) {
     setEditingProject(p);
-    setFormName(p.name);
-    setFormDesc(p.description);
-    setFormDept(p.department);
-    setFormStatus(p.status);
-    setFormIcon(p.icon);
-    setFormDeadline(p.deadline ?? "");
-    setFormAgentIds([...p.agentIds]);
-    setFormTaskIds([...p.taskIds]);
+    setFormName(p.name); setFormDesc(p.description); setFormDept(p.department);
+    setFormStatus(p.status); setFormIcon(p.icon); setFormDeadline(p.deadline ?? "");
+    setFormAgentIds([...p.agentIds]); setFormTaskIds([...p.taskIds]);
     setFormOpen(true);
   }
 
   function saveProject() {
     if (!formName.trim()) return;
     if (editingProject) {
-      setProjectList((prev) =>
-        prev.map((p) =>
-          p.id === editingProject.id
-            ? { ...p, name: formName, description: formDesc, department: formDept, status: formStatus, icon: formIcon, deadline: formDeadline || undefined, agentIds: formAgentIds, taskIds: formTaskIds }
-            : p
-        )
-      );
+      updateProject(editingProject.id, {
+        name: formName, description: formDesc, department: formDept,
+        status: formStatus, icon: formIcon, deadline: formDeadline || undefined,
+        agentIds: formAgentIds, taskIds: formTaskIds,
+      });
     } else {
-      const newP: Project = {
+      addProject({
         id: `p-${Date.now()}`,
-        name: formName,
-        description: formDesc,
-        status: formStatus,
-        department: formDept,
-        icon: formIcon,
+        name: formName, description: formDesc, status: formStatus,
+        department: formDept, icon: formIcon,
         color: departmentInfo[formDept].color,
-        taskIds: formTaskIds,
-        agentIds: formAgentIds,
+        taskIds: formTaskIds, agentIds: formAgentIds,
         createdAt: new Date().toISOString().slice(0, 10),
         deadline: formDeadline || undefined,
-      };
-      setProjectList((prev) => [...prev, newP]);
+      });
     }
     setFormOpen(false);
   }
 
   function deleteProject(id: string) {
-    setProjectList((prev) => prev.filter((p) => p.id !== id));
+    removeProject(id);
     setDetailOpen(false);
   }
 
@@ -206,11 +191,8 @@ export default function Projects() {
                   </Badge>
                 </div>
 
-                <p className="font-pixel-body text-sm text-muted-foreground mb-3 line-clamp-2">
-                  {p.description}
-                </p>
+                <p className="font-pixel-body text-sm text-muted-foreground mb-3 line-clamp-2">{p.description}</p>
 
-                {/* Progress */}
                 <div className="mb-3">
                   <div className="flex justify-between mb-1">
                     <span className="font-pixel text-[9px] text-muted-foreground">PROGRESS</span>
@@ -219,29 +201,20 @@ export default function Projects() {
                   <Progress value={progress} className="h-2" />
                 </div>
 
-                {/* Tasks count & Agents */}
                 <div className="flex items-center justify-between">
-                  <span className="font-pixel text-[9px] text-muted-foreground">
-                    📋 {projectTasks.length} tasks
-                  </span>
+                  <span className="font-pixel text-[9px] text-muted-foreground">📋 {projectTasks.length} tasks</span>
                   <div className="flex items-center gap-0.5">
                     {projectAgents.slice(0, 4).map((a) => (
-                      <span key={a!.id} className="text-sm" title={a!.name}>
-                        {a!.avatar}
-                      </span>
+                      <span key={a!.id} className="text-sm" title={a!.name}>{a!.avatar}</span>
                     ))}
                     {projectAgents.length > 4 && (
-                      <span className="font-pixel text-[9px] text-muted-foreground ml-1">
-                        +{projectAgents.length - 4}
-                      </span>
+                      <span className="font-pixel text-[9px] text-muted-foreground ml-1">+{projectAgents.length - 4}</span>
                     )}
                   </div>
                 </div>
 
                 {p.deadline && (
-                  <div className="font-pixel text-[9px] text-muted-foreground mt-2">
-                    ⏰ Deadline: {p.deadline}
-                  </div>
+                  <div className="font-pixel text-[9px] text-muted-foreground mt-2">⏰ Deadline: {p.deadline}</div>
                 )}
               </div>
             );
@@ -274,14 +247,11 @@ export default function Projects() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Badge className={`font-pixel text-[9px] ${sc.color}`}>{sc.icon} {sc.label}</Badge>
-                    {p.deadline && (
-                      <span className="font-pixel text-[9px] text-muted-foreground">⏰ {p.deadline}</span>
-                    )}
+                    {p.deadline && <span className="font-pixel text-[9px] text-muted-foreground">⏰ {p.deadline}</span>}
                   </div>
 
                   <p className="font-pixel-body text-sm text-foreground">{p.description}</p>
 
-                  {/* Progress */}
                   <div>
                     <div className="flex justify-between mb-1">
                       <span className="font-pixel text-[10px] text-muted-foreground">PROGRESS</span>
@@ -290,7 +260,6 @@ export default function Projects() {
                     <Progress value={progress} className="h-3" />
                   </div>
 
-                  {/* Tasks */}
                   <div>
                     <h4 className="font-pixel text-[10px] text-primary mb-2">📋 TASKS ({projectTasks.length})</h4>
                     <ScrollArea className="max-h-32">
@@ -312,7 +281,6 @@ export default function Projects() {
                     </ScrollArea>
                   </div>
 
-                  {/* Agents */}
                   <div>
                     <h4 className="font-pixel text-[10px] text-primary mb-2">👥 TEAM ({projectAgents.length})</h4>
                     <div className="flex flex-wrap gap-2">
@@ -331,19 +299,11 @@ export default function Projects() {
                     </div>
                   </div>
 
-                  {/* Actions */}
                   <div className="flex gap-2 pt-2">
-                    <Button
-                      className="font-pixel text-[10px] h-9 flex-1"
-                      onClick={() => { setDetailOpen(false); openEditProject(p); }}
-                    >
+                    <Button className="font-pixel text-[10px] h-9 flex-1" onClick={() => { setDetailOpen(false); openEditProject(p); }}>
                       ✏️ EDIT
                     </Button>
-                    <Button
-                      variant="destructive"
-                      className="font-pixel text-[10px] h-9"
-                      onClick={() => deleteProject(p.id)}
-                    >
+                    <Button variant="destructive" className="font-pixel text-[10px] h-9" onClick={() => deleteProject(p.id)}>
                       🗑️ DELETE
                     </Button>
                   </div>
@@ -369,35 +329,20 @@ export default function Projects() {
           <div className="space-y-4">
             <div>
               <label className="font-pixel text-[10px] text-muted-foreground mb-1 block">NAME</label>
-              <Input
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                className="font-pixel-body text-sm h-10"
-                placeholder="Project name..."
-              />
+              <Input value={formName} onChange={(e) => setFormName(e.target.value)} className="font-pixel-body text-sm h-10" placeholder="Project name..." />
             </div>
             <div>
               <label className="font-pixel text-[10px] text-muted-foreground mb-1 block">DESCRIPTION</label>
-              <Textarea
-                value={formDesc}
-                onChange={(e) => setFormDesc(e.target.value)}
-                className="font-pixel-body text-sm"
-                placeholder="What's this project about?"
-                rows={3}
-              />
+              <Textarea value={formDesc} onChange={(e) => setFormDesc(e.target.value)} className="font-pixel-body text-sm" placeholder="What's this project about?" rows={3} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="font-pixel text-[10px] text-muted-foreground mb-1 block">DEPARTMENT</label>
                 <Select value={formDept} onValueChange={(v) => setFormDept(v as Department)}>
-                  <SelectTrigger className="font-pixel-body text-sm h-10">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="font-pixel-body text-sm h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(departmentInfo).map(([key, info]) => (
-                      <SelectItem key={key} value={key} className="font-pixel-body text-sm">
-                        {info.icon} {info.label}
-                      </SelectItem>
+                      <SelectItem key={key} value={key} className="font-pixel-body text-sm">{info.icon} {info.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -405,9 +350,7 @@ export default function Projects() {
               <div>
                 <label className="font-pixel text-[10px] text-muted-foreground mb-1 block">STATUS</label>
                 <Select value={formStatus} onValueChange={(v) => setFormStatus(v as ProjectStatus)}>
-                  <SelectTrigger className="font-pixel-body text-sm h-10">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="font-pixel-body text-sm h-10"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active" className="font-pixel-body text-sm">🟢 Active</SelectItem>
                     <SelectItem value="completed" className="font-pixel-body text-sm">✅ Completed</SelectItem>
@@ -419,77 +362,53 @@ export default function Projects() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="font-pixel text-[10px] text-muted-foreground mb-1 block">ICON</label>
-                <Input
-                  value={formIcon}
-                  onChange={(e) => setFormIcon(e.target.value)}
-                  className="font-pixel-body text-lg h-10 text-center"
-                  maxLength={2}
-                />
+                <Input value={formIcon} onChange={(e) => setFormIcon(e.target.value)} className="font-pixel-body text-lg h-10 text-center" maxLength={2} />
               </div>
               <div>
                 <label className="font-pixel text-[10px] text-muted-foreground mb-1 block">DEADLINE</label>
-                <Input
-                  type="date"
-                  value={formDeadline}
-                  onChange={(e) => setFormDeadline(e.target.value)}
-                  className="font-pixel-body text-sm h-10"
-                />
+                <Input type="date" value={formDeadline} onChange={(e) => setFormDeadline(e.target.value)} className="font-pixel-body text-sm h-10" />
               </div>
             </div>
 
             {/* Agent Selection */}
             <div>
-              <label className="font-pixel text-[10px] text-muted-foreground mb-2 block">
-                👥 AGENTS ({formAgentIds.length} selected)
-              </label>
+              <label className="font-pixel text-[10px] text-muted-foreground mb-2 block">👥 AGENTS ({formAgentIds.length} selected)</label>
               <ScrollArea className="max-h-36 pixel-border p-2" style={{ borderWidth: 1 }}>
                 <div className="space-y-1">
-                  {agents.map((a) => {
-                    const checked = formAgentIds.includes(a.id);
-                    return (
-                      <label
-                        key={a.id}
-                        className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-muted/50 transition-colors"
-                      >
-                        <Checkbox
-                          checked={checked}
-                          onCheckedChange={(v) => {
-                            if (v) setFormAgentIds((prev) => [...prev, a.id]);
-                            else setFormAgentIds((prev) => prev.filter((id) => id !== a.id));
-                          }}
-                        />
-                        <span className="text-base">{a.avatar}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-pixel text-[10px] truncate">{a.name}</div>
-                          <div className="font-pixel text-[8px] text-muted-foreground truncate">{a.specialty}</div>
-                        </div>
-                      </label>
-                    );
-                  })}
+                  {agents.map((a) => (
+                    <label key={a.id} className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-muted/50 transition-colors">
+                      <Checkbox
+                        checked={formAgentIds.includes(a.id)}
+                        onCheckedChange={(v) => {
+                          if (v) setFormAgentIds(prev => [...prev, a.id]);
+                          else setFormAgentIds(prev => prev.filter(id => id !== a.id));
+                        }}
+                      />
+                      <span className="text-base">{a.avatar}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-pixel text-[10px] truncate">{a.name}</div>
+                        <div className="font-pixel text-[8px] text-muted-foreground truncate">{a.specialty}</div>
+                      </div>
+                    </label>
+                  ))}
                 </div>
               </ScrollArea>
             </div>
 
             {/* Task Selection */}
             <div>
-              <label className="font-pixel text-[10px] text-muted-foreground mb-2 block">
-                📋 TASKS ({formTaskIds.length} selected)
-              </label>
+              <label className="font-pixel text-[10px] text-muted-foreground mb-2 block">📋 TASKS ({formTaskIds.length} selected)</label>
               <ScrollArea className="max-h-36 pixel-border p-2" style={{ borderWidth: 1 }}>
                 <div className="space-y-1">
                   {tasks.map((t) => {
-                    const checked = formTaskIds.includes(t.id);
                     const assignee = agents.find((a) => a.id === t.assigneeId);
                     return (
-                      <label
-                        key={t.id}
-                        className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-muted/50 transition-colors"
-                      >
+                      <label key={t.id} className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-muted/50 transition-colors">
                         <Checkbox
-                          checked={checked}
+                          checked={formTaskIds.includes(t.id)}
                           onCheckedChange={(v) => {
-                            if (v) setFormTaskIds((prev) => [...prev, t.id]);
-                            else setFormTaskIds((prev) => prev.filter((id) => id !== t.id));
+                            if (v) setFormTaskIds(prev => [...prev, t.id]);
+                            else setFormTaskIds(prev => prev.filter(id => id !== t.id));
                           }}
                         />
                         <span className="font-pixel text-[9px]">

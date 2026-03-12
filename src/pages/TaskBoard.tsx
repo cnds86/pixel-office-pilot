@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/AppLayout";
-import { tasks as initialTasks } from "@/data/mockData";
 import type { Task, TaskStatus, TaskPriority } from "@/data/mockData";
 import { useAgents } from "@/contexts/AgentContext";
+import { useWorkflow } from "@/contexts/WorkflowContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -147,7 +147,24 @@ function KanbanColumn({ status, label, icon, tasks, openEditTask, deleteTask }: 
 
 export default function TaskBoard() {
   const { agents, getAgentById } = useAgents();
-  const [taskList, setTaskList] = useState<Task[]>(initialTasks);
+  const { tasks: workflowTasks } = useWorkflow();
+  const [taskList, setTaskList] = useState<Task[]>(workflowTasks);
+
+  // Sync when workflow creates new tasks
+  useEffect(() => {
+    setTaskList(prev => {
+      const existingIds = new Set(prev.map(t => t.id));
+      const newTasks = workflowTasks.filter(t => !existingIds.has(t.id));
+      if (newTasks.length === 0) {
+        // Also sync status updates
+        return prev.map(t => {
+          const wt = workflowTasks.find(w => w.id === t.id);
+          return wt ? { ...t, status: wt.status } : t;
+        });
+      }
+      return [...prev, ...newTasks];
+    });
+  }, [workflowTasks]);
   const [filterAgent, setFilterAgent] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);

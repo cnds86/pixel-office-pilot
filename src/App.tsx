@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CompanyProvider } from "@/contexts/CompanyContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { AgentProvider } from "@/contexts/AgentContext";
+import { WorkflowProvider } from "@/contexts/WorkflowContext";
 import Index from "./pages/Index";
 import TaskBoard from "./pages/TaskBoard";
 import DepartmentStats from "./pages/DepartmentStats";
@@ -41,6 +42,7 @@ const App = () => (
       <CompanyProvider>
         <AgentProvider>
         <NotificationProvider>
+        <WorkflowProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -73,6 +75,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
+        </WorkflowProvider>
         </NotificationProvider>
         </AgentProvider>
       </CompanyProvider>

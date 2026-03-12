@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { orgChart, getOrgNode, getSubordinates, type OrgNode } from "@/data/paperclipData";
-import { agents, getAgentById } from "@/data/mockData";
+import { useAgents } from "@/contexts/AgentContext";
+import { useWorkflow } from "@/contexts/WorkflowContext";
 import { ChevronDown, ChevronRight, User, Users, Network, Shield } from "lucide-react";
 
 const levelColors = [
@@ -30,6 +31,7 @@ function OrgNodeCard({
   expanded: Set<string>;
   onToggle: (id: string) => void;
 }) {
+  const { getAgentById } = useAgents();
   const agent = getAgentById(node.agentId);
   if (!agent) return null;
 
@@ -96,6 +98,8 @@ function OrgNodeCard({
 }
 
 export default function OrgChartPage() {
+  const { getAgentById } = useAgents();
+  const { xpData, workflowRuns } = useWorkflow();
   const [expanded, setExpanded] = useState<Set<string>>(new Set(["h1", "a8", "a1", "a17", "h15"]));
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
