@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { heartbeats, type Heartbeat, type HeartbeatStatus } from "@/data/paperclipData";
-import { agents, getAgentById } from "@/data/mockData";
+import { useAgents } from "@/contexts/AgentContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
