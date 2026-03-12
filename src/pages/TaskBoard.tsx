@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import type { Task, TaskStatus, TaskPriority } from "@/data/mockData";
 import { useAgents } from "@/contexts/AgentContext";
