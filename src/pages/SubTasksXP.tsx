@@ -7,8 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Trophy, Zap, Target, AlertTriangle, ArrowRight, Flame, Star, ChevronDown, ChevronRight } from "lucide-react";
-import { subTasks, agentXPData, getSubTasksByParent, type SubTask, type AgentXP } from "@/data/clawEmpireData";
-import { tasks, getAgentById } from "@/data/mockData";
+import { useWorkflow } from "@/contexts/WorkflowContext";
+import { useAgents } from "@/contexts/AgentContext";
 
 const statusConfig: Record<string, { label: string; color: string; icon: string }> = {
   todo: { label: "To Do", color: "bg-muted text-muted-foreground", icon: "○" },
@@ -27,17 +27,19 @@ const rankConfig: Record<string, { color: string; icon: string }> = {
 };
 
 export default function SubTasksXP() {
+  const { subTasks, tasks, xpData, completeSubTask } = useWorkflow();
+  const { getAgentById } = useAgents();
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set(["t6", "t2"]));
   const [tab, setTab] = useState("subtasks");
 
   const sortedLeaderboard = useMemo(
-    () => [...agentXPData].sort((a, b) => b.xp - a.xp),
-    []
+    () => [...xpData].sort((a, b) => b.xp - a.xp),
+    [xpData]
   );
 
   const tasksWithSubs = useMemo(
     () => tasks.filter(t => subTasks.some(st => st.parentTaskId === t.id)),
-    []
+    [tasks, subTasks]
   );
 
   const stats = useMemo(() => ({
@@ -45,7 +47,7 @@ export default function SubTasksXP() {
     done: subTasks.filter(s => s.status === "done").length,
     blocked: subTasks.filter(s => s.status === "blocked").length,
     delegations: subTasks.filter(s => s.delegatedFrom).length,
-  }), []);
+  }), [subTasks]);
 
   const toggleExpand = (id: string) => {
     setExpandedTasks(prev => {
@@ -110,7 +112,7 @@ export default function SubTasksXP() {
             <ScrollArea className="h-[60vh]">
               <div className="space-y-3">
                 {tasksWithSubs.map(task => {
-                  const subs = getSubTasksByParent(task.id);
+                  const subs = subTasks.filter(st => st.parentTaskId === task.id);
                   const expanded = expandedTasks.has(task.id);
                   const doneCount = subs.filter(s => s.status === "done").length;
                   const progress = (doneCount / subs.length) * 100;
@@ -161,6 +163,16 @@ export default function SubTasksXP() {
                                 <div className="flex items-center gap-2">
                                   <Badge className={`${cfg.color} font-pixel text-[7px]`}>{cfg.label}</Badge>
                                   <Badge variant="outline" className="font-pixel-body text-xs">+{sub.xpReward} XP</Badge>
+                                  {sub.status !== "done" && sub.status !== "blocked" && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-6 px-2 font-pixel text-[7px]"
+                                      onClick={() => completeSubTask(sub.id)}
+                                    >
+                                      ✓ Done
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
                             );
@@ -180,13 +192,12 @@ export default function SubTasksXP() {
               <div className="space-y-2">
                 {sortedLeaderboard.map((entry, idx) => {
                   const agent = getAgentById(entry.agentId);
-                  const rc = rankConfig[entry.rank];
+                  const rc = rankConfig[entry.rank] || rankConfig["Intern"];
                   const maxXP = sortedLeaderboard[0]?.xp || 1;
 
                   return (
                     <Card key={entry.agentId} className={`pixel-border ${idx < 3 ? "pixel-border-glow" : ""}`}>
                       <CardContent className="p-4 flex items-center gap-4">
-                        {/* Rank position */}
                         <div className="w-8 text-center">
                           {idx === 0 && <span className="text-2xl">🥇</span>}
                           {idx === 1 && <span className="text-2xl">🥈</span>}
@@ -194,19 +205,17 @@ export default function SubTasksXP() {
                           {idx > 2 && <span className="font-pixel text-sm text-muted-foreground">#{idx + 1}</span>}
                         </div>
 
-                        {/* Agent info */}
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <span className="text-2xl">{agent?.avatar}</span>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="font-pixel text-[10px] truncate">{agent?.name}</p>
+                              <p className="font-pixel text-[10px] truncate">{agent?.name || entry.agentId}</p>
                               <span className={`font-pixel text-[8px] ${rc.color}`}>{rc.icon} {entry.rank}</span>
                             </div>
                             <p className="font-pixel-body text-sm text-muted-foreground">{agent?.specialty} • {agent?.department}</p>
                           </div>
                         </div>
 
-                        {/* Stats */}
                         <div className="flex items-center gap-4">
                           <div className="text-center">
                             <div className="flex items-center gap-1">
