@@ -94,7 +94,7 @@ function generateSubTasksForStep(step: string, parentTaskId: string, agentIds: s
 
 export function WorkflowProvider({ children }: { children: ReactNode }) {
   const { agents } = useAgents();
-  const { push: pushNotif } = useNotifications();
+  const { push: pushNotif } = useGlobalNotifications();
 
   // Core state
   const [tasks, setTasks] = useState<Task[]>([...initialTasks]);
