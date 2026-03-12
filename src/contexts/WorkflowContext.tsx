@@ -270,9 +270,9 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     }, 1000);
 
     pushNotif({
-      title: `🚀 Workflow Started: ${pack.name}`,
-      message: `Created ${newTasks.length} tasks, assigned to ${agentIds.length} agents`,
-      type: "info",
+      agentId: agentIds[0] || "a1",
+      message: `🚀 Workflow Started: ${pack.name} — ${newTasks.length} tasks, ${agentIds.length} agents`,
+      type: "delegation",
     });
 
     return run;
