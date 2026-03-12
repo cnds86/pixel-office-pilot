@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { orgChart, getOrgNode, getSubordinates, type OrgNode } from "@/data/paperclipData";
-import { agents, getAgentById } from "@/data/mockData";
+import { useAgents } from "@/contexts/AgentContext";
+import { useWorkflow } from "@/contexts/WorkflowContext";
 import { ChevronDown, ChevronRight, User, Users, Network, Shield } from "lucide-react";
 
 const levelColors = [

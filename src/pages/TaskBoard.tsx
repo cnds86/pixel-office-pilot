@@ -149,6 +149,22 @@ export default function TaskBoard() {
   const { agents, getAgentById } = useAgents();
   const { tasks: workflowTasks } = useWorkflow();
   const [taskList, setTaskList] = useState<Task[]>(workflowTasks);
+
+  // Sync when workflow creates new tasks
+  useEffect(() => {
+    setTaskList(prev => {
+      const existingIds = new Set(prev.map(t => t.id));
+      const newTasks = workflowTasks.filter(t => !existingIds.has(t.id));
+      if (newTasks.length === 0) {
+        // Also sync status updates
+        return prev.map(t => {
+          const wt = workflowTasks.find(w => w.id === t.id);
+          return wt ? { ...t, status: wt.status } : t;
+        });
+      }
+      return [...prev, ...newTasks];
+    });
+  }, [workflowTasks]);
   const [filterAgent, setFilterAgent] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
