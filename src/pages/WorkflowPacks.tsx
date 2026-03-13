@@ -85,6 +85,25 @@ export default function WorkflowPacks() {
     });
   };
 
+  const handleCreatePack = () => {
+    if (!newPack.name || !newPack.steps) return;
+    const pack: WorkflowPack = {
+      id: `wp-${Date.now()}`,
+      type: newPack.type,
+      name: newPack.name,
+      description: newPack.description,
+      icon: newPack.icon || "📦",
+      agentRoles: newPack.roles.split(",").map(r => r.trim()).filter(Boolean),
+      defaultDepartment: newPack.department,
+      steps: [newPack.steps],
+      isActive: true,
+    };
+    addPack(pack);
+    setCreateDialogOpen(false);
+    setNewPack({ name: "", description: "", type: "dev", icon: "⚡", department: "engineering", roles: "", steps: "" });
+    toast({ title: "✅ Pack Created!", description: `${pack.name} is ready to run` });
+  };
+
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
