@@ -5,18 +5,39 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Play, Pause, ArrowRight, Users, Rocket, Clock, Timer, Trash2, CalendarClock, Zap } from "lucide-react";
-import { departmentInfo } from "@/data/mockData";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Play, Pause, ArrowRight, Users, Rocket, Clock, Timer, Trash2, CalendarClock, Zap, Plus } from "lucide-react";
+import { departmentInfo, type Department } from "@/data/mockData";
 import { useWorkflow } from "@/contexts/WorkflowContext";
 import { useAgents } from "@/contexts/AgentContext";
 import { useToast } from "@/hooks/use-toast";
-import type { WorkflowPack } from "@/data/clawEmpireData";
+import type { WorkflowPack, WorkflowPackType } from "@/data/clawEmpireData";
+
+const packTypes: { value: WorkflowPackType; label: string }[] = [
+  { value: "dev", label: "Development" },
+  { value: "report", label: "Report" },
+  { value: "novel", label: "Novel/Content" },
+  { value: "video", label: "Video" },
+  { value: "research", label: "Research" },
+  { value: "roleplay", label: "Roleplay" },
+];
+
+const departments: { value: Department; label: string }[] = [
+  { value: "engineering", label: "Engineering" },
+  { value: "design", label: "Design" },
+  { value: "product", label: "Product" },
+  { value: "qa", label: "QA" },
+  { value: "operations", label: "Operations" },
+  { value: "support", label: "Support" },
+];
 
 export default function WorkflowPacks() {
   const {
-    packs, togglePack, runWorkflow, workflowRuns,
+    packs, togglePack, addPack, runWorkflow, workflowRuns,
     scheduledWorkflows, scheduleWorkflow, unscheduleWorkflow, toggleSchedule,
   } = useWorkflow();
   const { agents } = useAgents();
@@ -24,6 +45,11 @@ export default function WorkflowPacks() {
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [schedulePackId, setSchedulePackId] = useState<string>("");
   const [scheduleInterval, setScheduleInterval] = useState("60");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newPack, setNewPack] = useState({
+    name: "", description: "", type: "dev" as WorkflowPackType, icon: "⚡",
+    department: "engineering" as Department, roles: "", steps: "",
+  });
   const { toast } = useToast();
 
   const activeCount = packs.filter(p => p.isActive).length;
