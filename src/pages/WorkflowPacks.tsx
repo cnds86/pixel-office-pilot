@@ -125,6 +125,13 @@ export default function WorkflowPacks() {
               </Badge>
             )}
             <Button
+              size="sm"
+              className="font-pixel text-[9px]"
+              onClick={() => setCreateDialogOpen(true)}
+            >
+              <Plus className="h-3 w-3 mr-1" /> Create Pack
+            </Button>
+            <Button
               variant="outline"
               size="sm"
               className="font-pixel text-[9px]"
