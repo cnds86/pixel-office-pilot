@@ -55,6 +55,7 @@ interface WorkflowContextType {
 
   // Workflow Packs
   packs: WorkflowPack[];
+  addPack: (pack: WorkflowPack) => void;
   togglePack: (id: string) => void;
 
   // Workflow Engine
@@ -158,6 +159,9 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
       return prev;
     });
   }, [awardXP]);
+
+  // ── Add Pack ──
+  const addPack = useCallback((pack: WorkflowPack) => setPacks(p => [...p, pack]), []);
 
   // ── Toggle Pack ──
   const togglePack = useCallback((id: string) => {
@@ -336,7 +340,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
       projects, addProject, updateProject, removeProject,
       subTasks, addSubTask, updateSubTask, completeSubTask,
       xpData, awardXP,
-      packs, togglePack,
+      packs, addPack, togglePack,
       runWorkflow, workflowRuns,
       scheduledWorkflows, scheduleWorkflow, unscheduleWorkflow, toggleSchedule,
     }}>
