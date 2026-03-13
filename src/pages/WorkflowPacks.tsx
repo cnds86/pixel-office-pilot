@@ -31,7 +31,7 @@ const departments: { value: Department; label: string }[] = [
   { value: "design", label: "Design" },
   { value: "product", label: "Product" },
   { value: "qa", label: "QA" },
-  { value: "operations", label: "Operations" },
+  { value: "devops", label: "DevOps" },
   { value: "support", label: "Support" },
 ];
 
