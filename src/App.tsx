@@ -73,6 +73,7 @@ const App = () => (
               <Route path="/org-management" element={<OrgManagement />} />
               <Route path="/docs" element={<DocsViewer />} />
               <Route path="/agents/new" element={<AgentCreator />} />
+              <Route path="/workflow-dashboard" element={<WorkflowDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
