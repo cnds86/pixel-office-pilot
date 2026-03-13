@@ -340,7 +340,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
       projects, addProject, updateProject, removeProject,
       subTasks, addSubTask, updateSubTask, completeSubTask,
       xpData, awardXP,
-      packs, togglePack,
+      packs, addPack, togglePack,
       runWorkflow, workflowRuns,
       scheduledWorkflows, scheduleWorkflow, unscheduleWorkflow, toggleSchedule,
     }}>
