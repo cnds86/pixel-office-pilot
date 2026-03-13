@@ -40,6 +40,7 @@ const paperclipItems = [
   { title: "Tags", url: "/tags", icon: Settings2 },
   { title: "SubTasks & XP", url: "/subtasks", icon: Swords },
   { title: "Workflows", url: "/workflows", icon: Workflow },
+  { title: "WF Dashboard", url: "/workflow-dashboard", icon: Activity },
   { title: "Reports", url: "/reports", icon: FileText },
   { title: "Org Mgmt", url: "/org-management", icon: UserCog },
   { title: "Settings", url: "/settings", icon: Building2 },
