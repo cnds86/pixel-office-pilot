@@ -160,6 +160,9 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     });
   }, [awardXP]);
 
+  // ── Add Pack ──
+  const addPack = useCallback((pack: WorkflowPack) => setPacks(p => [...p, pack]), []);
+
   // ── Toggle Pack ──
   const togglePack = useCallback((id: string) => {
     setPacks(prev => prev.map(p => p.id === id ? { ...p, isActive: !p.isActive } : p));
