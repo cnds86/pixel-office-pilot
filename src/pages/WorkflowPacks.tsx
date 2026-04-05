@@ -147,6 +147,17 @@ export default function WorkflowPacks() {
     toast({ title: "🗑️ Pack Deleted", description: `${packName} has been removed` });
   };
 
+  const handleDuplicatePack = (pack: WorkflowPack) => {
+    const duplicate: WorkflowPack = {
+      ...pack,
+      id: `wp-${Date.now()}`,
+      name: `${pack.name} (Copy)`,
+    };
+    addPack(duplicate);
+    setSelectedPack(null);
+    toast({ title: "📋 Pack Duplicated!", description: `${duplicate.name} created from ${pack.name}` });
+  };
+
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
