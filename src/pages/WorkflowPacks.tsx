@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Play, Pause, ArrowRight, Users, Rocket, Clock, Timer, Trash2, CalendarClock, Zap, Plus, Pencil } from "lucide-react";
+import { Play, Pause, ArrowRight, Users, Rocket, Clock, Timer, Trash2, CalendarClock, Zap, Plus, Pencil, Copy } from "lucide-react";
 import { departmentInfo, type Department } from "@/data/mockData";
 import { useWorkflow } from "@/contexts/WorkflowContext";
 import { useAgents } from "@/contexts/AgentContext";
@@ -145,6 +145,17 @@ export default function WorkflowPacks() {
     removePack(packId);
     setSelectedPack(null);
     toast({ title: "🗑️ Pack Deleted", description: `${packName} has been removed` });
+  };
+
+  const handleDuplicatePack = (pack: WorkflowPack) => {
+    const duplicate: WorkflowPack = {
+      ...pack,
+      id: `wp-${Date.now()}`,
+      name: `${pack.name} (Copy)`,
+    };
+    addPack(duplicate);
+    setSelectedPack(null);
+    toast({ title: "📋 Pack Duplicated!", description: `${duplicate.name} created from ${pack.name}` });
   };
 
   return (
@@ -458,6 +469,13 @@ export default function WorkflowPacks() {
                       onClick={() => openEditDialog(selectedPack)}
                     >
                       <Pencil className="h-3 w-3 mr-1" /> Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="font-pixel text-[9px]"
+                      onClick={() => handleDuplicatePack(selectedPack)}
+                    >
+                      <Copy className="h-3 w-3 mr-1" /> Duplicate
                     </Button>
                     <Button
                       variant="outline"
