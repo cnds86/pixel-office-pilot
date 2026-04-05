@@ -37,7 +37,7 @@ const departments: { value: Department; label: string }[] = [
 
 export default function WorkflowPacks() {
   const {
-    packs, togglePack, addPack, runWorkflow, workflowRuns,
+    packs, togglePack, addPack, updatePack, removePack, runWorkflow, workflowRuns,
     scheduledWorkflows, scheduleWorkflow, unscheduleWorkflow, toggleSchedule,
   } = useWorkflow();
   const { agents } = useAgents();
@@ -46,7 +46,13 @@ export default function WorkflowPacks() {
   const [schedulePackId, setSchedulePackId] = useState<string>("");
   const [scheduleInterval, setScheduleInterval] = useState("60");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingPack, setEditingPack] = useState<WorkflowPack | null>(null);
   const [newPack, setNewPack] = useState({
+    name: "", description: "", type: "dev" as WorkflowPackType, icon: "⚡",
+    department: "engineering" as Department, roles: "", steps: "",
+  });
+  const [editForm, setEditForm] = useState({
     name: "", description: "", type: "dev" as WorkflowPackType, icon: "⚡",
     department: "engineering" as Department, roles: "", steps: "",
   });
