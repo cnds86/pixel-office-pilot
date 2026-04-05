@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Play, Pause, ArrowRight, Users, Rocket, Clock, Timer, Trash2, CalendarClock, Zap, Plus } from "lucide-react";
+import { Play, Pause, ArrowRight, Users, Rocket, Clock, Timer, Trash2, CalendarClock, Zap, Plus, Pencil } from "lucide-react";
 import { departmentInfo, type Department } from "@/data/mockData";
 import { useWorkflow } from "@/contexts/WorkflowContext";
 import { useAgents } from "@/contexts/AgentContext";
@@ -37,7 +37,7 @@ const departments: { value: Department; label: string }[] = [
 
 export default function WorkflowPacks() {
   const {
-    packs, togglePack, addPack, runWorkflow, workflowRuns,
+    packs, togglePack, addPack, updatePack, removePack, runWorkflow, workflowRuns,
     scheduledWorkflows, scheduleWorkflow, unscheduleWorkflow, toggleSchedule,
   } = useWorkflow();
   const { agents } = useAgents();
@@ -46,7 +46,13 @@ export default function WorkflowPacks() {
   const [schedulePackId, setSchedulePackId] = useState<string>("");
   const [scheduleInterval, setScheduleInterval] = useState("60");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingPack, setEditingPack] = useState<WorkflowPack | null>(null);
   const [newPack, setNewPack] = useState({
+    name: "", description: "", type: "dev" as WorkflowPackType, icon: "⚡",
+    department: "engineering" as Department, roles: "", steps: "",
+  });
+  const [editForm, setEditForm] = useState({
     name: "", description: "", type: "dev" as WorkflowPackType, icon: "⚡",
     department: "engineering" as Department, roles: "", steps: "",
   });
@@ -102,6 +108,43 @@ export default function WorkflowPacks() {
     setCreateDialogOpen(false);
     setNewPack({ name: "", description: "", type: "dev", icon: "⚡", department: "engineering", roles: "", steps: "" });
     toast({ title: "✅ Pack Created!", description: `${pack.name} is ready to run` });
+  };
+
+  const openEditDialog = (pack: WorkflowPack) => {
+    setEditingPack(pack);
+    setEditForm({
+      name: pack.name,
+      description: pack.description,
+      type: pack.type,
+      icon: pack.icon,
+      department: pack.defaultDepartment,
+      roles: pack.agentRoles.join(", "),
+      steps: pack.steps[0],
+    });
+    setSelectedPack(null);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdatePack = () => {
+    if (!editingPack || !editForm.name || !editForm.steps) return;
+    updatePack(editingPack.id, {
+      name: editForm.name,
+      description: editForm.description,
+      type: editForm.type,
+      icon: editForm.icon || "📦",
+      agentRoles: editForm.roles.split(",").map(r => r.trim()).filter(Boolean),
+      defaultDepartment: editForm.department,
+      steps: [editForm.steps],
+    });
+    setEditDialogOpen(false);
+    setEditingPack(null);
+    toast({ title: "✏️ Pack Updated!", description: `${editForm.name} has been updated` });
+  };
+
+  const handleDeletePack = (packId: string, packName: string) => {
+    removePack(packId);
+    setSelectedPack(null);
+    toast({ title: "🗑️ Pack Deleted", description: `${packName} has been removed` });
   };
 
   return (
@@ -412,6 +455,13 @@ export default function WorkflowPacks() {
                     <Button
                       variant="outline"
                       className="font-pixel text-[9px]"
+                      onClick={() => openEditDialog(selectedPack)}
+                    >
+                      <Pencil className="h-3 w-3 mr-1" /> Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="font-pixel text-[9px]"
                       onClick={() => {
                         setSchedulePackId(selectedPack.id);
                         setSelectedPack(null);
@@ -420,15 +470,24 @@ export default function WorkflowPacks() {
                     >
                       <CalendarClock className="h-3 w-3 mr-1" /> Schedule
                     </Button>
+                  </div>
+                  <div className="flex gap-2">
                     <Button
                       variant={selectedPack.isActive ? "destructive" : "default"}
-                      className="font-pixel text-[9px]"
+                      className="flex-1 font-pixel text-[9px]"
                       onClick={() => {
                         handleToggle(selectedPack.id);
                         setSelectedPack({ ...selectedPack, isActive: !selectedPack.isActive });
                       }}
                     >
                       {selectedPack.isActive ? "Deactivate" : "Activate"}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="font-pixel text-[9px]"
+                      onClick={() => handleDeletePack(selectedPack.id, selectedPack.name)}
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" /> Delete
                     </Button>
                   </div>
                 </div>
@@ -541,6 +600,65 @@ export default function WorkflowPacks() {
               <DialogFooter>
                 <Button className="w-full font-pixel text-[9px]" onClick={handleCreatePack} disabled={!newPack.name || !newPack.steps}>
                   <Plus className="h-3 w-3 mr-1" /> Create Pack
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Pack Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-pixel text-sm">✏️ Edit Workflow Pack</DialogTitle>
+              <DialogDescription className="font-pixel-body text-sm">Update this workflow template</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <div className="w-16">
+                  <Label className="font-pixel text-[9px]">Icon</Label>
+                  <Input value={editForm.icon} onChange={e => setEditForm(p => ({ ...p, icon: e.target.value }))} className="font-pixel text-center text-lg h-9" maxLength={2} />
+                </div>
+                <div className="flex-1">
+                  <Label className="font-pixel text-[9px]">Name</Label>
+                  <Input value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} className="font-pixel-body text-sm h-9" />
+                </div>
+              </div>
+              <div>
+                <Label className="font-pixel text-[9px]">Description</Label>
+                <Textarea value={editForm.description} onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))} className="font-pixel-body text-sm min-h-[60px]" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="font-pixel text-[9px]">Type</Label>
+                  <Select value={editForm.type} onValueChange={v => setEditForm(p => ({ ...p, type: v as WorkflowPackType }))}>
+                    <SelectTrigger className="font-pixel-body text-sm h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {packTypes.map(t => <SelectItem key={t.value} value={t.value} className="font-pixel-body text-sm">{t.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="font-pixel text-[9px]">Department</Label>
+                  <Select value={editForm.department} onValueChange={v => setEditForm(p => ({ ...p, department: v as Department }))}>
+                    <SelectTrigger className="font-pixel-body text-sm h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {departments.map(d => <SelectItem key={d.value} value={d.value} className="font-pixel-body text-sm">{d.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label className="font-pixel text-[9px]">Agent Roles <span className="text-muted-foreground">(comma-separated)</span></Label>
+                <Input value={editForm.roles} onChange={e => setEditForm(p => ({ ...p, roles: e.target.value }))} className="font-pixel-body text-sm h-9" />
+              </div>
+              <div>
+                <Label className="font-pixel text-[9px]">Steps <span className="text-muted-foreground">(use → to separate)</span></Label>
+                <Input value={editForm.steps} onChange={e => setEditForm(p => ({ ...p, steps: e.target.value }))} className="font-pixel-body text-sm h-9" />
+              </div>
+              <DialogFooter>
+                <Button className="w-full font-pixel text-[9px]" onClick={handleUpdatePack} disabled={!editForm.name || !editForm.steps}>
+                  <Pencil className="h-3 w-3 mr-1" /> Save Changes
                 </Button>
               </DialogFooter>
             </div>
