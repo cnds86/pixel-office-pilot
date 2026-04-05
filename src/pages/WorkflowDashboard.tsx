@@ -1,18 +1,21 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useWorkflow } from "@/contexts/WorkflowContext";
 import { useAgents } from "@/contexts/AgentContext";
+import { useToast } from "@/hooks/use-toast";
 import {
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { Activity, CheckCircle2, Clock, Flame, Trophy, Users, Zap, TrendingUp } from "lucide-react";
+import { Activity, CheckCircle2, Clock, Flame, Trophy, Users, Zap, TrendingUp, Download } from "lucide-react";
 
 const COLORS = [
   "hsl(160 100% 50%)", "hsl(270 80% 65%)", "hsl(45 100% 60%)",
@@ -27,6 +30,49 @@ const tooltipStyle = {
 export default function WorkflowDashboard() {
   const { workflowRuns, xpData, tasks, subTasks, packs, scheduledWorkflows } = useWorkflow();
   const { agents, getAgentById } = useAgents();
+  const { toast } = useToast();
+
+  // ── CSV Export Helper ──
+  const downloadCSV = useCallback((filename: string, headers: string[], rows: string[][]) => {
+    const csv = [headers.join(","), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${filename}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "📥 Exported!", description: `${filename}.csv downloaded` });
+  }, [toast]);
+
+  const exportRunLog = useCallback(() => {
+    downloadCSV("workflow_runs",
+      ["ID", "Pack", "Status", "Started", "Completed", "Tasks", "XP", "Agents"],
+      workflowRuns.map(r => [r.id, r.packName, r.status, r.startedAt, r.completedAt || "", String(r.tasksCreated), String(r.xpAwarded), r.assignedAgents.join(";")]));
+  }, [workflowRuns, downloadCSV]);
+
+  const exportXPLeaderboard = useCallback(() => {
+    downloadCSV("xp_leaderboard",
+      ["Agent ID", "Agent Name", "XP", "Tasks Done", "Rank", "Streak", "Last Active"],
+      xpData.map(x => { const a = getAgentById(x.agentId); return [x.agentId, a?.name || x.agentId, String(x.xp), String(x.tasksDone), x.rank, String(x.streak), x.lastActive]; }));
+  }, [xpData, getAgentById, downloadCSV]);
+
+  const exportAgentUtil = useCallback(() => {
+    const taskCount: Record<string, number> = {};
+    tasks.forEach(t => { if (t.assigneeId) taskCount[t.assigneeId] = (taskCount[t.assigneeId] || 0) + 1; });
+    downloadCSV("agent_utilization",
+      ["Agent ID", "Name", "Department", "Tasks", "XP", "Rank"],
+      agents.map(a => {
+        const xp = xpData.find(x => x.agentId === a.id);
+        return [a.id, a.name, a.department, String(taskCount[a.id] || 0), String(xp?.xp || 0), xp?.rank || "—"];
+      }));
+  }, [agents, tasks, xpData, downloadCSV]);
+
+  const exportAll = useCallback(() => {
+    exportRunLog();
+    setTimeout(exportXPLeaderboard, 200);
+    setTimeout(exportAgentUtil, 400);
+  }, [exportRunLog, exportXPLeaderboard, exportAgentUtil]);
 
   // ── Stats ──
   const completedRuns = workflowRuns.filter(r => r.status === "completed").length;
@@ -84,9 +130,24 @@ export default function WorkflowDashboard() {
     <AppLayout>
       <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <Activity className="w-6 h-6 text-primary" />
-          <h1 className="text-xl md:text-2xl font-bold text-foreground pixel-text">⚡ Workflow Dashboard</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Activity className="w-6 h-6 text-primary" />
+            <h1 className="text-xl md:text-2xl font-bold text-foreground pixel-text">⚡ Workflow Dashboard</h1>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="font-pixel text-[9px] gap-1">
+                <Download className="w-3 h-3" /> Export CSV
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportRunLog} className="text-xs cursor-pointer">📋 Run Log</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportXPLeaderboard} className="text-xs cursor-pointer">🏆 XP Leaderboard</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAgentUtil} className="text-xs cursor-pointer">👥 Agent Utilization</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAll} className="text-xs cursor-pointer">📦 Export All</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* KPI Row */}
