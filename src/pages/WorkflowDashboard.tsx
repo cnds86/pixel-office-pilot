@@ -30,6 +30,49 @@ const tooltipStyle = {
 export default function WorkflowDashboard() {
   const { workflowRuns, xpData, tasks, subTasks, packs, scheduledWorkflows } = useWorkflow();
   const { agents, getAgentById } = useAgents();
+  const { toast } = useToast();
+
+  // ── CSV Export Helper ──
+  const downloadCSV = useCallback((filename: string, headers: string[], rows: string[][]) => {
+    const csv = [headers.join(","), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${filename}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "📥 Exported!", description: `${filename}.csv downloaded` });
+  }, [toast]);
+
+  const exportRunLog = useCallback(() => {
+    downloadCSV("workflow_runs",
+      ["ID", "Pack", "Status", "Started", "Completed", "Tasks", "XP", "Agents"],
+      workflowRuns.map(r => [r.id, r.packName, r.status, r.startedAt, r.completedAt || "", String(r.tasksCreated), String(r.xpAwarded), r.assignedAgents.join(";")]));
+  }, [workflowRuns, downloadCSV]);
+
+  const exportXPLeaderboard = useCallback(() => {
+    downloadCSV("xp_leaderboard",
+      ["Agent ID", "Agent Name", "XP", "Tasks Done", "Rank", "Streak", "Last Active"],
+      xpData.map(x => { const a = getAgentById(x.agentId); return [x.agentId, a?.name || x.agentId, String(x.xp), String(x.tasksDone), x.rank, String(x.streak), x.lastActive]; }));
+  }, [xpData, getAgentById, downloadCSV]);
+
+  const exportAgentUtil = useCallback(() => {
+    const taskCount: Record<string, number> = {};
+    tasks.forEach(t => { if (t.assigneeId) taskCount[t.assigneeId] = (taskCount[t.assigneeId] || 0) + 1; });
+    downloadCSV("agent_utilization",
+      ["Agent ID", "Name", "Department", "Tasks", "XP", "Rank"],
+      agents.map(a => {
+        const xp = xpData.find(x => x.agentId === a.id);
+        return [a.id, a.name, a.department, String(taskCount[a.id] || 0), String(xp?.xp || 0), xp?.rank || "—"];
+      }));
+  }, [agents, tasks, xpData, downloadCSV]);
+
+  const exportAll = useCallback(() => {
+    exportRunLog();
+    setTimeout(exportXPLeaderboard, 200);
+    setTimeout(exportAgentUtil, 400);
+  }, [exportRunLog, exportXPLeaderboard, exportAgentUtil]);
 
   // ── Stats ──
   const completedRuns = workflowRuns.filter(r => r.status === "completed").length;
