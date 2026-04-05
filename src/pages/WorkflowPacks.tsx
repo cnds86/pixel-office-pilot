@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Play, Pause, ArrowRight, Users, Rocket, Clock, Timer, Trash2, CalendarClock, Zap, Plus } from "lucide-react";
+import { Play, Pause, ArrowRight, Users, Rocket, Clock, Timer, Trash2, CalendarClock, Zap, Plus, Pencil } from "lucide-react";
 import { departmentInfo, type Department } from "@/data/mockData";
 import { useWorkflow } from "@/contexts/WorkflowContext";
 import { useAgents } from "@/contexts/AgentContext";
