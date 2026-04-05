@@ -130,9 +130,24 @@ export default function WorkflowDashboard() {
     <AppLayout>
       <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <Activity className="w-6 h-6 text-primary" />
-          <h1 className="text-xl md:text-2xl font-bold text-foreground pixel-text">⚡ Workflow Dashboard</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Activity className="w-6 h-6 text-primary" />
+            <h1 className="text-xl md:text-2xl font-bold text-foreground pixel-text">⚡ Workflow Dashboard</h1>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="font-pixel text-[9px] gap-1">
+                <Download className="w-3 h-3" /> Export CSV
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportRunLog} className="text-xs cursor-pointer">📋 Run Log</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportXPLeaderboard} className="text-xs cursor-pointer">🏆 XP Leaderboard</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAgentUtil} className="text-xs cursor-pointer">👥 Agent Utilization</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAll} className="text-xs cursor-pointer">📦 Export All</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* KPI Row */}
