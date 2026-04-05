@@ -110,6 +110,43 @@ export default function WorkflowPacks() {
     toast({ title: "✅ Pack Created!", description: `${pack.name} is ready to run` });
   };
 
+  const openEditDialog = (pack: WorkflowPack) => {
+    setEditingPack(pack);
+    setEditForm({
+      name: pack.name,
+      description: pack.description,
+      type: pack.type,
+      icon: pack.icon,
+      department: pack.defaultDepartment,
+      roles: pack.agentRoles.join(", "),
+      steps: pack.steps[0],
+    });
+    setSelectedPack(null);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdatePack = () => {
+    if (!editingPack || !editForm.name || !editForm.steps) return;
+    updatePack(editingPack.id, {
+      name: editForm.name,
+      description: editForm.description,
+      type: editForm.type,
+      icon: editForm.icon || "📦",
+      agentRoles: editForm.roles.split(",").map(r => r.trim()).filter(Boolean),
+      defaultDepartment: editForm.department,
+      steps: [editForm.steps],
+    });
+    setEditDialogOpen(false);
+    setEditingPack(null);
+    toast({ title: "✏️ Pack Updated!", description: `${editForm.name} has been updated` });
+  };
+
+  const handleDeletePack = (packId: string, packName: string) => {
+    removePack(packId);
+    setSelectedPack(null);
+    toast({ title: "🗑️ Pack Deleted", description: `${packName} has been removed` });
+  };
+
   return (
     <AppLayout>
       <div className="p-6 space-y-6">
