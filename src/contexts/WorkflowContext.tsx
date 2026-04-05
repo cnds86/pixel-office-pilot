@@ -56,6 +56,8 @@ interface WorkflowContextType {
   // Workflow Packs
   packs: WorkflowPack[];
   addPack: (pack: WorkflowPack) => void;
+  updatePack: (id: string, updates: Partial<WorkflowPack>) => void;
+  removePack: (id: string) => void;
   togglePack: (id: string) => void;
 
   // Workflow Engine
