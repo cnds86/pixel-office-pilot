@@ -165,6 +165,13 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
   // ── Add Pack ──
   const addPack = useCallback((pack: WorkflowPack) => setPacks(p => [...p, pack]), []);
 
+  // ── Update Pack ──
+  const updatePack = useCallback((id: string, updates: Partial<WorkflowPack>) =>
+    setPacks(p => p.map(pk => pk.id === id ? { ...pk, ...updates } : pk)), []);
+
+  // ── Remove Pack ──
+  const removePack = useCallback((id: string) => setPacks(p => p.filter(pk => pk.id !== id)), []);
+
   // ── Toggle Pack ──
   const togglePack = useCallback((id: string) => {
     setPacks(prev => prev.map(p => p.id === id ? { ...p, isActive: !p.isActive } : p));
