@@ -455,6 +455,13 @@ export default function WorkflowPacks() {
                     <Button
                       variant="outline"
                       className="font-pixel text-[9px]"
+                      onClick={() => openEditDialog(selectedPack)}
+                    >
+                      <Pencil className="h-3 w-3 mr-1" /> Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="font-pixel text-[9px]"
                       onClick={() => {
                         setSchedulePackId(selectedPack.id);
                         setSelectedPack(null);
@@ -463,15 +470,24 @@ export default function WorkflowPacks() {
                     >
                       <CalendarClock className="h-3 w-3 mr-1" /> Schedule
                     </Button>
+                  </div>
+                  <div className="flex gap-2">
                     <Button
                       variant={selectedPack.isActive ? "destructive" : "default"}
-                      className="font-pixel text-[9px]"
+                      className="flex-1 font-pixel text-[9px]"
                       onClick={() => {
                         handleToggle(selectedPack.id);
                         setSelectedPack({ ...selectedPack, isActive: !selectedPack.isActive });
                       }}
                     >
                       {selectedPack.isActive ? "Deactivate" : "Activate"}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="font-pixel text-[9px]"
+                      onClick={() => handleDeletePack(selectedPack.id, selectedPack.name)}
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" /> Delete
                     </Button>
                   </div>
                 </div>
