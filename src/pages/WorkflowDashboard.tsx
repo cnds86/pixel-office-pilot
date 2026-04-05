@@ -1,18 +1,21 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useWorkflow } from "@/contexts/WorkflowContext";
 import { useAgents } from "@/contexts/AgentContext";
+import { useToast } from "@/hooks/use-toast";
 import {
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { Activity, CheckCircle2, Clock, Flame, Trophy, Users, Zap, TrendingUp } from "lucide-react";
+import { Activity, CheckCircle2, Clock, Flame, Trophy, Users, Zap, TrendingUp, Download } from "lucide-react";
 
 const COLORS = [
   "hsl(160 100% 50%)", "hsl(270 80% 65%)", "hsl(45 100% 60%)",
