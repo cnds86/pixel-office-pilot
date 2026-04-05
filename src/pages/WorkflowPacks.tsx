@@ -605,6 +605,65 @@ export default function WorkflowPacks() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Pack Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-pixel text-sm">✏️ Edit Workflow Pack</DialogTitle>
+              <DialogDescription className="font-pixel-body text-sm">Update this workflow template</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <div className="w-16">
+                  <Label className="font-pixel text-[9px]">Icon</Label>
+                  <Input value={editForm.icon} onChange={e => setEditForm(p => ({ ...p, icon: e.target.value }))} className="font-pixel text-center text-lg h-9" maxLength={2} />
+                </div>
+                <div className="flex-1">
+                  <Label className="font-pixel text-[9px]">Name</Label>
+                  <Input value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} className="font-pixel-body text-sm h-9" />
+                </div>
+              </div>
+              <div>
+                <Label className="font-pixel text-[9px]">Description</Label>
+                <Textarea value={editForm.description} onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))} className="font-pixel-body text-sm min-h-[60px]" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="font-pixel text-[9px]">Type</Label>
+                  <Select value={editForm.type} onValueChange={v => setEditForm(p => ({ ...p, type: v as WorkflowPackType }))}>
+                    <SelectTrigger className="font-pixel-body text-sm h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {packTypes.map(t => <SelectItem key={t.value} value={t.value} className="font-pixel-body text-sm">{t.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="font-pixel text-[9px]">Department</Label>
+                  <Select value={editForm.department} onValueChange={v => setEditForm(p => ({ ...p, department: v as Department }))}>
+                    <SelectTrigger className="font-pixel-body text-sm h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {departments.map(d => <SelectItem key={d.value} value={d.value} className="font-pixel-body text-sm">{d.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label className="font-pixel text-[9px]">Agent Roles <span className="text-muted-foreground">(comma-separated)</span></Label>
+                <Input value={editForm.roles} onChange={e => setEditForm(p => ({ ...p, roles: e.target.value }))} className="font-pixel-body text-sm h-9" />
+              </div>
+              <div>
+                <Label className="font-pixel text-[9px]">Steps <span className="text-muted-foreground">(use → to separate)</span></Label>
+                <Input value={editForm.steps} onChange={e => setEditForm(p => ({ ...p, steps: e.target.value }))} className="font-pixel-body text-sm h-9" />
+              </div>
+              <DialogFooter>
+                <Button className="w-full font-pixel text-[9px]" onClick={handleUpdatePack} disabled={!editForm.name || !editForm.steps}>
+                  <Pencil className="h-3 w-3 mr-1" /> Save Changes
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
