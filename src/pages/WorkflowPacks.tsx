@@ -473,6 +473,13 @@ export default function WorkflowPacks() {
                     <Button
                       variant="outline"
                       className="font-pixel text-[9px]"
+                      onClick={() => handleDuplicatePack(selectedPack)}
+                    >
+                      <Copy className="h-3 w-3 mr-1" /> Duplicate
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="font-pixel text-[9px]"
                       onClick={() => {
                         setSchedulePackId(selectedPack.id);
                         setSelectedPack(null);
